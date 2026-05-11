@@ -64,40 +64,40 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         {profile.avatar_url ? (
           <img src={profile.avatar_url} alt={profile.display_name} className="h-16 w-16 rounded-full" />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-xl font-bold text-green-700">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 text-xl font-bold text-green-400">
             {profile.display_name.charAt(0).toUpperCase()}
           </div>
         )}
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{profile.display_name}</h1>
+          <h1 className="text-xl font-bold text-white">{profile.display_name}</h1>
           {profile.city && profile.state && (
-            <p className="text-sm text-gray-500">{profile.city}, {profile.state}</p>
+            <p className="text-sm text-gray-400">{profile.city}, {profile.state}</p>
           )}
         </div>
       </div>
 
       {/* Album progress */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <p className="text-sm font-medium text-gray-700">Progresso do álbum</p>
+      <div className="rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+        <p className="text-sm font-medium text-gray-300">Progresso do álbum</p>
         <div className="mt-2 flex items-center gap-3">
-          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
             <div className="h-full rounded-full bg-green-500" style={{ width: `${percent}%` }} />
           </div>
-          <span className="text-sm font-semibold text-gray-900">{percent}%</span>
+          <span className="text-sm font-semibold text-white">{percent}%</span>
         </div>
-        <p className="mt-1 text-xs text-gray-500">{uniqueOwned} de {total} figurinhas</p>
+        <p className="mt-1 text-xs text-gray-400">{uniqueOwned} de {total} figurinhas</p>
       </div>
 
       {/* Contact info (friends only) */}
       {isFriend && (profile.instagram || profile.whatsapp) && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-          <p className="text-sm font-semibold text-green-800">Contato</p>
+        <div className="rounded-lg border border-green-500/20 bg-green-500/10 backdrop-blur-sm p-4">
+          <p className="text-sm font-semibold text-green-400">Contato</p>
           <div className="mt-2 space-y-1">
             {profile.instagram && (
-              <p className="text-sm text-gray-700">Instagram: {profile.instagram}</p>
+              <p className="text-sm text-gray-300">Instagram: {profile.instagram}</p>
             )}
             {profile.whatsapp && (
-              <p className="text-sm text-gray-700">WhatsApp: {profile.whatsapp}</p>
+              <p className="text-sm text-gray-300">WhatsApp: {profile.whatsapp}</p>
             )}
           </div>
         </div>
@@ -107,11 +107,11 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
       {!isOwnProfile && (
         <div>
           {isFriend ? (
-            <span className="inline-flex items-center rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-700">
+            <span className="inline-flex items-center rounded-lg bg-green-500/20 px-3 py-2 text-sm font-medium text-green-400">
               Amigos
             </span>
           ) : pendingInvite ? (
-            <span className="inline-flex items-center rounded-lg bg-amber-100 px-3 py-2 text-sm font-medium text-amber-700">
+            <span className="inline-flex items-center rounded-lg bg-amber-500/20 px-3 py-2 text-sm font-medium text-amber-400">
               Convite pendente
             </span>
           ) : (
@@ -120,7 +120,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         </div>
       )}
 
-      <Link href="/friends" className="inline-block text-sm text-green-600 hover:underline">
+      <Link href="/friends" className="inline-block text-sm text-green-400 hover:underline">
         ← Voltar para amigos
       </Link>
     </div>

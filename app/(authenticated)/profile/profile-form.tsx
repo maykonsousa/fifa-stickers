@@ -63,12 +63,12 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
             alt="Avatar"
             className="h-16 w-16 rounded-full"
           />
-          <span className="text-sm text-gray-500">Foto do Google</span>
+          <span className="text-sm text-gray-400">Foto do Google</span>
         </div>
       )}
 
       <div>
-        <label htmlFor="display_name" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="display_name" className="block text-sm font-medium text-gray-300">
           Nome
         </label>
         <input
@@ -77,13 +77,13 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           type="text"
           required
           defaultValue={profile?.display_name ?? ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+          className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="city" className="block text-sm font-medium text-gray-300">
             Cidade
           </label>
           <input
@@ -91,18 +91,18 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
             name="city"
             type="text"
             defaultValue={profile?.city ?? ""}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
           />
         </div>
         <div>
-          <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="state" className="block text-sm font-medium text-gray-300">
             Estado
           </label>
           <select
             id="state"
             name="state"
             defaultValue={profile?.state ?? ""}
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
           >
             <option value="">Selecione</option>
             {STATES.map((s) => (
@@ -113,7 +113,7 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
       </div>
 
       <div>
-        <label htmlFor="instagram" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="instagram" className="block text-sm font-medium text-gray-300">
           Instagram
         </label>
         <input
@@ -122,13 +122,13 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           type="text"
           placeholder="@seuusuario"
           defaultValue={profile?.instagram ?? ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+          className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
         <p className="mt-1 text-xs text-gray-500">Visível apenas para amigos</p>
       </div>
 
       <div>
-        <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-300">
           WhatsApp
         </label>
         <input
@@ -137,13 +137,13 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           type="text"
           placeholder="(11) 99999-9999"
           defaultValue={profile?.whatsapp ?? ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+          className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
         <p className="mt-1 text-xs text-gray-500">Visível apenas para amigos</p>
       </div>
 
       {message && (
-        <p className={`text-sm ${message.includes("Erro") ? "text-red-600" : "text-green-600"}`}>
+        <p className={`text-sm ${message.includes("Erro") ? "text-red-400" : "text-green-400"}`}>
           {message}
         </p>
       )}

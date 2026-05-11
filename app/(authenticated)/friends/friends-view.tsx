@@ -116,22 +116,22 @@ export function FriendsView({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Amigos</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-white">Amigos</h1>
+        <p className="mt-1 text-sm text-gray-400">
           Gerencie seus amigos e envie convites.
         </p>
       </div>
 
       {/* Search users */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Buscar usuários</h2>
+      <div className="rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+        <h2 className="text-sm font-semibold text-white">Buscar usuários</h2>
         <form onSubmit={handleSearch} className="mt-2 flex gap-2">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por nome..."
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
           />
           <button
             type="submit"
@@ -147,25 +147,25 @@ export function FriendsView({
               const alreadyFriend = friends.some((f) => f.friend_id === user.id && f.status === "active");
               const alreadyInvited = sentInvites.some((i) => i.receiver_id === user.id);
               return (
-                <div key={user.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                <div key={user.id} className="flex items-center justify-between rounded-lg bg-white/5 p-3">
                   <div className="flex items-center gap-3">
                     <Avatar url={user.avatar_url} name={user.display_name} />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{user.display_name}</p>
+                      <p className="text-sm font-medium text-white">{user.display_name}</p>
                       {user.city && user.state && (
-                        <p className="text-xs text-gray-500">{user.city}, {user.state}</p>
+                        <p className="text-xs text-gray-400">{user.city}, {user.state}</p>
                       )}
                     </div>
                   </div>
                   {alreadyFriend ? (
-                    <span className="text-xs text-green-600 font-medium">Amigos</span>
+                    <span className="text-xs text-green-400 font-medium">Amigos</span>
                   ) : alreadyInvited ? (
-                    <span className="text-xs text-gray-500">Convite enviado</span>
+                    <span className="text-xs text-gray-400">Convite enviado</span>
                   ) : (
                     <button
                       onClick={() => handleSendInvite(user.id)}
                       disabled={loading}
-                      className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-200 disabled:opacity-50"
+                      className="rounded-lg bg-green-500/20 px-3 py-1.5 text-xs font-medium text-green-400 hover:bg-green-500/30 disabled:opacity-50"
                     >
                       Convidar
                     </button>
@@ -179,19 +179,19 @@ export function FriendsView({
 
       {/* Pending invites */}
       {pendingInvites.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <h2 className="text-sm font-semibold text-gray-900">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 backdrop-blur-sm p-4">
+          <h2 className="text-sm font-semibold text-white">
             Convites recebidos ({pendingInvites.length})
           </h2>
           <div className="mt-3 space-y-2">
             {pendingInvites.map((invite) => (
-              <div key={invite.id} className="flex items-center justify-between rounded-lg bg-white p-3">
+              <div key={invite.id} className="flex items-center justify-between rounded-lg bg-white/5 p-3">
                 <div className="flex items-center gap-3">
                   <Avatar url={invite.profiles.avatar_url} name={invite.profiles.display_name} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{invite.profiles.display_name}</p>
+                    <p className="text-sm font-medium text-white">{invite.profiles.display_name}</p>
                     {invite.profiles.city && invite.profiles.state && (
-                      <p className="text-xs text-gray-500">{invite.profiles.city}, {invite.profiles.state}</p>
+                      <p className="text-xs text-gray-400">{invite.profiles.city}, {invite.profiles.state}</p>
                     )}
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export function FriendsView({
                   <button
                     onClick={() => handleReject(invite.id)}
                     disabled={loading}
-                    className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                    className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-white/20 disabled:opacity-50"
                   >
                     Recusar
                   </button>
@@ -218,22 +218,22 @@ export function FriendsView({
       )}
 
       {/* Active friends */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+        <h2 className="text-sm font-semibold text-white">
           Meus amigos ({activeFriends.length})
         </h2>
         {activeFriends.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-500">Nenhum amigo ainda. Busque e convide!</p>
+          <p className="mt-2 text-sm text-gray-400">Nenhum amigo ainda. Busque e convide!</p>
         ) : (
           <div className="mt-3 space-y-2">
             {activeFriends.map((friend) => (
-              <div key={friend.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+              <div key={friend.id} className="flex items-center justify-between rounded-lg bg-white/5 p-3">
                 <div className="flex items-center gap-3">
                   <Avatar url={friend.profiles.avatar_url} name={friend.profiles.display_name} />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{friend.profiles.display_name}</p>
+                    <p className="text-sm font-medium text-white">{friend.profiles.display_name}</p>
                     {friend.profiles.city && friend.profiles.state && (
-                      <p className="text-xs text-gray-500">{friend.profiles.city}, {friend.profiles.state}</p>
+                      <p className="text-xs text-gray-400">{friend.profiles.city}, {friend.profiles.state}</p>
                     )}
                   </div>
                 </div>
@@ -241,14 +241,14 @@ export function FriendsView({
                   <button
                     onClick={() => handleRemove(friend.friend_id)}
                     disabled={loading}
-                    className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                    className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-white/20 disabled:opacity-50"
                   >
                     Remover
                   </button>
                   <button
                     onClick={() => handleBlock(friend.friend_id)}
                     disabled={loading}
-                    className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-50"
                   >
                     Bloquear
                   </button>
@@ -261,21 +261,21 @@ export function FriendsView({
 
       {/* Blocked */}
       {blockedFriends.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">
+        <div className="rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+          <h2 className="text-sm font-semibold text-white">
             Bloqueados ({blockedFriends.length})
           </h2>
           <div className="mt-3 space-y-2">
             {blockedFriends.map((friend) => (
-              <div key={friend.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+              <div key={friend.id} className="flex items-center justify-between rounded-lg bg-white/5 p-3">
                 <div className="flex items-center gap-3">
                   <Avatar url={friend.profiles.avatar_url} name={friend.profiles.display_name} />
-                  <p className="text-sm font-medium text-gray-900">{friend.profiles.display_name}</p>
+                  <p className="text-sm font-medium text-white">{friend.profiles.display_name}</p>
                 </div>
                 <button
                   onClick={() => handleUnblock(friend.friend_id)}
                   disabled={loading}
-                  className="rounded-lg bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                  className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-white/20 disabled:opacity-50"
                 >
                   Desbloquear
                 </button>
@@ -293,7 +293,7 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
     return <img src={url} alt={name} className="h-9 w-9 rounded-full" />;
   }
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/20 text-sm font-bold text-green-400">
       {name.charAt(0).toUpperCase()}
     </div>
   );

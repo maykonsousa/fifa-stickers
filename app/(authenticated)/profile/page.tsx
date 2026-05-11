@@ -12,8 +12,8 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
-      <p className="mt-1 text-sm text-gray-600">
+      <h1 className="text-2xl font-bold text-white">Meu Perfil</h1>
+      <p className="mt-1 text-sm text-gray-400">
         Edite suas informações. Instagram e WhatsApp são visíveis apenas para amigos.
       </p>
       <ProfileForm profile={profile} />

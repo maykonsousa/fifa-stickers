@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Hero card */}
-      <div className="rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 p-6 text-white shadow-lg">
+      <div className="rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 p-6 text-white shadow-lg shadow-green-500/20">
         <h1 className="text-2xl font-bold">Meu Álbum</h1>
         <div className="mt-4 flex items-end gap-4">
           <span className="text-5xl font-bold">{totalPercent}%</span>
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
 
       {/* Groups grid */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Progresso por grupo</h2>
+        <h2 className="text-lg font-semibold text-white">Progresso por grupo</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {groups?.map((group) => {
             const owned = ownedByGroup.get(group.id) ?? 0;
@@ -62,21 +62,21 @@ export default async function DashboardPage() {
             return (
               <div
                 key={group.id}
-                className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-4"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50 text-xs font-bold text-green-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-xs font-bold text-green-400">
                   {group.code}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-900">{group.name}</p>
+                  <p className="truncate text-sm font-medium text-white">{group.name}</p>
                   <div className="mt-1 flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
                       <div
                         className="h-full rounded-full bg-green-500 transition-all"
                         style={{ width: `${percent}%` }}
                       />
                     </div>
-                    <span className="text-xs font-medium text-gray-500">
+                    <span className="text-xs font-medium text-gray-400">
                       {owned}/{group.sticker_count}
                     </span>
                   </div>

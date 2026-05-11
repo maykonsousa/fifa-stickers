@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 interface Group {
   id: number;
@@ -12,168 +11,218 @@ interface Group {
   sticker_count: number;
 }
 
-interface Sticker {
+interface StickerResult {
   id: number;
   group_id: number;
   code: string;
   number: number;
   title: string | null;
+  image_url: string | null;
+  owned_count: number;
+  total_count: number;
 }
 
-interface UserSticker {
-  id: string;
-  sticker_id: number;
-}
+const PAGE_SIZE = 10;
 
 export function CollectionView({
   groups,
-  stickers,
-  userStickers,
   userId,
 }: {
   groups: Group[];
-  stickers: Sticker[];
-  userStickers: UserSticker[];
   userId: string;
 }) {
-  const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
+  const [keyword, setKeyword] = useState("");
+  const [groupId, setGroupId] = useState<number | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [results, setResults] = useState<StickerResult[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-  const [quickAdd, setQuickAdd] = useState("");
 
-  const userStickerMap = new Map<number, string[]>();
-  for (const us of userStickers) {
-    const existing = userStickerMap.get(us.sticker_id) ?? [];
-    existing.push(us.id);
-    userStickerMap.set(us.sticker_id, existing);
-  }
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-  const filteredStickers = stickers.filter((s) => {
-    if (selectedGroup && s.group_id !== selectedGroup) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return (
-        s.code.toLowerCase().includes(q) ||
-        (s.title && s.title.toLowerCase().includes(q))
-      );
+  const fetchStickers = useCallback(async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const { data } = await supabase.rpc("search_stickers", {
+      p_user_id: userId,
+      p_keyword: keyword || null,
+      p_group_id: groupId,
+      p_status: status,
+      p_page: page,
+      p_page_size: PAGE_SIZE,
+    });
+    if (data && data.length > 0) {
+      setResults(data as StickerResult[]);
+      setTotalCount((data as StickerResult[])[0].total_count);
+    } else {
+      setResults([]);
+      setTotalCount(0);
     }
-    return true;
-  });
+    setLoading(false);
+  }, [userId, keyword, groupId, status, page]);
+
+  useEffect(() => {
+    fetchStickers();
+  }, [fetchStickers]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
+  const handleFilterChange = (setter: () => void) => {
+    setter();
+    setPage(1);
+  };
 
   const handleAdd = async (stickerId: number) => {
     setAdding(true);
     const supabase = createClient();
     await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: stickerId });
-    router.refresh();
+    await fetchStickers();
     setAdding(false);
   };
 
   const handleRemove = async (stickerId: number) => {
-    const ids = userStickerMap.get(stickerId);
-    if (!ids || ids.length === 0) return;
     setAdding(true);
     const supabase = createClient();
-    await supabase.from("user_stickers").delete().eq("id", ids[ids.length - 1]);
-    router.refresh();
-    setAdding(false);
-  };
-
-  const handleQuickAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickAdd.trim()) return;
-    const code = quickAdd.trim().toUpperCase();
-    const sticker = stickers.find((s) => s.code === code);
-    if (!sticker) {
-      alert(`Figurinha "${code}" não encontrada.`);
-      return;
+    const { data: rows } = await supabase
+      .from("user_stickers")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("sticker_id", stickerId)
+      .limit(1);
+    if (rows && rows.length > 0) {
+      await supabase.from("user_stickers").delete().eq("id", rows[0].id);
     }
-    await handleAdd(sticker.id);
-    setQuickAdd("");
+    await fetchStickers();
+    setAdding(false);
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Coleção</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Adicione figurinhas digitando o código ou navegue pela lista.
+        <h1 className="text-2xl font-bold text-white">Coleção</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          Navegue pela lista e gerencie suas figurinhas.
         </p>
       </div>
-
-      {/* Quick add */}
-      <form onSubmit={handleQuickAdd} className="flex gap-2">
-        <input
-          type="text"
-          value={quickAdd}
-          onChange={(e) => setQuickAdd(e.target.value)}
-          placeholder="Digite o código (ex: BRA7)"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
-        />
-        <button
-          type="submit"
-          disabled={adding}
-          className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-        >
-          Adicionar
-        </button>
-      </form>
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
           placeholder="Buscar por código ou nome..."
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
         <select
-          value={selectedGroup ?? ""}
-          onChange={(e) => setSelectedGroup(e.target.value ? Number(e.target.value) : null)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+          value={groupId ?? ""}
+          onChange={(e) => handleFilterChange(() => setGroupId(e.target.value ? Number(e.target.value) : null))}
+          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
         >
           <option value="">Todos os grupos</option>
-          {groups.map((g) => (
+          {[...groups].sort((a, b) => a.name.localeCompare(b.name)).map((g) => (
             <option key={g.id} value={g.id}>{g.name}</option>
           ))}
+        </select>
+        <select
+          value={status ?? ""}
+          onChange={(e) => handleFilterChange(() => setStatus(e.target.value || null))}
+          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+        >
+          <option value="">Todas</option>
+          <option value="owned">Tenho</option>
+          <option value="missing">Faltam</option>
+          <option value="duplicate">Repetidas</option>
         </select>
       </div>
 
       {/* Sticker grid */}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-        {filteredStickers.map((sticker) => {
-          const count = userStickerMap.get(sticker.id)?.length ?? 0;
-          const hasIt = count > 0;
-          const isDuplicate = count > 1;
+      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 transition-opacity ${loading ? "opacity-50" : ""}`}>
+        {results.map((sticker) => {
+          const hasIt = sticker.owned_count > 0;
+          const isDuplicate = sticker.owned_count > 1;
+
+          const borderClass = hasIt
+            ? isDuplicate
+              ? "border-2 border-transparent bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-500"
+              : "border-2 border-transparent bg-gradient-to-br from-gray-300 via-white to-gray-400"
+            : "border border-white/10";
 
           return (
             <div
               key={sticker.id}
-              className={`relative flex flex-col items-center rounded-lg border p-2 text-center transition-colors ${
-                hasIt
-                  ? isDuplicate
-                    ? "border-amber-300 bg-amber-50"
-                    : "border-green-300 bg-green-50"
-                  : "border-gray-200 bg-white"
-              }`}
+              className="group relative"
             >
-              <span className="text-xs font-bold text-gray-700">{sticker.code}</span>
-              {sticker.title && (
-                <span className="mt-0.5 text-[10px] text-gray-500 truncate w-full">
-                  {sticker.title}
-                </span>
-              )}
-              {isDuplicate && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white">
-                  {count}
-                </span>
-              )}
-              <div className="mt-1 flex gap-1">
+              {/* Outer border (gradient for metallic effect) */}
+              <div className={`rounded-lg p-[2px] ${hasIt ? borderClass : ""}`}>
+                <div
+                  className={`relative aspect-[2/3] overflow-hidden rounded-lg ${
+                    hasIt ? "bg-gray-800" : "bg-gray-800/50 border border-white/10 opacity-50"
+                  }`}
+                >
+                  {/* Content */}
+                  {sticker.image_url ? (
+                    <img
+                      src={sticker.image_url}
+                      alt={sticker.code}
+                      className={`h-full w-full object-cover ${!hasIt ? "grayscale" : ""}`}
+                    />
+                  ) : (
+                    <div className="flex h-full flex-col items-start p-3 pt-2">
+                      {/* Top: code */}
+                      <span className="text-sm font-bold text-white/50">{sticker.code}</span>
+
+                      {/* Center: person icon */}
+                      <div className="flex flex-1 w-full items-center justify-center -mt-2">
+                        <svg className="h-20 w-20 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                        </svg>
+                      </div>
+
+                      {/* Bottom: name and description */}
+                      <div className="w-full space-y-1 text-center">
+                        {sticker.title ? (
+                          <p className="text-sm font-bold text-white/80 truncate">{sticker.title}</p>
+                        ) : (
+                          <div className="mx-auto h-3 w-3/4 rounded bg-white/10" />
+                        )}
+                        <div className="mx-auto h-2 w-1/2 rounded bg-white/5" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Code badge (when has image) */}
+                  {sticker.image_url && (
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4">
+                      <span className="text-[10px] font-bold text-white">{sticker.code}</span>
+                    </div>
+                  )}
+
+                  {/* Duplicate badge */}
+                  {isDuplicate && (
+                    <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow">
+                      {sticker.owned_count - 1}
+                    </span>
+                  )}
+
+                  {/* Hover shine effect */}
+                  <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="mt-1.5 flex justify-center gap-1">
                 <button
                   onClick={() => handleAdd(sticker.id)}
                   disabled={adding}
-                  className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 hover:bg-green-200 disabled:opacity-50"
+                  className="rounded-md bg-green-500/20 px-2 py-1 text-[10px] font-medium text-green-400 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
                 >
                   +
                 </button>
@@ -181,7 +230,7 @@ export function CollectionView({
                   <button
                     onClick={() => handleRemove(sticker.id)}
                     disabled={adding}
-                    className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 hover:bg-red-200 disabled:opacity-50"
+                    className="rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
                   >
                     −
                   </button>
@@ -191,6 +240,36 @@ export function CollectionView({
           );
         })}
       </div>
+
+      {/* Empty state */}
+      {!loading && results.length === 0 && (
+        <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
+          <p className="text-gray-400">Nenhuma figurinha encontrada para os filtros selecionados.</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || loading}
+            className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
+          >
+            ← Anterior
+          </button>
+          <span className="text-sm text-gray-400">
+            Página {page} de {totalPages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages || loading}
+            className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
+          >
+            Próximo →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

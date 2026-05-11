@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { Sparkles, Trophy, Users, Zap } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Hero() {
   return (
@@ -142,27 +143,31 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 1 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <motion.button
-            whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-green-900 px-10 py-5 rounded-xl text-xl shadow-2xl hover:shadow-yellow-500/50 transition-shadow duration-300 flex items-center gap-3 group"
-          >
-            <span>Começar agora</span>
-            <motion.span
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+          <Link href="/login">
+            <motion.div
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-green-900 px-10 py-5 rounded-xl text-xl shadow-2xl hover:shadow-yellow-500/50 transition-shadow duration-300 flex items-center gap-3 group"
             >
-              →
-            </motion.span>
-          </motion.button>
+              <span>Começar agora</span>
+              <motion.span
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                →
+              </motion.span>
+            </motion.div>
+          </Link>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white/10 backdrop-blur-md border-2 border-white/30 text-white px-10 py-5 rounded-xl text-xl hover:bg-white/20 transition-all duration-300"
-          >
-            Ver demonstração
-          </motion.button>
+          <Link href="/login">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-white/10 backdrop-blur-md border-2 border-white/30 text-white px-10 py-5 rounded-xl text-xl hover:bg-white/20 transition-all duration-300"
+            >
+              Entrar com Google
+            </motion.div>
+          </Link>
         </motion.div>
 
         {/* Scroll indicator */}

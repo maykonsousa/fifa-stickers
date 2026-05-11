@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from 'motion/react';
-import { BarChart3, RefreshCw, Users, MapPin, Sparkles, Zap, Shield, Heart } from 'lucide-react';
+import { BarChart3, RefreshCw, Users, MapPin, Zap, Shield } from 'lucide-react';
 
 const features = [
   {
@@ -20,8 +20,8 @@ const features = [
   },
   {
     icon: Users,
-    title: 'Comunidade global',
-    description: 'Milhares de fãs trocando figurinhas pelo mundo todo',
+    title: 'Comunidade ativa',
+    description: 'Milhares de fãs trocando figurinhas pelo Brasil todo',
     color: 'from-purple-500 to-pink-500',
     iconColor: 'text-purple-600'
   },
@@ -35,30 +35,16 @@ const features = [
   {
     icon: Zap,
     title: 'Super rápido',
-    description: 'Adicione figurinhas em segundos com nosso scanner',
+    description: 'Adicione figurinhas em segundos digitando o código',
     color: 'from-yellow-500 to-amber-500',
     iconColor: 'text-yellow-600'
   },
   {
     icon: Shield,
     title: '100% seguro',
-    description: 'Suas informações protegidas com criptografia de ponta',
+    description: 'Suas informações protegidas e contato visível só para amigos',
     color: 'from-indigo-500 to-blue-500',
     iconColor: 'text-indigo-600'
-  },
-  {
-    icon: Sparkles,
-    title: 'Gamificação',
-    description: 'Ganhe badges, conquistas e suba no ranking',
-    color: 'from-pink-500 to-rose-500',
-    iconColor: 'text-pink-600'
-  },
-  {
-    icon: Heart,
-    title: 'Feito por fãs',
-    description: 'Criado por colecionadores apaixonados pelo futebol',
-    color: 'from-red-500 to-pink-500',
-    iconColor: 'text-red-600'
   }
 ];
 
@@ -101,7 +87,7 @@ export default function Features() {
         </motion.div>
 
         {/* Features grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (

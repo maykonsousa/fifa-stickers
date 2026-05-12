@@ -2,6 +2,21 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ChevronsUpDown, Check } from "lucide-react";
+import { PaginationControl } from "@/components/ui/pagination";
 
 interface Group {
   id: number;
@@ -33,7 +48,9 @@ export function CollectionView({
 }) {
   const [keyword, setKeyword] = useState("");
   const [groupId, setGroupId] = useState<number | null>(null);
+  const [groupOpen, setGroupOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [results, setResults] = useState<StickerResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -121,26 +138,84 @@ export function CollectionView({
           placeholder="Buscar por código ou nome..."
           className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
-        <select
-          value={groupId ?? ""}
-          onChange={(e) => handleFilterChange(() => setGroupId(e.target.value ? Number(e.target.value) : null))}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
-        >
-          <option value="">Todos os grupos</option>
-          {[...groups].sort((a, b) => a.name.localeCompare(b.name)).map((g) => (
-            <option key={g.id} value={g.id}>{g.name}</option>
-          ))}
-        </select>
-        <select
-          value={status ?? ""}
-          onChange={(e) => handleFilterChange(() => setStatus(e.target.value || null))}
-          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
-        >
-          <option value="">Todas</option>
-          <option value="owned">Tenho</option>
-          <option value="missing">Faltam</option>
-          <option value="duplicate">Repetidas</option>
-        </select>
+        <Popover open={groupOpen} onOpenChange={setGroupOpen}>
+          <PopoverTrigger
+            className="flex w-full sm:w-52 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+          >
+            <span className={groupId ? "text-white" : "text-gray-400"}>
+              {groupId
+                ? groups.find((g) => g.id === groupId)?.name ?? "Grupo"
+                : "Todos os grupos"}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
+          </PopoverTrigger>
+          <PopoverContent className="w-52 p-0" align="start">
+            <Command filter={(value, search) => {
+              if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+              return 0;
+            }}>
+              <CommandInput placeholder="Buscar grupo..." />
+              <CommandList>
+                <CommandEmpty>Nenhum grupo encontrado.</CommandEmpty>
+                <CommandGroup>
+                  <CommandItem
+                    value="all"
+                    onSelect={() => {
+                      handleFilterChange(() => setGroupId(null));
+                      setGroupOpen(false);
+                    }}
+                  >
+                    <Check className={`mr-2 h-4 w-4 ${groupId === null ? "opacity-100" : "opacity-0"}`} />
+                    Todos os grupos
+                  </CommandItem>
+                  {[...groups].sort((a, b) => a.name.localeCompare(b.name)).map((g) => (
+                    <CommandItem
+                      key={g.id}
+                      value={`${g.code} ${g.name}`}
+                      onSelect={() => {
+                        handleFilterChange(() => setGroupId(g.id));
+                        setGroupOpen(false);
+                      }}
+                    >
+                      <Check className={`mr-2 h-4 w-4 ${groupId === g.id ? "opacity-100" : "opacity-0"}`} />
+                      {g.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <Popover open={statusOpen} onOpenChange={setStatusOpen}>
+          <PopoverTrigger
+            className="flex w-full sm:w-36 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+          >
+            <span className={status ? "text-white" : "text-gray-400"}>
+              {status === "owned" ? "Tenho" : status === "missing" ? "Faltam" : status === "duplicate" ? "Repetidas" : "Todas"}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
+          </PopoverTrigger>
+          <PopoverContent className="w-36 p-1" align="start">
+            {[
+              { value: null, label: "Todas" },
+              { value: "owned", label: "Tenho" },
+              { value: "missing", label: "Faltam" },
+              { value: "duplicate", label: "Repetidas" },
+            ].map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => {
+                  handleFilterChange(() => setStatus(opt.value));
+                  setStatusOpen(false);
+                }}
+                className="flex w-full items-center rounded-md px-2 py-1.5 text-sm text-popover-foreground hover:bg-accent"
+              >
+                <Check className={`mr-2 h-4 w-4 ${status === opt.value ? "opacity-100" : "opacity-0"}`} />
+                {opt.label}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Sticker grid */}
@@ -161,7 +236,10 @@ export function CollectionView({
               className="group relative"
             >
               {/* Outer border (gradient for metallic effect) */}
-              <div className={`rounded-lg p-[2px] ${hasIt ? borderClass : ""}`}>
+              <div
+                className={`rounded-lg p-[2px] cursor-pointer ${hasIt ? borderClass : ""}`}
+                onClick={() => !adding && handleAdd(sticker.id)}
+              >
                 <div
                   className={`relative aspect-[2/3] overflow-hidden rounded-lg ${
                     hasIt ? "bg-gray-800" : "bg-gray-800/50 border border-white/10 opacity-50"
@@ -218,11 +296,11 @@ export function CollectionView({
               </div>
 
               {/* Action buttons */}
-              <div className="mt-1.5 flex justify-center gap-1">
+              <div className="mt-2 flex justify-center gap-2">
                 <button
                   onClick={() => handleAdd(sticker.id)}
                   disabled={adding}
-                  className="rounded-md bg-green-500/20 px-2 py-1 text-[10px] font-medium text-green-400 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
+                  className="rounded-lg bg-green-500/20 px-4 py-2 text-sm font-medium text-green-400 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
                 >
                   +
                 </button>
@@ -230,7 +308,7 @@ export function CollectionView({
                   <button
                     onClick={() => handleRemove(sticker.id)}
                     disabled={adding}
-                    className="rounded-md bg-red-500/20 px-2 py-1 text-[10px] font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
+                    className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
                   >
                     −
                   </button>
@@ -249,27 +327,12 @@ export function CollectionView({
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1 || loading}
-            className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
-          >
-            ← Anterior
-          </button>
-          <span className="text-sm text-gray-400">
-            Página {page} de {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages || loading}
-            className="rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
-          >
-            Próximo →
-          </button>
-        </div>
-      )}
+      <PaginationControl
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        disabled={loading}
+      />
     </div>
   );
 }

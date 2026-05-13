@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { DashboardCharts } from "@/components/dashboard-charts";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -15,6 +16,8 @@ export default async function DashboardPage() {
     .eq("user_id", user!.id);
 
   const ownedByGroup = new Map<number, number>();
+  const totalEntries = userStickers?.length ?? 0;
+
   if (userStickers) {
     const seen = new Set<string>();
     for (const us of userStickers) {
@@ -29,63 +32,29 @@ export default async function DashboardPage() {
 
   const totalStickers = groups?.reduce((sum, g) => sum + g.sticker_count, 0) ?? 0;
   const totalOwned = Array.from(ownedByGroup.values()).reduce((sum, v) => sum + v, 0);
+  const totalRepeats = totalEntries - totalOwned;
   const totalPercent = totalStickers > 0 ? Math.round((totalOwned / totalStickers) * 100) : 0;
+  const completedGroups = groups?.filter(g => (ownedByGroup.get(g.id) ?? 0) >= g.sticker_count).length ?? 0;
+
+  const groupsData = (groups ?? []).map(g => ({
+    id: g.id,
+    name: g.name,
+    code: g.code,
+    type: g.type,
+    sticker_count: g.sticker_count,
+    owned: ownedByGroup.get(g.id) ?? 0,
+    percent: g.sticker_count > 0 ? Math.round(((ownedByGroup.get(g.id) ?? 0) / g.sticker_count) * 100) : 0,
+  }));
 
   return (
-    <div className="space-y-8">
-      {/* Hero card */}
-      <div className="rounded-xl bg-gradient-to-r from-green-600 to-emerald-500 p-6 text-white shadow-lg shadow-green-500/20">
-        <h1 className="text-2xl font-bold">Meu Álbum</h1>
-        <div className="mt-4 flex items-end gap-4">
-          <span className="text-5xl font-bold">{totalPercent}%</span>
-          <span className="pb-1 text-green-100">
-            {totalOwned} de {totalStickers} figurinhas
-          </span>
-        </div>
-        <div className="mt-3 h-3 overflow-hidden rounded-full bg-green-800/30">
-          <div
-            className="h-full rounded-full bg-white/90 transition-all"
-            style={{ width: `${totalPercent}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Groups grid */}
-      <div>
-        <h2 className="text-lg font-semibold text-white">Progresso por grupo</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {groups?.map((group) => {
-            const owned = ownedByGroup.get(group.id) ?? 0;
-            const percent = group.sticker_count > 0
-              ? Math.round((owned / group.sticker_count) * 100)
-              : 0;
-            return (
-              <div
-                key={group.id}
-                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-4"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-xs font-bold text-green-400">
-                  {group.code}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="truncate text-sm font-medium text-white">{group.name}</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-green-500 transition-all"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-gray-400">
-                      {owned}/{group.sticker_count}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+    <DashboardCharts
+      totalOwned={totalOwned}
+      totalStickers={totalStickers}
+      totalRepeats={totalRepeats}
+      totalPercent={totalPercent}
+      completedGroups={completedGroups}
+      totalGroups={groups?.length ?? 0}
+      groups={groupsData}
+    />
   );
 }

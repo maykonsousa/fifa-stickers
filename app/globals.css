@@ -7,9 +7,19 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-body), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-heading: var(--font-display), "Arial Black", system-ui, sans-serif;
+  --font-body: var(--font-body), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display), "Arial Black", system-ui, sans-serif;
+  --color-brand-field: #0a3d2a;
+  --color-brand-field-2: #155236;
+  --color-brand-grass: #2d7d4f;
+  --color-brand-cream: #fef9e8;
+  --color-brand-paper: #fffaf0;
+  --color-brand-gold: #fbbf24;
+  --color-brand-gold-2: #f59e0b;
+  --color-brand-ink: #18181b;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -57,7 +67,7 @@
   body {
     background: var(--background);
     color: var(--foreground);
-    font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    font-family: var(--font-body), system-ui, -apple-system, sans-serif;
     @apply bg-background text-foreground;
   }
 
@@ -147,4 +157,21 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+.font-display {
+  font-family: var(--font-display), "Archivo Black", "Arial Black", system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.font-mono-tag {
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.bg-paper {
+  background-color: #fffaf0;
+  background-image: radial-gradient(circle at 20% 10%, rgba(10, 61, 42, 0.04), transparent 60%);
 }

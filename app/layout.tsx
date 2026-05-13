@@ -1,21 +1,46 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo_Black, Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const archivoBlack = Archivo_Black({
+  weight: "400",
   subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "FIFA Stickers 2026 — Gerencie sua coleção",
-  description: "Controle sua coleção do álbum da Copa do Mundo 2026, encontre trocas e conecte com outros colecionadores.",
+  title: "faltaUma — álbum colecionável 2026",
+  description:
+    "Cada figurinha colada é uma vitória. Acompanhe seu álbum, encontre trocas e cole a última que falta.",
+  metadataBase: new URL("https://faltauma.com"),
+  openGraph: {
+    title: "faltaUma — álbum colecionável 2026",
+    description:
+      "Cada figurinha colada é uma vitória. Cole a última que falta.",
+    url: "https://faltauma.com",
+    siteName: "faltaUma",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "faltaUma",
+    description: "Cada figurinha colada é uma vitória.",
+  },
 };
 
 export default function RootLayout({
@@ -26,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${archivoBlack.variable} ${inter.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <head>
         {process.env.NODE_ENV === "development" && (
@@ -37,7 +62,7 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="font-body min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

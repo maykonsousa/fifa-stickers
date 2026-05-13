@@ -16,16 +16,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-green-900 via-green-700 to-emerald-600">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-[#155236] via-[#0a3d2a] to-[#04140b]">
       {/* Background image */}
       <div className="absolute inset-0">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-15"
+          className="absolute inset-0 bg-cover bg-center opacity-60"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1707798178440-84403072d249?w=1920&q=80')`,
+            backgroundImage: `url('/brand/hero-bg-stadium.svg')`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-green-900/90 via-green-800/50 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.55)_100%)]" />
       </div>
 
       {/* Grid pattern */}
@@ -75,7 +75,7 @@ export default function LoginPage() {
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-md">
               <Sparkles className="h-4 w-4 text-yellow-300" />
-              <span>Copa do Mundo 2026</span>
+              <span>Álbum Colecionável 2026</span>
             </div>
           </motion.div>
 
@@ -86,14 +86,14 @@ export default function LoginPage() {
             transition={{ delay: 0.3 }}
             className="mb-8 text-center"
           >
-            <h1 className="text-3xl font-bold text-white">
-              FIFA{" "}
-              <span className="bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">
-                Stickers
-              </span>
+            <h1
+              className="text-3xl text-white"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-1px' }}
+            >
+              falta<span className="text-yellow-400">Uma</span>
             </h1>
             <p className="mt-2 text-sm text-green-100">
-              Gerencie sua coleção e encontre trocas
+              Cole a última que falta
             </p>
           </motion.div>
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { LayoutDashboard, Grid3X3, Users, Repeat2, User, LogOut, Menu, X } from "lucide-react";
+import { MarkFU } from "./brand/Logo";
 
 const links = [
   { href: "/dashboard", label: "Álbum", icon: LayoutDashboard },
@@ -30,10 +31,13 @@ export function NavBar() {
     <>
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-gray-900/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link href="/dashboard" className="text-lg font-bold text-white">
-            FIFA{" "}
-            <span className="bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">
-              2026
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <MarkFU size={32} />
+            <span
+              className="text-lg text-white"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-0.5px' }}
+            >
+              falta<span className="text-yellow-400">Uma</span>
             </span>
           </Link>
           <div className="hidden items-center gap-1 sm:flex">

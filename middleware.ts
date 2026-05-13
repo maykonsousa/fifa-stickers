@@ -13,7 +13,6 @@ export const config = {
     "/trades/:path*",
     "/profile/:path*",
     "/user/:path*",
-    "/auth/callback",
     "/admin/callback",
   ],
 };

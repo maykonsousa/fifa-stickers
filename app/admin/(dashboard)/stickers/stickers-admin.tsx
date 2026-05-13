@@ -3,6 +3,21 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { ChevronsUpDown, Check } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { PaginationControl } from "@/components/ui/pagination";
 
 interface Group {
   id: number;
@@ -25,6 +40,8 @@ interface Sticker {
 export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers: Sticker[] }) {
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [page, setPage] = useState(1);
   const [editingSticker, setEditingSticker] = useState<Sticker | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -36,6 +53,10 @@ export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers:
   const filteredStickers = selectedGroup
     ? stickers.filter((s) => s.group_id === selectedGroup)
     : stickers;
+
+  const PAGE_SIZE = 20;
+  const totalPages = Math.ceil(filteredStickers.length / PAGE_SIZE);
+  const paginatedStickers = filteredStickers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleEdit = (sticker: Sticker) => {
     setEditingSticker(sticker);
@@ -79,7 +100,7 @@ export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers:
         const { data: urlData } = supabase.storage
           .from("sticker-images")
           .getPublicUrl(path);
-        imageUrl = urlData.publicUrl;
+        imageUrl = `${urlData.publicUrl}?v=${Date.now()}`;
       }
     }
 
@@ -105,59 +126,106 @@ export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers:
       </div>
 
       {/* Group filter */}
-      <select
-        value={selectedGroup ?? ""}
-        onChange={(e) => setSelectedGroup(e.target.value ? Number(e.target.value) : null)}
-        className="rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
-      >
-        <option value="">Todos os grupos</option>
-        {groups.map((g) => (
-          <option key={g.id} value={g.id}>{g.code} — {g.name}</option>
-        ))}
-      </select>
-
-      {/* Stickers table */}
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-800 text-gray-400">
-            <tr>
-              <th className="px-4 py-3">Código</th>
-              <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Título</th>
-              <th className="px-4 py-3">Imagem</th>
-              <th className="px-4 py-3">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {filteredStickers.map((sticker) => (
-              <tr key={sticker.id} className="bg-gray-800/50 hover:bg-gray-700/50">
-                <td className="px-4 py-2 font-mono text-white">{sticker.code}</td>
-                <td className="px-4 py-2 text-gray-400">{sticker.number}</td>
-                <td className="px-4 py-2">
-                  <span className={sticker.title ? "text-white" : "text-gray-500 italic"}>
-                    {sticker.title ?? "—"}
-                  </span>
-                </td>
-                <td className="px-4 py-2">
-                  {sticker.image_url ? (
-                    <img src={sticker.image_url} alt={sticker.code} className="h-8 w-8 rounded object-cover" />
-                  ) : (
-                    <span className="text-gray-500">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-2">
-                  <button
-                    onClick={() => handleEdit(sticker)}
-                    className="rounded bg-gray-600 px-2 py-1 text-xs text-white hover:bg-gray-500"
+      <Popover open={groupOpen} onOpenChange={setGroupOpen}>
+        <PopoverTrigger
+          className="flex w-full sm:w-52 items-center justify-between rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white hover:bg-gray-600 transition-colors"
+        >
+          <span className={selectedGroup ? "text-white" : "text-gray-400"}>
+            {selectedGroup
+              ? groups.find((g) => g.id === selectedGroup)?.name ?? "Grupo"
+              : "Todos os grupos"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
+        </PopoverTrigger>
+        <PopoverContent className="w-52 p-0" align="start">
+          <Command filter={(value, search) => {
+            if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+            return 0;
+          }}>
+            <CommandInput placeholder="Buscar grupo..." />
+            <CommandList>
+              <CommandEmpty>Nenhum grupo encontrado.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value="all"
+                  onSelect={() => {
+                    setSelectedGroup(null);
+                    setPage(1);
+                    setGroupOpen(false);
+                  }}
+                >
+                  <Check className={`mr-2 h-4 w-4 ${selectedGroup === null ? "opacity-100" : "opacity-0"}`} />
+                  Todos os grupos
+                </CommandItem>
+                {[...groups].sort((a, b) => a.name.localeCompare(b.name)).map((g) => (
+                  <CommandItem
+                    key={g.id}
+                    value={`${g.code} ${g.name}`}
+                    onSelect={() => {
+                      setSelectedGroup(g.id);
+                      setPage(1);
+                      setGroupOpen(false);
+                    }}
                   >
-                    Editar
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    <Check className={`mr-2 h-4 w-4 ${selectedGroup === g.id ? "opacity-100" : "opacity-0"}`} />
+                    {g.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {/* Stickers grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {paginatedStickers.map((sticker) => (
+          <div
+            key={sticker.id}
+            onClick={() => handleEdit(sticker)}
+            className="group relative cursor-pointer rounded-lg border border-white/10 bg-white/5 overflow-hidden hover:scale-[1.03] hover:border-white/20 transition-all"
+          >
+            <div className="aspect-[2/3] relative">
+              {sticker.image_url ? (
+                <img
+                  src={sticker.image_url}
+                  alt={sticker.code}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full flex flex-col items-center justify-center bg-gray-800/50">
+                  <svg className="h-12 w-12 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                  </svg>
+                </div>
+              )}
+
+              {/* Player name overlay on hover */}
+              {sticker.image_url && sticker.title && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <span className="text-sm font-bold text-white text-center px-2 leading-tight">
+                    {sticker.title}
+                  </span>
+                </div>
+              )}
+
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4">
+                <span className="text-[10px] font-bold text-white">{sticker.code}</span>
+                {sticker.title && !sticker.image_url && (
+                  <span className="block text-[10px] text-white/70 truncate">{sticker.title}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
+
+      {/* Pagination */}
+      <PaginationControl
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       {/* Edit Dialog */}
       <dialog

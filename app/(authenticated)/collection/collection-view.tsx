@@ -17,7 +17,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { ChevronsUpDown, Check } from "lucide-react";
+import { ChevronsUpDown, Check, Camera } from "lucide-react";
 import { PaginationControl } from "@/components/ui/pagination";
 import { StickerImageUpload } from "@/components/sticker-image-upload";
 
@@ -322,6 +322,15 @@ export function CollectionView({
                     </div>
                   )}
 
+                  {/* Player name overlay on hover */}
+                  {sticker.image_url && sticker.title && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <span className="text-sm font-bold text-white text-center px-2 leading-tight">
+                        {sticker.title}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Duplicate badge */}
                   {isDuplicate && (
                     <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow">
@@ -350,6 +359,15 @@ export function CollectionView({
                     className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
                   >
                     −
+                  </button>
+                )}
+                {sticker.image_url && (
+                  <button
+                    onClick={() => setUploadSticker(sticker)}
+                    disabled={adding}
+                    className="rounded-lg bg-blue-500/20 px-4 py-2 text-sm font-medium text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
+                  >
+                    <Camera className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -381,7 +399,9 @@ export function CollectionView({
         stickerCode={uploadSticker?.code ?? ""}
         userId={userId}
         onSuccess={handleUploadSuccess}
-        onSkip={handleSkipUpload}
+        onSkip={uploadSticker?.image_url ? undefined : handleSkipUpload}
+        currentImageUrl={uploadSticker?.image_url}
+        onRemove={fetchStickers}
       />
     </div>
   );

@@ -62,7 +62,11 @@ export default function Footer() {
             © 2026 · FALTAUMA.COM · ÁLBUM · COLECIONÁVEL
           </div>
           <div className="text-xs text-zinc-500">
-            Feito por colecionadores, pra colecionadores · 🇧🇷
+            Produzido por{' '}
+            <a href="https://www.linkedin.com/in/maykonsousa/" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400 transition">Maykon Sousa</a>
+            {' '}e{' '}
+            <a href="https://www.linkedin.com/in/brunasousasantos/" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400 transition">Bruna Sousa</a>
+            {' '}· 🇧🇷
           </div>
         </div>
       </div>

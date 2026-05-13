@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { Sparkles } from "lucide-react";
+import { LogoNav } from "@/components/brand/Logo";
 
 export default function LoginPage() {
   const handleLogin = async () => {
@@ -75,7 +76,7 @@ export default function LoginPage() {
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-md">
               <Sparkles className="h-4 w-4 text-yellow-300" />
-              <span>Álbum Colecionável 2026</span>
+              <span>Gerencie seu álbum da copa do mundo</span>
             </div>
           </motion.div>
 
@@ -86,15 +87,8 @@ export default function LoginPage() {
             transition={{ delay: 0.3 }}
             className="mb-8 text-center"
           >
-            <h1
-              className="text-3xl text-white"
-              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-1px' }}
-            >
-              falta<span className="text-yellow-400">Uma</span>
-            </h1>
-            <p className="mt-2 text-sm text-green-100">
-              Cole a última que falta
-            </p>
+            <LogoNav />
+            
           </motion.div>
 
           {/* Google button */}

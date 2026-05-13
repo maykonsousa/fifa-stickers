@@ -7,13 +7,13 @@ import Link from 'next/link';
 const STICKER_BASE = "https://ryahywolbykyqrpiibmp.supabase.co/storage/v1/object/public/sticker-images/stickers";
 
 const COLLAGE_STICKERS = [
-  { src: `${STICKER_BASE}/BRA14.jpeg`, x: '6%',  y: '52%', r: -14, s: 0.55, blur: 0 },
-  { src: `${STICKER_BASE}/ARG20.png`, x: '14%', y: '14%', r: 8,   s: 0.45, blur: 1 },
-  { src: `${STICKER_BASE}/FRA20.png`, x: '78%', y: '18%', r: -6,  s: 0.5,  blur: 0 },
-  { src: `${STICKER_BASE}/ESP15.png`, x: '84%', y: '62%', r: 12,  s: 0.55, blur: 0 },
-  { src: `${STICKER_BASE}/POR15.png`, x: '50%', y: '8%',  r: 0,   s: 0.4,  blur: 2 },
-  { src: `${STICKER_BASE}/COL14.png`, x: '32%', y: '78%', r: -10, s: 0.5,  blur: 1 },
-  { src: `${STICKER_BASE}/ENG18.png`, x: '64%', y: '82%', r: 14,  s: 0.45, blur: 1 },
+  { src: `${STICKER_BASE}/BRA14.jpeg`, x: '4%',  y: '55%', r: -14, s: 0.55, blur: 0, mobileHidden: false },
+  { src: `${STICKER_BASE}/ARG20.png`, x: '10%', y: '12%', r: 8,   s: 0.45, blur: 1, mobileHidden: true },
+  { src: `${STICKER_BASE}/FRA20.png`, x: '82%', y: '15%', r: -6,  s: 0.5,  blur: 0, mobileHidden: false },
+  { src: `${STICKER_BASE}/ESP15.png`, x: '88%', y: '60%', r: 12,  s: 0.55, blur: 0, mobileHidden: false },
+  { src: `${STICKER_BASE}/POR15.png`, x: '50%', y: '5%',  r: 0,   s: 0.4,  blur: 2, mobileHidden: true },
+  { src: `${STICKER_BASE}/COL14.png`, x: '28%', y: '82%', r: -10, s: 0.5,  blur: 1, mobileHidden: true },
+  { src: `${STICKER_BASE}/ENG18.png`, x: '68%', y: '85%', r: 14,  s: 0.45, blur: 1, mobileHidden: false },
 ];
 
 export default function Hero() {
@@ -31,7 +31,7 @@ export default function Hero() {
         {COLLAGE_STICKERS.map((s, i) => (
           <motion.div
             key={i}
-            className="absolute"
+            className={`absolute ${s.mobileHidden ? 'hidden md:block' : ''}`}
             style={{ left: s.x, top: s.y }}
             initial={{ opacity: 0, scale: 0.3, rotate: s.r - 20 }}
             animate={{ opacity: s.blur ? 0.55 : 0.85, scale: 1, rotate: s.r }}
@@ -51,7 +51,7 @@ export default function Hero() {
                   alt=""
                   width={220}
                   height={295}
-                  className="block w-[220px] h-[295px] object-cover rounded-md"
+                  className="block w-[120px] h-[160px] md:w-[220px] md:h-[295px] object-cover rounded-md"
                   loading="lazy"
                 />
               </div>

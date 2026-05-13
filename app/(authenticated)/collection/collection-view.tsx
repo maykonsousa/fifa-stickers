@@ -120,6 +120,17 @@ export function CollectionView({
     setAdding(false);
   };
 
+  const handleSkipUpload = async () => {
+    if (!uploadSticker) return;
+    setAdding(true);
+    const supabase = createClient();
+    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    setUploadSticker(null);
+    toast.success("Figurinha adicionada!");
+    await fetchStickers();
+    setAdding(false);
+  };
+
   const handleUploadSuccess = async (imageUrl: string) => {
     if (!uploadSticker) return;
     setAdding(true);
@@ -370,6 +381,7 @@ export function CollectionView({
         stickerCode={uploadSticker?.code ?? ""}
         userId={userId}
         onSuccess={handleUploadSuccess}
+        onSkip={handleSkipUpload}
       />
     </div>
   );

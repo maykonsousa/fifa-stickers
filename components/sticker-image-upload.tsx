@@ -19,6 +19,7 @@ interface Props {
   stickerCode: string;
   userId: string;
   onSuccess: (imageUrl: string) => void;
+  onSkip?: () => void;
 }
 
 export function StickerImageUpload({
@@ -28,6 +29,7 @@ export function StickerImageUpload({
   stickerCode,
   userId,
   onSuccess,
+  onSkip,
 }: Props) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -114,7 +116,7 @@ export function StickerImageUpload({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="max-w-sm bg-gray-900 border-white/10 text-white p-4">
+      <DialogContent className="max-w-sm bg-zinc-900/95 backdrop-blur-xl border border-white/15 shadow-2xl text-white p-4">
         <DialogHeader className="pb-2">
           <DialogTitle className="text-white text-base">
             Foto — {stickerCode}
@@ -124,7 +126,7 @@ export function StickerImageUpload({
         {!imageSrc ? (
           <div className="flex flex-col gap-2">
             <p className="text-xs text-gray-400">
-              Figurinha sem foto. Contribua com uma imagem.
+              Figurinha sem foto. Contribua com uma imagem ou pule esta etapa.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -142,6 +144,14 @@ export function StickerImageUpload({
                 <span className="text-xs">Galeria</span>
               </button>
             </div>
+            {onSkip && (
+              <button
+                onClick={() => { onSkip(); handleClose(); }}
+                className="w-full rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-400 hover:bg-white/5 hover:text-gray-300 transition-colors"
+              >
+                Pular e adicionar sem foto
+              </button>
+            )}
             <input
               ref={cameraInputRef}
               type="file"

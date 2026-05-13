@@ -67,7 +67,7 @@ export default function LoginPage() {
         transition={{ duration: 0.6 }}
         className="relative z-10 w-full max-w-sm"
       >
-        <div className="rounded-3xl border border-white/20 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-3xl flex flex-col items-center justify-center border border-white/20 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -81,7 +81,9 @@ export default function LoginPage() {
             </div>
           </motion.div>
 
-          {/* Title */}
+          <div className="flex flex-col items-center justify-center">
+
+ {/* Title */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -89,16 +91,20 @@ export default function LoginPage() {
             className="mb-8 text-center"
           >
             <Link href="/dashboard" className="flex items-center gap-2">
-            <MarkFU size={32} />
+            <MarkFU size={48} />
             <span
-              className="text-lg text-white"
-              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-0.5px' }}
+              className="text-lg text-white font-bold text-3xl"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-0.5px', lineHeight: 1, fontWeight: 900 ,fontSize: 'clamp(24px, 4vw, 32px)'}}
             >
               falta<span className="text-yellow-400">Uma</span>
             </span>
           </Link>
             
           </motion.div>
+
+          </div>
+
+         
 
           {/* Google button */}
           <motion.button

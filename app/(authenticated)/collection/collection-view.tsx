@@ -17,7 +17,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { ChevronsUpDown, Check, Camera, Loader2 } from "lucide-react";
+import { ChevronsUpDown, Check, Loader2 } from "lucide-react";
 import { StickerImageUpload } from "@/components/sticker-image-upload";
 
 interface Group {
@@ -44,11 +44,9 @@ const PAGE_SIZE = 20;
 export function CollectionView({
   groups,
   userId,
-  isAdmin,
 }: {
   groups: Group[];
   userId: string;
-  isAdmin: boolean;
 }) {
   const searchParams = useSearchParams();
   const initialGroup = searchParams.get("group");
@@ -393,15 +391,6 @@ export function CollectionView({
                     className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
                   >
                     −
-                  </button>
-                )}
-                {sticker.image_url && isAdmin && (
-                  <button
-                    onClick={() => setUploadSticker(sticker)}
-                    disabled={adding}
-                    className="rounded-lg bg-blue-500/20 px-4 py-2 text-sm font-medium text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
-                  >
-                    <Camera className="w-4 h-4" />
                   </button>
                 )}
               </div>

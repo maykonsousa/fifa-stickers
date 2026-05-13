@@ -44,9 +44,11 @@ const PAGE_SIZE = 20;
 export function CollectionView({
   groups,
   userId,
+  isAdmin,
 }: {
   groups: Group[];
   userId: string;
+  isAdmin: boolean;
 }) {
   const searchParams = useSearchParams();
   const initialGroup = searchParams.get("group");
@@ -393,7 +395,7 @@ export function CollectionView({
                     −
                   </button>
                 )}
-                {sticker.image_url && (
+                {sticker.image_url && isAdmin && (
                   <button
                     onClick={() => setUploadSticker(sticker)}
                     disabled={adding}

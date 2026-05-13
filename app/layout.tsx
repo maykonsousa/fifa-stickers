@@ -29,6 +29,12 @@ export const metadata: Metadata = {
   description:
     "Cada figurinha colada é uma vitória. Acompanhe seu álbum, encontre trocas e cole a última que falta.",
   metadataBase: new URL("https://faltauma.com"),
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "faltaUma",
+  },
   openGraph: {
     title: "faltaUma — álbum colecionável 2026",
     description:
@@ -56,6 +62,8 @@ export default function RootLayout({
       className={`${archivoBlack.variable} ${inter.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <head>
+        <meta name="theme-color" content="#0a3d2a" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         {process.env.NODE_ENV === "development" && (
           <Script
             src="//unpkg.com/react-grab/dist/index.global.js"

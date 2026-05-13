@@ -76,11 +76,11 @@ export function DashboardCharts({
   return (
     <div className="space-y-8">
       {/* Hero section */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#0a3d2a] to-[#155236] p-6 md:p-8 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+      <div className="rounded-2xl bg-gradient-to-br from-[#0a3d2a] to-[#155236] p-5 md:p-8 shadow-xl">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="flex items-center justify-center sm:justify-start gap-3">
             <h1
-              className="text-2xl md:text-3xl text-white"
+              className="text-xl sm:text-2xl md:text-3xl text-white"
               style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-0.5px' }}
             >
               Meu Álbum
@@ -92,39 +92,39 @@ export function DashboardCharts({
               2026
             </span>
           </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white/10 transition-colors"
-            style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', fontSize: 12, letterSpacing: 0.5 }}
-          >
-            {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
-            {copied ? "COPIADO" : "COMPARTILHAR"}
-          </button>
-          <Link
-            href="/collection"
-            className="inline-flex items-center gap-2 bg-yellow-400 text-zinc-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-300 transition-colors"
-            style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', fontSize: 12, letterSpacing: 0.5 }}
-          >
-            <Plus className="w-4 h-4" />
-            ADICIONAR
-          </Link>
-        </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 border border-white/20 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white/10 transition-colors"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', fontSize: 11, letterSpacing: 0.5 }}
+            >
+              {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
+              {copied ? "COPIADO" : "COMPARTILHAR"}
+            </button>
+            <Link
+              href="/collection"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-yellow-400 text-zinc-900 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-300 transition-colors"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', fontSize: 11, letterSpacing: 0.5 }}
+            >
+              <Plus className="w-4 h-4" />
+              ADICIONAR
+            </Link>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-[1fr_200px] gap-6 items-center">
           {/* Stats grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-xl bg-white/5 border border-white/10 p-4">
-                <stat.icon className={`w-5 h-5 ${stat.color} mb-2`} />
+              <div key={stat.label} className="rounded-xl bg-white/5 border border-white/10 p-3 sm:p-4">
+                <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.color} mb-1 sm:mb-2`} />
                 <div
-                  className="text-xl md:text-2xl text-white"
+                  className="text-base sm:text-xl md:text-2xl text-white"
                   style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif' }}
                 >
                   {stat.value}
                 </div>
-                <div className="text-xs text-[#fef9e8]/50 mt-1">{stat.label}</div>
+                <div className="text-[10px] sm:text-xs text-[#fef9e8]/50 mt-1">{stat.label}</div>
               </div>
             ))}
           </div>

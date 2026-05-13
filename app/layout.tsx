@@ -25,9 +25,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "faltaUma — álbum colecionável 2026",
+  title: "faltaUma — Gerencie seu Álbum da Copa do Mundo de 2026",
   description:
-    "Cada figurinha colada é uma vitória. Acompanhe seu álbum, encontre trocas e cole a última que falta.",
+    "Gerencie sua coleção de figurinhas da Copa 2026. Controle o que falta, encontre trocas com amigos e complete seu álbum.",
   metadataBase: new URL("https://faltauma.com"),
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
     title: "faltaUma",
   },
   openGraph: {
-    title: "faltaUma — álbum colecionável 2026",
+    title: "faltaUma — Gerencie seu Álbum da Copa do Mundo de 2026",
     description:
-      "Cada figurinha colada é uma vitória. Cole a última que falta.",
+      "Gerencie sua coleção de figurinhas da Copa 2026. Controle o que falta, encontre trocas com amigos e complete seu álbum.",
     url: "https://faltauma.com",
     siteName: "faltaUma",
     locale: "pt_BR",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "faltaUma",
-    description: "Cada figurinha colada é uma vitória.",
+    description: "Gerencie sua coleção de figurinhas da Copa 2026. Controle o que falta, encontre trocas com amigos e complete seu álbum.",
   },
 };
 

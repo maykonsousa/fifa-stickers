@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Archivo_Black, Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
+import { ContactWidget } from "@/components/contact-widget";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const archivoBlack = Archivo_Black({
@@ -62,7 +64,11 @@ export default function RootLayout({
           />
         )}
       </head>
-      <body className="font-body min-h-full flex flex-col">{children}</body>
+      <body className="font-body min-h-full flex flex-col">
+        {children}
+        <ContactWidget />
+        <Toaster position="bottom-right" theme="dark" richColors />
+      </body>
     </html>
   );
 }

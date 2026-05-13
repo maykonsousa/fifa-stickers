@@ -3,15 +3,20 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
   display_name: string;
   avatar_url: string | null;
+  username: string;
   city: string | null;
   state: string | null;
   instagram: string | null;
   whatsapp: string | null;
+  share_instagram: boolean;
+  share_whatsapp: boolean;
 }
 
 const STATES = [
@@ -23,20 +28,38 @@ const STATES = [
 export function ProfileForm({ profile }: { profile: Profile | null }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const publicUrl = `faltauma.com/p/${profile?.username ?? ""}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`https://${publicUrl}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
-    setMessage("");
 
     const formData = new FormData(e.currentTarget);
+    const username = (formData.get("username") as string).toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    if (username.length < 3) {
+      toast.error("Username deve ter pelo menos 3 caracteres.");
+      setSaving(false);
+      return;
+    }
+
     const updates = {
       display_name: formData.get("display_name") as string,
+      username,
       city: formData.get("city") as string || null,
       state: formData.get("state") as string || null,
       instagram: formData.get("instagram") as string || null,
       whatsapp: formData.get("whatsapp") as string || null,
+      share_instagram: formData.get("share_instagram") === "on",
+      share_whatsapp: formData.get("share_whatsapp") === "on",
     };
 
     const supabase = createClient();
@@ -46,16 +69,36 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
       .eq("id", profile!.id);
 
     if (error) {
-      setMessage("Erro ao salvar. Tente novamente.");
+      if (error.code === "23505") {
+        toast.error("Esse username já está em uso.");
+      } else {
+        toast.error("Erro ao salvar. Tente novamente.");
+      }
     } else {
-      setMessage("Perfil atualizado!");
+      toast.success("Perfil atualizado!");
       router.refresh();
     }
     setSaving(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+      {/* Public link */}
+      <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+        <p className="text-xs text-gray-400 mb-2">Seu perfil público</p>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-white truncate flex-1">{publicUrl}</span>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1 rounded-md bg-white/10 px-2.5 py-1.5 text-xs text-gray-300 hover:bg-white/20 transition-colors"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? "Copiado" : "Copiar"}
+          </button>
+        </div>
+      </div>
+
       {profile?.avatar_url && (
         <div className="flex items-center gap-4">
           <img
@@ -66,6 +109,23 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           <span className="text-sm text-gray-400">Foto do Google</span>
         </div>
       )}
+
+      <div>
+        <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+          Username
+        </label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          required
+          maxLength={14}
+          pattern="[a-zA-Z0-9]+"
+          defaultValue={profile?.username ?? ""}
+          className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+        />
+        <p className="mt-1 text-xs text-gray-500">Até 14 caracteres, apenas letras e números</p>
+      </div>
 
       <div>
         <label htmlFor="display_name" className="block text-sm font-medium text-gray-300">
@@ -112,10 +172,22 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
         </div>
       </div>
 
+      {/* Instagram */}
       <div>
-        <label htmlFor="instagram" className="block text-sm font-medium text-gray-300">
-          Instagram
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="instagram" className="block text-sm font-medium text-gray-300">
+            Instagram
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              name="share_instagram"
+              defaultChecked={profile?.share_instagram ?? false}
+              className="h-4 w-4 rounded border-white/20 bg-white/5 text-green-500 focus:ring-green-500"
+            />
+            <span className="text-xs text-gray-400">Exibir no perfil público</span>
+          </label>
+        </div>
         <input
           id="instagram"
           name="instagram"
@@ -124,13 +196,24 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           defaultValue={profile?.instagram ?? ""}
           className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
-        <p className="mt-1 text-xs text-gray-500">Visível apenas para amigos</p>
       </div>
 
+      {/* WhatsApp */}
       <div>
-        <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-300">
-          WhatsApp
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-300">
+            WhatsApp
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              name="share_whatsapp"
+              defaultChecked={profile?.share_whatsapp ?? false}
+              className="h-4 w-4 rounded border-white/20 bg-white/5 text-green-500 focus:ring-green-500"
+            />
+            <span className="text-xs text-gray-400">Exibir no perfil público</span>
+          </label>
+        </div>
         <input
           id="whatsapp"
           name="whatsapp"
@@ -139,14 +222,8 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
           defaultValue={profile?.whatsapp ?? ""}
           className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
-        <p className="mt-1 text-xs text-gray-500">Visível apenas para amigos</p>
       </div>
 
-      {message && (
-        <p className={`text-sm ${message.includes("Erro") ? "text-red-400" : "text-green-400"}`}>
-          {message}
-        </p>
-      )}
 
       <button
         type="submit"

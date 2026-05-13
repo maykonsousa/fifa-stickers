@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -47,8 +49,14 @@ export function CollectionView({
   groups: Group[];
   userId: string;
 }) {
+  const searchParams = useSearchParams();
+  const initialGroup = searchParams.get("group");
+  const initialGroupId = initialGroup
+    ? groups.find((g) => g.code === initialGroup)?.id ?? null
+    : null;
+
   const [keyword, setKeyword] = useState("");
-  const [groupId, setGroupId] = useState<number | null>(null);
+  const [groupId, setGroupId] = useState<number | null>(initialGroupId);
   const [groupOpen, setGroupOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -107,6 +115,7 @@ export function CollectionView({
     setAdding(true);
     const supabase = createClient();
     await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: stickerId });
+    toast.success("Figurinha adicionada!");
     await fetchStickers();
     setAdding(false);
   };
@@ -117,6 +126,7 @@ export function CollectionView({
     const supabase = createClient();
     await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
     setUploadSticker(null);
+    toast.success("Figurinha adicionada!");
     await fetchStickers();
     setAdding(false);
   };
@@ -133,6 +143,7 @@ export function CollectionView({
     if (rows && rows.length > 0) {
       await supabase.from("user_stickers").delete().eq("id", rows[0].id);
     }
+    toast.success("Figurinha removida!");
     await fetchStickers();
     setAdding(false);
   };

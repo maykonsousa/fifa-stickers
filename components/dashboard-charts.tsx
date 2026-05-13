@@ -6,12 +6,6 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
 } from "recharts";
 import { Trophy, Layers, CheckCircle2, Plus } from "lucide-react";
 
@@ -146,7 +140,7 @@ export function DashboardCharts({
         </div>
       </div>
 
-      {/* Special groups bar chart */}
+      {/* Special groups */}
       {specials.length > 0 && (
         <section>
           <h2
@@ -155,23 +149,12 @@ export function DashboardCharts({
           >
             Especiais
           </h2>
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-4" style={{ height: specials.length * 60 + 40 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={specials} layout="vertical" margin={{ left: 80, right: 30, top: 10, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" domain={[0, 100]} tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} axisLine={false} tickLine={false} unit="%" />
-                <YAxis type="category" dataKey="name" tick={{ fill: "rgba(255,255,255,0.7)", fontSize: 12 }} axisLine={false} tickLine={false} width={75} />
-                <Tooltip
-                  contentStyle={{ background: "#0a3d2a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fef9e8" }}
-                  formatter={(value) => [`${value}%`, "Progresso"]}
-                />
-                <Bar dataKey="percent" radius={[0, 6, 6, 0]} animationDuration={1200} barSize={20}>
-                  {specials.map((entry) => (
-                    <Cell key={entry.id} fill={entry.percent >= 100 ? COLORS.gold : COLORS.emerald} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {specials.map((group) => (
+              <Link key={group.id} href={`/collection?group=${group.code}`} className="block">
+                <GroupDonut group={group} />
+              </Link>
+            ))}
           </div>
         </section>
       )}
@@ -186,7 +169,9 @@ export function DashboardCharts({
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {teams.map((group) => (
-            <GroupDonut key={group.id} group={group} />
+            <Link key={group.id} href={`/collection?group=${group.code}`} className="block">
+              <GroupDonut group={group} />
+            </Link>
           ))}
         </div>
       </section>
@@ -215,10 +200,10 @@ function GroupDonut({ group }: { group: GroupData }) {
   ];
 
   return (
-    <div className={`rounded-xl border p-4 flex flex-col items-center transition-all ${
+    <div className={`rounded-xl border p-4 flex flex-col items-center transition-all cursor-pointer hover:scale-[1.03] hover:shadow-lg ${
       isComplete
-        ? "border-yellow-400/30 bg-yellow-400/5"
-        : "border-white/10 bg-white/5"
+        ? "border-yellow-400/30 bg-yellow-400/5 hover:border-yellow-400/50"
+        : "border-white/10 bg-white/5 hover:border-white/20"
     }`}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{flag}</span>
@@ -234,26 +219,24 @@ function GroupDonut({ group }: { group: GroupData }) {
       <p className="text-xs font-medium text-white truncate w-full text-center mb-2">{group.name}</p>
 
       <div className="relative w-20 h-20">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={25}
-              outerRadius={36}
-              dataKey="value"
-              startAngle={90}
-              endAngle={-270}
-              animationBegin={100}
-              animationDuration={800}
-              stroke="none"
-            >
-              <Cell fill={isComplete ? COLORS.gold : COLORS.emerald} />
-              <Cell fill="rgba(255,255,255,0.08)" />
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
+        <PieChart width={80} height={80}>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            innerRadius={25}
+            outerRadius={36}
+            dataKey="value"
+            startAngle={90}
+            endAngle={-270}
+            animationBegin={100}
+            animationDuration={800}
+            stroke="none"
+          >
+            <Cell fill={isComplete ? COLORS.gold : COLORS.emerald} />
+            <Cell fill="rgba(255,255,255,0.08)" />
+          </Pie>
+        </PieChart>
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-xs font-bold text-white">{group.percent}%</span>
         </div>

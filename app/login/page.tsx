@@ -2,7 +2,6 @@
 
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
-import { Sparkles } from "lucide-react";
 import { MarkFU } from "@/components/brand/Logo";
 import Link from "next/link";
 
@@ -68,18 +67,7 @@ export default function LoginPage() {
         className="relative z-10 w-full max-w-sm"
       >
         <div className="rounded-3xl flex flex-col items-center justify-center border border-white/20 bg-white/10 p-8 shadow-2xl backdrop-blur-xl">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mb-6 flex justify-center"
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-md">
-              <Sparkles className="h-4 w-4 text-yellow-300" />
-              <span>Gerencie seu álbum da copa do mundo</span>
-            </div>
-          </motion.div>
+       
 
           <div className="flex flex-col items-center justify-center">
 

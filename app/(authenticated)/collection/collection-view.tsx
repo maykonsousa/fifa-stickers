@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -17,8 +17,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { ChevronsUpDown, Check, Camera } from "lucide-react";
-import { PaginationControl } from "@/components/ui/pagination";
+import { ChevronsUpDown, Check, Camera, Loader2 } from "lucide-react";
 import { StickerImageUpload } from "@/components/sticker-image-upload";
 
 interface Group {
@@ -40,7 +39,7 @@ interface StickerResult {
   total_count: number;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 export function CollectionView({
   groups,
@@ -63,47 +62,70 @@ export function CollectionView({
   const [page, setPage] = useState(1);
   const [results, setResults] = useState<StickerResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [adding, setAdding] = useState(false);
   const [uploadSticker, setUploadSticker] = useState<StickerResult | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const hasMore = results.length < totalCount;
 
-  const fetchStickers = useCallback(async () => {
-    setLoading(true);
+  const fetchStickers = useCallback(async (pageNum: number, append: boolean) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     const supabase = createClient();
     const { data } = await supabase.rpc("search_stickers", {
       p_user_id: userId,
       p_keyword: keyword || null,
       p_group_id: groupId,
       p_status: status,
-      p_page: page,
+      p_page: pageNum,
       p_page_size: PAGE_SIZE,
     });
     if (data && data.length > 0) {
-      setResults(data as StickerResult[]);
-      setTotalCount((data as StickerResult[])[0].total_count);
-    } else {
+      const typed = data as StickerResult[];
+      setResults((prev) => append ? [...prev, ...typed] : typed);
+      setTotalCount(typed[0].total_count);
+    } else if (!append) {
       setResults([]);
       setTotalCount(0);
     }
     setLoading(false);
-  }, [userId, keyword, groupId, status, page]);
+    setLoadingMore(false);
+  }, [userId, keyword, groupId, status]);
 
   useEffect(() => {
-    fetchStickers();
+    setPage(1);
+    fetchStickers(1, false);
   }, [fetchStickers]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [keyword]);
+    if (page > 1) {
+      fetchStickers(page, true);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          setPage((p) => p + 1);
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore]);
 
   const handleFilterChange = (setter: () => void) => {
     setter();
-    setPage(1);
   };
 
   const handleAdd = async (stickerId: number) => {
@@ -116,7 +138,9 @@ export function CollectionView({
     const supabase = createClient();
     await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: stickerId });
     toast.success("Figurinha adicionada!");
-    await fetchStickers();
+    setResults((prev) =>
+      prev.map((s) => s.id === stickerId ? { ...s, owned_count: s.owned_count + 1 } : s)
+    );
     setAdding(false);
   };
 
@@ -125,9 +149,12 @@ export function CollectionView({
     setAdding(true);
     const supabase = createClient();
     await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    const id = uploadSticker.id;
     setUploadSticker(null);
     toast.success("Figurinha adicionada!");
-    await fetchStickers();
+    setResults((prev) =>
+      prev.map((s) => s.id === id ? { ...s, owned_count: s.owned_count + 1 } : s)
+    );
     setAdding(false);
   };
 
@@ -136,9 +163,12 @@ export function CollectionView({
     setAdding(true);
     const supabase = createClient();
     await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    const id = uploadSticker.id;
     setUploadSticker(null);
     toast.success("Figurinha adicionada!");
-    await fetchStickers();
+    setResults((prev) =>
+      prev.map((s) => s.id === id ? { ...s, owned_count: s.owned_count + 1, image_url: imageUrl } : s)
+    );
     setAdding(false);
   };
 
@@ -155,7 +185,9 @@ export function CollectionView({
       await supabase.from("user_stickers").delete().eq("id", rows[0].id);
     }
     toast.success("Figurinha removida!");
-    await fetchStickers();
+    setResults((prev) =>
+      prev.map((s) => s.id === stickerId ? { ...s, owned_count: Math.max(0, s.owned_count - 1) } : s)
+    );
     setAdding(false);
   };
 
@@ -383,13 +415,13 @@ export function CollectionView({
         </div>
       )}
 
-      {/* Pagination */}
-      <PaginationControl
-        page={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        disabled={loading}
-      />
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} className="h-1" />
+      {loadingMore && (
+        <div className="flex justify-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin text-green-400" />
+        </div>
+      )}
 
       {/* Upload modal */}
       <StickerImageUpload
@@ -401,7 +433,7 @@ export function CollectionView({
         onSuccess={handleUploadSuccess}
         onSkip={uploadSticker?.image_url ? undefined : handleSkipUpload}
         currentImageUrl={uploadSticker?.image_url}
-        onRemove={fetchStickers}
+        onRemove={() => fetchStickers(1, false).then(() => setPage(1))}
       />
     </div>
   );

@@ -99,6 +99,7 @@ export default function Hero() {
           Cada figurinha colada é uma vitória. Acompanhe seu álbum, encontre trocas e cole a última que falta.
         </motion.p>
 
+        {/* Stats cards - hidden until we have real data
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -125,6 +126,7 @@ export default function Hero() {
             </motion.div>
           ))}
         </motion.div>
+        */}
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}

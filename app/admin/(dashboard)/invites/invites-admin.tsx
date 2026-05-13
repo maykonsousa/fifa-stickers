@@ -72,8 +72,34 @@ export function InvitesAdmin({ adminId, invites }: { adminId: string; invites: I
         )}
       </div>
 
-      {/* Invites list */}
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
+      {/* Mobile cards */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {invites.map((invite) => {
+          const isUsed = !!invite.used_at;
+          const isExpired = new Date(invite.expires_at) < new Date();
+          return (
+            <div key={invite.id} className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-white truncate">{invite.email}</p>
+                {isUsed ? (
+                  <span className="rounded-full bg-green-900/50 px-2 py-0.5 text-xs text-green-300">Usado</span>
+                ) : isExpired ? (
+                  <span className="rounded-full bg-red-900/50 px-2 py-0.5 text-xs text-red-300">Expirado</span>
+                ) : (
+                  <span className="rounded-full bg-amber-900/50 px-2 py-0.5 text-xs text-amber-300">Pendente</span>
+                )}
+              </div>
+              <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                <span>Expira: {new Date(invite.expires_at).toLocaleDateString("pt-BR")}</span>
+                <span>Criado: {new Date(invite.created_at).toLocaleDateString("pt-BR")}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto rounded-lg border border-gray-700">
         <table className="w-full text-sm text-left">
           <thead className="bg-gray-800 text-gray-400">
             <tr>

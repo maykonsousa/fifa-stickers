@@ -4,63 +4,63 @@ import { motion } from 'motion/react';
 import { Sparkles, Trophy, Users, Zap } from 'lucide-react';
 import Link from 'next/link';
 
+const STICKER_BASE = "https://ryahywolbykyqrpiibmp.supabase.co/storage/v1/object/public/sticker-images/stickers";
+
+const COLLAGE_STICKERS = [
+  { src: `${STICKER_BASE}/BRA14.jpeg`, x: '6%',  y: '52%', r: -14, s: 0.55, blur: 0 },
+  { src: `${STICKER_BASE}/ARG20.png`, x: '14%', y: '14%', r: 8,   s: 0.45, blur: 1 },
+  { src: `${STICKER_BASE}/FRA20.png`, x: '78%', y: '18%', r: -6,  s: 0.5,  blur: 0 },
+  { src: `${STICKER_BASE}/ESP15.png`, x: '84%', y: '62%', r: 12,  s: 0.55, blur: 0 },
+  { src: `${STICKER_BASE}/POR15.png`, x: '50%', y: '8%',  r: 0,   s: 0.4,  blur: 2 },
+  { src: `${STICKER_BASE}/COL14.png`, x: '32%', y: '78%', r: -10, s: 0.5,  blur: 1 },
+  { src: `${STICKER_BASE}/ENG18.png`, x: '64%', y: '82%', r: 14,  s: 0.45, blur: 1 },
+];
+
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-green-900 via-green-700 to-emerald-600">
-      {/* Animated background image */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#155236] via-[#0a3d2a] to-[#04140b]">
       <div className="absolute inset-0">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1707798178440-84403072d249?w=1920&q=80')`,
-          }}
+          className="absolute inset-0 bg-cover bg-center opacity-60"
+          style={{ backgroundImage: `url('/brand/hero-bg-stadium.svg')` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-green-900/90 via-green-800/50 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_30%,_rgba(0,0,0,0.55)_100%)]" />
       </div>
 
-      {/* Animated grid pattern */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px'
-        }} />
+      <div className="absolute inset-0 pointer-events-none">
+        {COLLAGE_STICKERS.map((s, i) => (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{ left: s.x, top: s.y }}
+            initial={{ opacity: 0, scale: 0.3, rotate: s.r - 20 }}
+            animate={{ opacity: s.blur ? 0.55 : 0.85, scale: 1, rotate: s.r }}
+            transition={{ duration: 0.9, delay: 0.2 + i * 0.08, ease: [0.2, 0.7, 0.3, 1] }}
+          >
+            <motion.div
+              animate={{ y: [0, -8, 0], rotate: [s.r, s.r + 1.5, s.r] }}
+              transition={{ duration: 6 + i, repeat: Infinity, ease: 'easeInOut' }}
+              style={{
+                transform: `translate(-50%,-50%) scale(${s.s})`,
+                filter: s.blur ? `blur(${s.blur}px)` : 'none',
+              }}
+            >
+              <div className="bg-white p-[3px] rounded-lg shadow-[0_18px_40px_rgba(0,0,0,0.4)]">
+                <img
+                  src={s.src}
+                  alt=""
+                  width={220}
+                  height={295}
+                  className="block w-[220px] h-[295px] object-cover rounded-md"
+                  loading="lazy"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        ))}
       </div>
-
-      {/* Floating soccer balls */}
-      <motion.div
-        className="absolute top-20 left-10 text-6xl opacity-20"
-        animate={{
-          y: [0, -20, 0],
-          rotate: [0, 360]
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        ⚽
-      </motion.div>
-      <motion.div
-        className="absolute bottom-40 right-20 text-5xl opacity-20"
-        animate={{
-          y: [0, 30, 0],
-          rotate: [0, -360]
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        ⚽
-      </motion.div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
-        {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -69,48 +69,36 @@ export default function Hero() {
         >
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-6 py-3 text-white">
             <Sparkles className="w-5 h-5 text-yellow-300" />
-            <span className="text-sm">Copa do Mundo 2026</span>
+            <span className="text-sm" style={{ fontFamily: '"JetBrains Mono", ui-monospace, monospace', letterSpacing: 2 }}>
+              EDIÇÃO COLECIONÁVEL · 2026
+            </span>
           </div>
         </motion.div>
 
-        {/* Main title */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-6xl md:text-8xl lg:text-9xl mb-6 text-white tracking-tight text-center"
+          className="mb-6 text-white text-center"
+          style={{
+            fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif',
+            fontSize: 'clamp(64px, 12vw, 160px)',
+            lineHeight: 0.92,
+            letterSpacing: '-3px',
+          }}
         >
-          <motion.span
-            className="inline-block"
-            animate={{
-              textShadow: [
-                "0 0 20px rgba(255,255,255,0.5)",
-                "0 0 40px rgba(255,255,255,0.8)",
-                "0 0 20px rgba(255,255,255,0.5)"
-              ]
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            FIFA
-          </motion.span>{' '}
-          <span className="bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 bg-clip-text text-transparent">
-            Stickers
-          </span>
-          <br />
-          <span className="text-5xl md:text-6xl lg:text-7xl">2026</span>
+          falta<span className="text-yellow-400">Uma</span>
         </motion.h1>
 
-        {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-xl md:text-2xl lg:text-3xl mb-12 text-green-50 max-w-3xl mx-auto text-center leading-relaxed"
+          className="text-xl md:text-2xl mb-12 text-green-50/90 max-w-2xl mx-auto text-center leading-relaxed"
         >
-          Complete seu álbum, encontre trocas e viva a <span className="text-yellow-300 font-bold">paixão</span> do futebol
+          Cada figurinha colada é uma vitória. Acompanhe seu álbum, encontre trocas e cole a última que falta.
         </motion.p>
 
-        {/* Stats */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -118,7 +106,7 @@ export default function Hero() {
           className="grid grid-cols-3 gap-6 max-w-2xl mx-auto mb-12"
         >
           {[
-            { icon: Trophy, label: 'Álbum Completo', value: '638' },
+            { icon: Trophy, label: 'Álbum completo', value: '638' },
             { icon: Users, label: 'Colecionadores', value: '50K+' },
             { icon: Zap, label: 'Trocas/dia', value: '10K+' }
           ].map((stat, index) => (
@@ -130,13 +118,14 @@ export default function Hero() {
               className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 text-center"
             >
               <stat.icon className="w-6 h-6 mx-auto mb-2 text-yellow-300" />
-              <div className="text-2xl md:text-3xl text-white mb-1">{stat.value}</div>
+              <div className="text-2xl md:text-3xl text-white mb-1" style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif' }}>
+                {stat.value}
+              </div>
               <div className="text-xs md:text-sm text-green-100">{stat.label}</div>
             </motion.div>
           ))}
         </motion.div>
 
-        {/* CTA Button */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -145,17 +134,13 @@ export default function Hero() {
         >
           <Link href="/login">
             <motion.div
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}
+              whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-green-900 px-10 py-5 rounded-xl text-xl shadow-2xl hover:shadow-yellow-500/50 transition-shadow duration-300 flex items-center gap-3 group"
+              className="bg-yellow-400 text-zinc-900 px-10 py-5 rounded-xl text-xl shadow-2xl hover:shadow-yellow-500/50 transition-shadow duration-300 flex items-center gap-3"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: 1 }}
             >
-              <span>Começar agora</span>
-              <motion.span
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                →
-              </motion.span>
+              <span>COMEÇAR AGORA</span>
+              <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>→</motion.span>
             </motion.div>
           </Link>
 
@@ -170,18 +155,13 @@ export default function Hero() {
           </Link>
         </motion.div>
 
-        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          className="hidden md:block mt-16"
         >
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="text-white/60 text-center"
-          >
+          <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }} className="text-white/60 text-center">
             <div className="text-sm mb-2">Role para baixo</div>
             <div className="text-2xl">↓</div>
           </motion.div>

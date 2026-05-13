@@ -3,14 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Image, Upload, Users, Mail } from "lucide-react";
+import { Menu, X, LayoutDashboard, Image, Upload, Users } from "lucide-react";
 
 const adminLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/stickers", label: "Figurinhas", icon: Image },
   { href: "/admin/upload", label: "Upload", icon: Upload },
   { href: "/admin/users", label: "Usuários", icon: Users },
-  { href: "/admin/invites", label: "Convites", icon: Mail },
 ];
 
 export function AdminNav() {

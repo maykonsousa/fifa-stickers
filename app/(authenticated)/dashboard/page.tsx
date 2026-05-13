@@ -5,6 +5,12 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user!.id)
+    .single();
+
   const { data: groups } = await supabase
     .from("sticker_groups")
     .select("id, name, code, type, sticker_count")
@@ -55,6 +61,7 @@ export default async function DashboardPage() {
       completedGroups={completedGroups}
       totalGroups={groups?.length ?? 0}
       groups={groupsData}
+      username={profile?.username ?? ""}
     />
   );
 }

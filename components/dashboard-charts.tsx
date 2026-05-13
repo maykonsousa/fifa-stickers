@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   PieChart,
@@ -7,7 +8,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import { Trophy, Layers, CheckCircle2, Plus } from "lucide-react";
+import { Trophy, Layers, CheckCircle2, Plus, Share2, Check } from "lucide-react";
 
 interface GroupData {
   id: number;
@@ -27,6 +28,7 @@ interface DashboardProps {
   completedGroups: number;
   totalGroups: number;
   groups: GroupData[];
+  username: string;
 }
 
 const COLORS = {
@@ -46,7 +48,17 @@ export function DashboardCharts({
   completedGroups,
   totalGroups,
   groups,
+  username,
 }: DashboardProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    const url = `https://faltauma.com/p/${username}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const stats = [
     { icon: Trophy, label: "Figurinhas", value: `${totalOwned}/${totalStickers}`, color: "text-yellow-400" },
     { icon: Layers, label: "Repetidas", value: `${totalRepeats}`, color: "text-orange-400" },
@@ -80,6 +92,15 @@ export function DashboardCharts({
               2026
             </span>
           </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center gap-2 border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white/10 transition-colors"
+            style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', fontSize: 12, letterSpacing: 0.5 }}
+          >
+            {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
+            {copied ? "COPIADO" : "COMPARTILHAR"}
+          </button>
           <Link
             href="/collection"
             className="inline-flex items-center gap-2 bg-yellow-400 text-zinc-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-300 transition-colors"
@@ -88,6 +109,7 @@ export function DashboardCharts({
             <Plus className="w-4 h-4" />
             ADICIONAR
           </Link>
+        </div>
         </div>
 
         <div className="grid md:grid-cols-[1fr_200px] gap-6 items-center">

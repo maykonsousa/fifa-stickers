@@ -27,6 +27,7 @@ interface Group {
 interface StickerResult {
   id: number;
   code: string;
+  title: string | null;
   image_url: string | null;
   group_name: string;
   duplicate_count: number;
@@ -209,6 +210,15 @@ function StickerCard({ sticker, tab }: { sticker: StickerResult; tab: string }) 
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
             </svg>
             <span className="text-xs text-white/40 mt-1">{sticker.code}</span>
+          </div>
+        )}
+
+        {/* Player name overlay on hover */}
+        {sticker.image_url && sticker.title && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <span className="text-sm font-bold text-white text-center px-2 leading-tight">
+              {sticker.title}
+            </span>
           </div>
         )}
 

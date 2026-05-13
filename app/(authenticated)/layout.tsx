@@ -14,9 +14,15 @@ export default async function AuthenticatedLayout({
     redirect("/login");
   }
 
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-green-950 flex flex-col">
-      <NavBar />
+      <NavBar isAdmin={!!admin} />
       <main className="mx-auto max-w-6xl px-4 py-6 flex-1 w-full">
         {children}
       </main>

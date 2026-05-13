@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, Grid3X3, Users, Repeat2, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Grid3X3, Users, Repeat2, Settings, LogOut, Menu, X, Shield } from "lucide-react";
 import { MarkFU } from "./brand/Logo";
 
 const links = [
@@ -15,7 +15,7 @@ const links = [
   { href: "/trades", label: "Trocas", icon: Repeat2 },
 ];
 
-export function NavBar() {
+export function NavBar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -97,6 +97,16 @@ export function NavBar() {
 
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-white/10 bg-gray-900/95 backdrop-blur-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin
+                    </Link>
+                  )}
                   <Link
                     href="/profile"
                     onClick={() => setMenuOpen(false)}
@@ -133,6 +143,7 @@ export function NavBar() {
         pathname={pathname}
         onLogout={handleLogout}
         avatarUrl={avatarUrl}
+        isAdmin={isAdmin}
       />
     </>
   );
@@ -144,12 +155,14 @@ function MobileDrawer({
   pathname,
   onLogout,
   avatarUrl,
+  isAdmin,
 }: {
   open: boolean;
   onClose: () => void;
   pathname: string;
   onLogout: () => void;
   avatarUrl: string | null;
+  isAdmin: boolean;
 }) {
   useEffect(() => {
     onClose();
@@ -219,6 +232,19 @@ function MobileDrawer({
             <Settings className="h-5 w-5" />
             Configurações
           </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+                pathname.startsWith("/admin")
+                  ? "bg-green-600/20 text-green-400"
+                  : "text-gray-300 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <Shield className="h-5 w-5" />
+              Admin
+            </Link>
+          )}
         </div>
 
         <div className="p-4 border-t border-white/10">

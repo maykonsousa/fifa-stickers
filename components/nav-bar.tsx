@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { LayoutDashboard, Grid3X3, Users, Repeat2, Settings, LogOut, Menu, X, Shield } from "lucide-react";
 import { MarkFU } from "./brand/Logo";
+import Image from "next/image";
 
 const links = [
   { href: "/dashboard", label: "Álbum", icon: LayoutDashboard },
@@ -22,6 +23,7 @@ export function NavBar({ isAdmin = false }: { isAdmin?: boolean }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const closeMobileDrawer = useCallback(() => setMobileOpen(false), []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -87,7 +89,7 @@ export function NavBar({ isAdmin = false }: { isAdmin?: boolean }) {
                 className="flex items-center justify-center rounded-full ring-2 ring-white/10 hover:ring-green-500/50 transition-all"
               >
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="h-8 w-8 rounded-full object-cover" />
+                  <Image src={avatarUrl} alt="Avatar" className="h-8 w-8 rounded-full object-cover" width={32} height={32} />
                 ) : (
                   <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs text-white font-medium">
                     ?
@@ -139,7 +141,7 @@ export function NavBar({ isAdmin = false }: { isAdmin?: boolean }) {
 
       <MobileDrawer
         open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
+        onClose={closeMobileDrawer}
         pathname={pathname}
         onLogout={handleLogout}
         avatarUrl={avatarUrl}
@@ -166,7 +168,7 @@ function MobileDrawer({
 }) {
   useEffect(() => {
     onClose();
-  }, [pathname]);
+  }, [onClose, pathname]);
 
   useEffect(() => {
     if (open) {
@@ -187,7 +189,7 @@ function MobileDrawer({
         <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="h-8 w-8 rounded-full object-cover" />
+              <Image src={avatarUrl} alt="Avatar" className="h-8 w-8 rounded-full object-cover" width={32} height={32} />
             ) : (
               <div className="h-8 w-8 rounded-full bg-white/10" />
             )}

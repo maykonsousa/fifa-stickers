@@ -3,7 +3,8 @@
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { Sparkles } from "lucide-react";
-import { LogoNav } from "@/components/brand/Logo";
+import { MarkFU } from "@/components/brand/Logo";
+import Link from "next/link";
 
 export default function LoginPage() {
   const handleLogin = async () => {
@@ -87,7 +88,15 @@ export default function LoginPage() {
             transition={{ delay: 0.3 }}
             className="mb-8 text-center"
           >
-            <LogoNav />
+            <Link href="/dashboard" className="flex items-center gap-2">
+            <MarkFU size={32} />
+            <span
+              className="text-lg text-white"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-0.5px' }}
+            >
+              falta<span className="text-yellow-400">Uma</span>
+            </span>
+          </Link>
             
           </motion.div>
 

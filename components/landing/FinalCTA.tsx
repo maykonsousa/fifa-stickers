@@ -45,7 +45,7 @@ export default function FinalCTA() {
                 <img
                   src={s.src}
                   alt=""
-                  className="block w-[220px] h-[295px] object-cover rounded-md"
+                  className="block w-[120px] md:w-[220px] h-auto aspect-[220/295] object-contain rounded-md"
                   loading="lazy"
                 />
               </div>

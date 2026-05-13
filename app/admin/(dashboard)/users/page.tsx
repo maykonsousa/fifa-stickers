@@ -13,7 +13,34 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Usuários</h1>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
+      {/* Mobile cards */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {profiles?.map((profile) => (
+          <div key={profile.id} className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+            <div className="flex items-center gap-3">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="h-10 w-10 rounded-full" />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-600 text-sm font-bold text-white">
+                  {profile.display_name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-white truncate">{profile.display_name}</p>
+                <p className="text-xs text-gray-400">
+                  {[profile.city, profile.state].filter(Boolean).join(", ") || "Sem localização"}
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Cadastro: {new Date(profile.created_at).toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto rounded-lg border border-gray-700">
         <table className="w-full text-sm text-left">
           <thead className="bg-gray-800 text-gray-400">
             <tr>

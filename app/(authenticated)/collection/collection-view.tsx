@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check } from "lucide-react";
 import { PaginationControl } from "@/components/ui/pagination";
+import { StickerImageUpload } from "@/components/sticker-image-upload";
 
 interface Group {
   id: number;
@@ -56,6 +57,7 @@ export function CollectionView({
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [uploadSticker, setUploadSticker] = useState<StickerResult | null>(null);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -97,9 +99,24 @@ export function CollectionView({
   };
 
   const handleAdd = async (stickerId: number) => {
+    const sticker = results.find((s) => s.id === stickerId);
+    if (sticker && !sticker.image_url) {
+      setUploadSticker(sticker);
+      return;
+    }
     setAdding(true);
     const supabase = createClient();
     await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: stickerId });
+    await fetchStickers();
+    setAdding(false);
+  };
+
+  const handleUploadSuccess = async (imageUrl: string) => {
+    if (!uploadSticker) return;
+    setAdding(true);
+    const supabase = createClient();
+    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    setUploadSticker(null);
     await fetchStickers();
     setAdding(false);
   };
@@ -125,7 +142,7 @@ export function CollectionView({
       <div>
         <h1 className="text-2xl font-bold text-white">Coleção</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Navegue pela lista e gerencie suas figurinhas.
+          Busque a figurinha pelo nome ou código e clique no card para adicionar ao seu álbum.
         </p>
       </div>
 
@@ -332,6 +349,16 @@ export function CollectionView({
         totalPages={totalPages}
         onPageChange={setPage}
         disabled={loading}
+      />
+
+      {/* Upload modal */}
+      <StickerImageUpload
+        open={!!uploadSticker}
+        onClose={() => setUploadSticker(null)}
+        stickerId={uploadSticker?.id ?? 0}
+        stickerCode={uploadSticker?.code ?? ""}
+        userId={userId}
+        onSuccess={handleUploadSuccess}
       />
     </div>
   );

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -11,6 +13,7 @@ interface Profile {
   city: string | null;
   state: string | null;
   created_at: string;
+  username: string | null;
 }
 
 export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; adminUserIds: string[] }) {
@@ -59,7 +62,9 @@ export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; ad
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-white truncate">{profile.display_name}</p>
+                    <Link href={`/p/${profile.username}`} className="text-sm font-medium text-white truncate hover:text-green-400 transition-colors">
+                      {profile.display_name}
+                    </Link>
                     {isAdmin && (
                       <span className="rounded-full bg-green-900/50 px-2 py-0.5 text-[10px] font-medium text-green-300">Admin</span>
                     )}
@@ -113,7 +118,10 @@ export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; ad
                           {profile.display_name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="text-white">{profile.display_name}</span>
+                      <Link href={`/p/${profile.username}`} className="text-white hover:text-green-400 transition-colors flex items-center gap-1.5">
+                        {profile.display_name}
+                        <ExternalLink className="h-3.5 w-3.5 text-gray-500" />
+                      </Link>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-400">{profile.city ?? "—"}</td>

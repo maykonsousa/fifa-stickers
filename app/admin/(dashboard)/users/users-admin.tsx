@@ -17,7 +17,7 @@ interface Profile {
   sticker_count: number;
 }
 
-type SortField = "created_at" | "display_name" | "stickers";
+type SortField = "created_at" | "display_name" | "sticker_count";
 type SortDir = "asc" | "desc";
 
 interface Props {
@@ -143,8 +143,8 @@ export function UsersAdmin({ profiles, adminUserIds, page, totalPages, sort, dir
               </th>
               <th className="px-4 py-3">Cidade/UF</th>
               <th className="px-4 py-3">
-                <button onClick={() => handleSort("stickers")} className="flex items-center gap-1 hover:text-white transition-colors">
-                  Figurinhas <SortIcon field="stickers" />
+                <button onClick={() => handleSort("sticker_count")} className="flex items-center gap-1 hover:text-white transition-colors">
+                  Figurinhas <SortIcon field="sticker_count" />
                 </button>
               </th>
               <th className="px-4 py-3">

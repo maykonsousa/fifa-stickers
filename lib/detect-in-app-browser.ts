@@ -19,20 +19,11 @@ export function isInAppBrowser(): boolean {
   return inAppPatterns.some((pattern) => pattern.test(ua));
 }
 
-export function openInExternalBrowser(url: string): { opened: boolean } {
-  const ua = navigator.userAgent;
-  const isAndroid = /android/i.test(ua);
+export function getExternalBrowserIntent(url: string): string {
+  const stripped = url.replace(/^https?:\/\//, "");
+  return `intent://${stripped}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+}
 
-  if (isAndroid) {
-    const intentUrl = `intent://${url.replace(/^https?:\/\//, "")}#Intent;scheme=https;end`;
-    window.location.href = intentUrl;
-    return { opened: true };
-  }
-
-  // iOS: no reliable way to force Safari from a WebView.
-  // Copy to clipboard and let the user paste in Safari.
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url);
-  }
-  return { opened: false };
+export function isAndroidDevice(): boolean {
+  return /android/i.test(navigator.userAgent);
 }

@@ -5,10 +5,12 @@ import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { MarkFU } from "@/components/brand/Logo";
 import Link from "next/link";
-import { isInAppBrowser, openInExternalBrowser } from "@/lib/detect-in-app-browser";
+import { isInAppBrowser, getExternalBrowserIntent, isAndroidDevice } from "@/lib/detect-in-app-browser";
 
 export default function LoginPage() {
   const [inAppBrowser, setInAppBrowser] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [intentUrl, setIntentUrl] = useState("#");
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [email, setEmail] = useState("");
@@ -18,6 +20,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     setInAppBrowser(isInAppBrowser());
+    setIsAndroid(isAndroidDevice());
+    setIntentUrl(getExternalBrowserIntent(window.location.origin + "/login"));
   }, []);
 
   const handleLogin = async () => {
@@ -32,10 +36,10 @@ export default function LoginPage() {
 
   const handleOpenExternal = () => {
     const url = window.location.origin + "/login";
-    const { opened } = openInExternalBrowser(url);
-    if (!opened) {
-      setLinkCopied(true);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
     }
+    setLinkCopied(true);
   };
 
   const handleMagicLink = async (e: React.FormEvent) => {
@@ -157,15 +161,27 @@ export default function LoginPage() {
                   <p className="mb-4 text-center text-sm text-green-100">
                     Para sua segurança, abra no navegador do celular ou entre com seu email.
                   </p>
-                  <button
-                    onClick={handleOpenExternal}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-4 text-base font-medium text-gray-700 shadow-lg transition-colors hover:bg-gray-50"
-                  >
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
-                    Abrir no navegador
-                  </button>
+                  {isAndroid ? (
+                    <a
+                      href={intentUrl}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-4 text-base font-medium text-gray-700 shadow-lg transition-colors hover:bg-gray-50"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
+                      Abrir no Chrome
+                    </a>
+                  ) : (
+                    <button
+                      onClick={handleOpenExternal}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-4 text-base font-medium text-gray-700 shadow-lg transition-colors hover:bg-gray-50"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
+                      Copiar link para o navegador
+                    </button>
+                  )}
                   {linkCopied && (
                     <p className="text-center text-sm text-yellow-300">
                       Link copiado! Cole no Safari ou Chrome para continuar.

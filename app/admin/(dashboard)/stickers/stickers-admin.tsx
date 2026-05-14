@@ -249,6 +249,7 @@ export function StickersAdmin({
       />
 
       <CreateStickerModal
+        key={createOpen ? "open" : "closed"}
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         groups={groups}

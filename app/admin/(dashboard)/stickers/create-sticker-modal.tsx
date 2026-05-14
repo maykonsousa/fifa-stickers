@@ -52,7 +52,7 @@ export function CreateStickerModal({
 }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  const [groupId, setGroupId] = useState<number | null>(null);
+  const [groupId, setGroupId] = useState<number | null>(defaultGroupId);
   const [groupOpen, setGroupOpen] = useState(false);
   const [code, setCode] = useState("");
   const [number, setNumber] = useState<string>("");
@@ -62,20 +62,16 @@ export function CreateStickerModal({
   const [codeError, setCodeError] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
+  // Open/close the native <dialog> imperatively. Parent uses `key` to remount
+  // the component each time the modal opens, so state initialization happens
+  // in useState above rather than here.
   useEffect(() => {
     if (open) {
-      setGroupId(defaultGroupId);
-      setCode("");
-      setNumber("");
-      setTitle("");
-      setDescription("");
-      setCodeError(null);
-      setGeneralError(null);
       dialogRef.current?.showModal();
     } else {
       dialogRef.current?.close();
     }
-  }, [open, defaultGroupId]);
+  }, [open]);
 
   const suggestedNumber = (() => {
     if (groupId == null) return "";
@@ -91,7 +87,7 @@ export function CreateStickerModal({
 
   const prefixWarning =
     selectedGroup && code.length > 0 && !code.toUpperCase().startsWith(selectedGroup.code)
-      ? `O código não segue o padrão do grupo \`${selectedGroup.code}\`.`
+      ? `O código não segue o padrão do grupo "${selectedGroup.code}".`
       : null;
 
   const handleClose = () => {
@@ -150,12 +146,13 @@ export function CreateStickerModal({
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby="create-sticker-title"
       className="fixed inset-0 m-auto w-full max-w-md rounded-xl bg-gray-800 p-0 text-white backdrop:bg-black/60"
       onClick={(e) => { if (e.target === dialogRef.current) handleClose(); }}
     >
       <form onSubmit={handleSubmit} className="p-6 space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Adicionar figurinha</h2>
+          <h2 id="create-sticker-title" className="text-lg font-bold">Adicionar figurinha</h2>
           <button
             type="button"
             onClick={handleClose}

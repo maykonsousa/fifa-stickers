@@ -39,7 +39,7 @@ interface Props {
     number: number;
     title: string;
     description: string;
-  }) => Promise<{ ok: true } | { ok: false; field?: "code"; message: string }>;
+  }) => Promise<{ ok: true } | { ok: false; field?: "code"; message?: string }>;
 }
 
 export function CreateStickerModal({
@@ -135,9 +135,9 @@ export function CreateStickerModal({
 
     if (!result.ok) {
       if (result.field === "code") {
-        setCodeError(result.message);
+        setCodeError(result.message ?? "");
       } else {
-        setGeneralError(result.message);
+        setGeneralError(result.message ?? null);
       }
       return;
     }

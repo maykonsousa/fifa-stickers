@@ -265,14 +265,15 @@ export function StickersAdmin({
             }
             if (result.error === "unauthorized") {
               toast.error("Acesso negado.");
-              return { ok: false, message: "Acesso negado." };
+              return { ok: false };
             }
             if (result.error === "invalid_input") {
-              return { ok: false, message: "Dados inválidos. Verifique os campos." };
+              toast.error("Dados inválidos. Verifique os campos.");
+              return { ok: false };
             }
             // result.error === "unknown" (the only remaining variant)
             toast.error("Erro ao criar figurinha. Tente novamente.");
-            return { ok: false, message: "Erro ao criar figurinha. Tente novamente." };
+            return { ok: false };
           }
           // Success — Task 6 chains the image upload here.
           setCreateOpen(false);

@@ -51,7 +51,7 @@ export default function Hero() {
                   alt=""
                   width={220}
                   height={295}
-                  className="block w-[120px] h-[160px] md:w-[220px] md:h-[295px] object-cover rounded-md"
+                  className="block w-[120px] md:w-[220px] h-auto aspect-[220/295] object-contain rounded-md"
                   loading="lazy"
                 />
               </div>

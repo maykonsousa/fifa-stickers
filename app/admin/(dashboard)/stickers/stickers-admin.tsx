@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/command";
 import { PaginationControl } from "@/components/ui/pagination";
 import { CreateStickerModal } from "./create-sticker-modal";
+import { StickerImageUpload } from "@/components/sticker-image-upload";
 import { toast } from "sonner";
 import { createSticker } from "./actions";
 
@@ -60,6 +61,7 @@ export function StickersAdmin({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [postCreateUpload, setPostCreateUpload] = useState<{ id: number; code: string } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const filteredStickers = selectedGroup
@@ -275,13 +277,34 @@ export function StickersAdmin({
             toast.error("Erro ao criar figurinha. Tente novamente.");
             return { ok: false };
           }
-          // Success — Task 6 chains the image upload here.
+          // Success — close create modal and open the image upload modal.
           setCreateOpen(false);
-          toast.success(`Figurinha ${result.data.code} criada.`);
-          router.refresh();
+          toast.success(`Figurinha ${result.data.code} criada. Adicione uma foto (opcional).`);
+          setPostCreateUpload({ id: result.data.id, code: result.data.code });
           return { ok: true };
         }}
       />
+      {postCreateUpload && (
+        <StickerImageUpload
+          open={true}
+          onClose={() => {
+            setPostCreateUpload(null);
+            router.refresh();
+          }}
+          stickerId={postCreateUpload.id}
+          stickerCode={postCreateUpload.code}
+          userId={userId}
+          currentImageUrl={null}
+          onSuccess={() => {
+            setPostCreateUpload(null);
+            router.refresh();
+          }}
+          onSkip={() => {
+            setPostCreateUpload(null);
+            router.refresh();
+          }}
+        />
+      )}
 
       {/* Edit Dialog */}
       <dialog

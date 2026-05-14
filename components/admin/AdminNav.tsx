@@ -33,8 +33,8 @@ export function AdminNav() {
     <>
       <nav className="border-b border-gray-700 bg-gray-800">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link href="/admin" className="text-lg font-bold text-green-400">
-            Admin — FIFA 2026
+          <Link href="/admin" className="flex items-center">
+            <img src="/brand/logo-wordmark-light.svg" alt="faltaUma" className="h-8" />
           </Link>
 
           <div className="hidden items-center gap-1 sm:flex">

@@ -6,7 +6,7 @@ export default async function AdminUsersPage() {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url, city, state, created_at")
+    .select("id, display_name, avatar_url, city, state, created_at, username")
     .order("created_at", { ascending: false })
     .limit(100);
 

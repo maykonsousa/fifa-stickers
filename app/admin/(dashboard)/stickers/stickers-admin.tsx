@@ -197,7 +197,8 @@ export function StickersAdmin({
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="group flex aspect-[2/3] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/60 hover:border-green-500/60 hover:bg-white/10 hover:text-white transition-all"
+            disabled={postCreateUpload !== null}
+            className="group flex aspect-[2/3] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/60 hover:border-green-500/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/20 disabled:hover:bg-white/5 disabled:hover:text-white/60 transition-all"
             aria-label="Adicionar figurinha"
           >
             <span className="text-4xl leading-none">+</span>

@@ -301,8 +301,9 @@ export function StickersAdmin({
             router.refresh();
           }}
           onSkip={() => {
-            setPostCreateUpload(null);
-            router.refresh();
+            // Intentionally empty: StickerImageUpload calls onSkip then
+            // its own handleClose which fires onClose, where we do the
+            // state reset and refresh. Avoids double-firing.
           }}
         />
       )}

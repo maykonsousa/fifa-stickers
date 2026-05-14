@@ -166,7 +166,10 @@ export function CreateStickerModal({
         <div>
           <label className="block text-sm font-medium text-gray-300">Grupo</label>
           <Popover open={groupOpen} onOpenChange={setGroupOpen}>
-            <PopoverTrigger className="mt-1 flex w-full items-center justify-between rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white hover:bg-gray-600 transition-colors">
+            <PopoverTrigger
+              aria-required="true"
+              className="mt-1 flex w-full items-center justify-between rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white hover:bg-gray-600 transition-colors"
+            >
               <span className={selectedGroup ? "text-white" : "text-gray-400"}>
                 {selectedGroup ? selectedGroup.name : "Selecionar grupo"}
               </span>
@@ -216,6 +219,7 @@ export function CreateStickerModal({
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder={selectedGroup ? `${selectedGroup.code}21` : "BRA21"}
+            aria-required="true"
             className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white uppercase placeholder:text-gray-500 placeholder:normal-case focus:border-green-500 focus:ring-1 focus:ring-green-500"
             autoCapitalize="characters"
             autoComplete="off"
@@ -237,6 +241,7 @@ export function CreateStickerModal({
             value={number}
             onChange={(e) => setNumber(e.target.value)}
             placeholder={suggestedNumber || "1"}
+            aria-required="true"
             className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
           />
           {suggestedNumber && number === "" && (

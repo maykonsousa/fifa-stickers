@@ -58,12 +58,10 @@ export function CreateStickerModal({
 }: Props) {
   const [groupId, setGroupId] = useState<number | null>(defaultGroupId);
   const [groupOpen, setGroupOpen] = useState(false);
-  const [code, setCode] = useState("");
   const [number, setNumber] = useState<string>("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [codeError, setCodeError] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
   const suggestedNumber = (() => {
@@ -77,11 +75,8 @@ export function CreateStickerModal({
 
   const numberValue = number === "" ? suggestedNumber : number;
   const selectedGroup = groups.find((g) => g.id === groupId) ?? null;
-
-  const prefixWarning =
-    selectedGroup && code.length > 0 && !code.toUpperCase().startsWith(selectedGroup.code)
-      ? `O código não segue o padrão do grupo "${selectedGroup.code}".`
-      : null;
+  const derivedCode =
+    selectedGroup && numberValue !== "" ? `${selectedGroup.code}${numberValue}` : "";
 
   const handleClose = () => {
     if (submitting) return;
@@ -90,16 +85,10 @@ export function CreateStickerModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCodeError(null);
     setGeneralError(null);
 
-    if (groupId == null) {
+    if (groupId == null || !selectedGroup) {
       setGeneralError("Selecione um grupo.");
-      return;
-    }
-    const trimmedCode = code.trim();
-    if (trimmedCode.length === 0) {
-      setCodeError("Informe o código da figurinha.");
       return;
     }
     const parsedNumber = Number(numberValue);
@@ -108,18 +97,10 @@ export function CreateStickerModal({
       return;
     }
 
-    if (
-      selectedGroup &&
-      !trimmedCode.toUpperCase().startsWith(selectedGroup.code) &&
-      !window.confirm("O código não segue o padrão do grupo. Continuar?")
-    ) {
-      return;
-    }
-
     setSubmitting(true);
     const result = await onSubmit({
       groupId,
-      code: trimmedCode,
+      code: `${selectedGroup.code}${parsedNumber}`,
       number: parsedNumber,
       title,
       description,
@@ -127,8 +108,10 @@ export function CreateStickerModal({
     setSubmitting(false);
 
     if (!result.ok) {
+      // Map any error to the general region. `field === "code"` (only `duplicate_code` uses it)
+      // shows the same generic message — there is no separate Código input to highlight anymore.
       if (result.field === "code") {
-        setCodeError(result.message ?? "");
+        setGeneralError("Já existe figurinha com esse código.");
       } else {
         setGeneralError(result.message ?? null);
       }
@@ -195,22 +178,15 @@ export function CreateStickerModal({
 
         <div>
           <label className="block text-sm font-medium text-gray-300">Código</label>
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder={selectedGroup ? `${selectedGroup.code}21` : "BRA21"}
-            aria-required="true"
-            className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white uppercase placeholder:text-gray-500 placeholder:normal-case focus:border-green-500 focus:ring-1 focus:ring-green-500"
-            autoCapitalize="characters"
-            autoComplete="off"
-          />
-          {codeError && (
-            <p className="mt-1 text-xs text-red-400">{codeError}</p>
-          )}
-          {!codeError && prefixWarning && (
-            <p className="mt-1 text-xs text-yellow-400">{prefixWarning}</p>
-          )}
+          <div
+            className="mt-1 flex w-full items-center rounded-lg border border-gray-700 bg-gray-900/50 px-3 py-2 text-sm font-mono text-gray-300"
+            aria-live="polite"
+          >
+            {derivedCode || <span className="text-gray-500">Selecione grupo e número</span>}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Gerado automaticamente a partir do grupo e número.
+          </p>
         </div>
 
         <div>

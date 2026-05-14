@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ChevronsUpDown, Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
@@ -50,8 +56,6 @@ export function CreateStickerModal({
   defaultGroupId,
   onSubmit,
 }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
   const [groupId, setGroupId] = useState<number | null>(defaultGroupId);
   const [groupOpen, setGroupOpen] = useState(false);
   const [code, setCode] = useState("");
@@ -61,17 +65,6 @@ export function CreateStickerModal({
   const [submitting, setSubmitting] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
-
-  // Open/close the native <dialog> imperatively. Parent uses `key` to remount
-  // the component each time the modal opens, so state initialization happens
-  // in useState above rather than here.
-  useEffect(() => {
-    if (open) {
-      dialogRef.current?.showModal();
-    } else {
-      dialogRef.current?.close();
-    }
-  }, [open]);
 
   const suggestedNumber = (() => {
     if (groupId == null) return "";
@@ -144,24 +137,12 @@ export function CreateStickerModal({
   };
 
   return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby="create-sticker-title"
-      className="fixed inset-0 m-auto w-full max-w-md rounded-xl bg-gray-800 p-0 text-white backdrop:bg-black/60"
-      onClick={(e) => { if (e.target === dialogRef.current) handleClose(); }}
-    >
-      <form onSubmit={handleSubmit} className="p-6 space-y-5">
-        <div className="flex items-center justify-between">
-          <h2 id="create-sticker-title" className="text-lg font-bold">Adicionar figurinha</h2>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white text-xl"
-            aria-label="Fechar"
-          >
-            ×
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
+      <DialogContent className="max-w-md bg-gray-800 text-white p-0 border border-white/10">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-white">Adicionar figurinha</DialogTitle>
+          </DialogHeader>
 
         <div>
           <label className="block text-sm font-medium text-gray-300">Grupo</label>
@@ -295,6 +276,7 @@ export function CreateStickerModal({
           </button>
         </div>
       </form>
-    </dialog>
+      </DialogContent>
+    </Dialog>
   );
 }

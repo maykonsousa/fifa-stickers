@@ -18,6 +18,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { PaginationControl } from "@/components/ui/pagination";
+import { CreateStickerModal } from "./create-sticker-modal";
 
 interface Group {
   id: number;
@@ -37,7 +38,15 @@ interface Sticker {
   image_url: string | null;
 }
 
-export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers: Sticker[] }) {
+export function StickersAdmin({
+  groups,
+  stickers,
+  userId,
+}: {
+  groups: Group[];
+  stickers: Sticker[];
+  userId: string;
+}) {
   const router = useRouter();
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -48,6 +57,7 @@ export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers:
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const filteredStickers = selectedGroup
@@ -179,6 +189,17 @@ export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers:
 
       {/* Stickers grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {page === 1 && (
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="group flex aspect-[2/3] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/60 hover:border-green-500/60 hover:bg-white/10 hover:text-white transition-all"
+            aria-label="Adicionar figurinha"
+          >
+            <span className="text-4xl leading-none">+</span>
+            <span className="mt-2 text-xs font-medium">Adicionar</span>
+          </button>
+        )}
         {paginatedStickers.map((sticker) => (
           <div
             key={sticker.id}
@@ -225,6 +246,18 @@ export function StickersAdmin({ groups, stickers }: { groups: Group[]; stickers:
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
+      />
+
+      <CreateStickerModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        groups={groups}
+        existingStickers={stickers}
+        defaultGroupId={selectedGroup}
+        onSubmit={async () => {
+          // Wired up in Task 5.
+          return { ok: false, message: "Em construção" };
+        }}
       />
 
       {/* Edit Dialog */}

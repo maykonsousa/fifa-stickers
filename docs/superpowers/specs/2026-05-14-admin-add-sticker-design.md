@@ -88,7 +88,7 @@ Passos internos:
 
 ### Nova migration RLS
 
-Arquivo: `supabase/migrations/024_admin_stickers_write.sql`.
+Arquivo: `supabase/migrations/025_admin_stickers_write.sql`.
 
 ```sql
 CREATE POLICY "stickers_insert_admin"
@@ -137,5 +137,5 @@ Necessário porque a Server Action roda com o token do admin autenticado (não s
 |---|---|
 | `app/admin/(dashboard)/stickers/stickers-admin.tsx` | Adicionar card `+` no início do grid (apenas pág. 1), estado para modal de criação, encadeamento para `StickerImageUpload` após sucesso. |
 | `app/admin/(dashboard)/stickers/actions.ts` | Novo arquivo. Server Action `createSticker`. |
-| `supabase/migrations/024_admin_stickers_write.sql` | Nova migration com policies de INSERT em `stickers` e UPDATE em `sticker_groups` restritas a admin. |
+| `supabase/migrations/025_admin_stickers_write.sql` | Nova migration com policies de INSERT em `stickers` e UPDATE em `sticker_groups` restritas a admin. |
 | `components/sticker-image-upload.tsx` | Sem mudanças. Reusado como está. |

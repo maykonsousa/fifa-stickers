@@ -69,7 +69,14 @@ export async function createSticker(input: CreateStickerInput): Promise<CreateSt
     .single();
 
   if (insertError) {
-    if (insertError.code === "23505") {
+    // 23505 = unique_violation. Today `stickers` only has UNIQUE on `code`,
+    // but match on the constraint name explicitly so a future UNIQUE
+    // constraint (e.g., (group_id, number)) cannot get silently mislabelled.
+    if (
+      insertError.code === "23505" &&
+      (insertError.message?.includes("stickers_code_key") ||
+        insertError.details?.includes("(code)"))
+    ) {
       return { data: null, error: "duplicate_code" };
     }
     console.error("createSticker insert failed:", insertError);

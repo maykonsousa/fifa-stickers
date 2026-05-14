@@ -7,7 +7,8 @@ export function isInAppBrowser(): boolean {
     /FBAN|FBAV/i,        // Facebook
     /Instagram/i,        // Instagram
     /LinkedInApp/i,      // LinkedIn
-    /Twitter|X/i,        // Twitter / X (in-app)
+    /Twitter/i,          // Twitter / X (in-app)
+    /\bX\/\d/i,          // X app (format: "X/1.2.3")
     /Threads/i,          // Threads
     /TikTok/i,           // TikTok
     /Snapchat/i,         // Snapchat

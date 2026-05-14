@@ -3,8 +3,8 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -14,13 +14,47 @@ interface Profile {
   state: string | null;
   created_at: string;
   username: string | null;
+  sticker_count: number;
 }
 
-export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; adminUserIds: string[] }) {
+type SortField = "created_at" | "display_name" | "stickers";
+type SortDir = "asc" | "desc";
+
+interface Props {
+  profiles: Profile[];
+  adminUserIds: string[];
+  page: number;
+  totalPages: number;
+  sort: SortField;
+  dir: SortDir;
+}
+
+export function UsersAdmin({ profiles, adminUserIds, page, totalPages, sort, dir }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [promoting, setPromoting] = useState(false);
   const [targetUser, setTargetUser] = useState<Profile | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+
+  function buildUrl(params: Record<string, string>) {
+    const sp = new URLSearchParams(searchParams.toString());
+    for (const [k, v] of Object.entries(params)) {
+      sp.set(k, v);
+    }
+    return `/admin/users?${sp.toString()}`;
+  }
+
+  function handleSort(field: SortField) {
+    const newDir = sort === field && dir === "desc" ? "asc" : "desc";
+    router.push(buildUrl({ sort: field, dir: newDir, page: "1" }));
+  }
+
+  function SortIcon({ field }: { field: SortField }) {
+    if (sort !== field) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-500" />;
+    return dir === "asc"
+      ? <ChevronUp className="h-3.5 w-3.5 text-green-400" />
+      : <ChevronDown className="h-3.5 w-3.5 text-green-400" />;
+  }
 
   const handlePromote = (profile: Profile) => {
     setTargetUser(profile);
@@ -75,9 +109,14 @@ export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; ad
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between">
-                <p className="text-xs text-gray-500">
-                  Cadastro: {new Date(profile.created_at).toLocaleDateString("pt-BR")}
-                </p>
+                <div className="flex items-center gap-3">
+                  <p className="text-xs text-gray-500">
+                    {new Date(profile.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {profile.sticker_count} figurinhas
+                  </p>
+                </div>
                 {!isAdmin && (
                   <button
                     onClick={() => handlePromote(profile)}
@@ -97,10 +136,22 @@ export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; ad
         <table className="w-full text-sm text-left">
           <thead className="bg-gray-800 text-gray-400">
             <tr>
-              <th className="px-4 py-3">Usuário</th>
-              <th className="px-4 py-3">Cidade</th>
-              <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3">Cadastro</th>
+              <th className="px-4 py-3">
+                <button onClick={() => handleSort("display_name")} className="flex items-center gap-1 hover:text-white transition-colors">
+                  Usuário <SortIcon field="display_name" />
+                </button>
+              </th>
+              <th className="px-4 py-3">Cidade/UF</th>
+              <th className="px-4 py-3">
+                <button onClick={() => handleSort("stickers")} className="flex items-center gap-1 hover:text-white transition-colors">
+                  Figurinhas <SortIcon field="stickers" />
+                </button>
+              </th>
+              <th className="px-4 py-3">
+                <button onClick={() => handleSort("created_at")} className="flex items-center gap-1 hover:text-white transition-colors">
+                  Cadastro <SortIcon field="created_at" />
+                </button>
+              </th>
               <th className="px-4 py-3">Ação</th>
             </tr>
           </thead>
@@ -122,10 +173,15 @@ export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; ad
                         {profile.display_name}
                         <ExternalLink className="h-3.5 w-3.5 text-gray-500" />
                       </Link>
+                      {isAdmin && (
+                        <span className="rounded-full bg-green-900/50 px-2 py-0.5 text-xs text-green-300">Admin</span>
+                      )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-400">{profile.city ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-400">{profile.state ?? "—"}</td>
+                  <td className="px-4 py-3 text-gray-400">
+                    {[profile.city, profile.state].filter(Boolean).join("/") || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-400">{profile.sticker_count}</td>
                   <td className="px-4 py-3 text-gray-400">
                     {new Date(profile.created_at).toLocaleDateString("pt-BR")}
                   </td>
@@ -147,6 +203,37 @@ export function UsersAdmin({ profiles, adminUserIds }: { profiles: Profile[]; ad
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <Link
+            href={buildUrl({ page: String(Math.max(1, page - 1)) })}
+            className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              page === 1
+                ? "pointer-events-none text-gray-600"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+            }`}
+            aria-disabled={page === 1}
+          >
+            Anterior
+          </Link>
+          <span className="text-sm text-gray-400">
+            {page} / {totalPages}
+          </span>
+          <Link
+            href={buildUrl({ page: String(Math.min(totalPages, page + 1)) })}
+            className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              page === totalPages
+                ? "pointer-events-none text-gray-600"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+            }`}
+            aria-disabled={page === totalPages}
+          >
+            Próxima
+          </Link>
+        </div>
+      )}
 
       {/* Confirmation dialog */}
       <dialog

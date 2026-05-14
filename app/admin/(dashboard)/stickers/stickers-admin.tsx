@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/command";
 import { PaginationControl } from "@/components/ui/pagination";
 import { CreateStickerModal } from "./create-sticker-modal";
+import { toast } from "sonner";
+import { createSticker } from "./actions";
 
 interface Group {
   id: number;
@@ -255,9 +257,28 @@ export function StickersAdmin({
         groups={groups}
         existingStickers={stickers}
         defaultGroupId={selectedGroup}
-        onSubmit={async () => {
-          // Wired up in Task 5.
-          return { ok: false, message: "Em construção" };
+        onSubmit={async (input) => {
+          const result = await createSticker(input);
+          if (result.error !== null) {
+            if (result.error === "duplicate_code") {
+              return { ok: false, field: "code", message: "Já existe figurinha com esse código." };
+            }
+            if (result.error === "unauthorized") {
+              toast.error("Acesso negado.");
+              return { ok: false, message: "Acesso negado." };
+            }
+            if (result.error === "invalid_input") {
+              return { ok: false, message: "Dados inválidos. Verifique os campos." };
+            }
+            // result.error === "unknown" (the only remaining variant)
+            toast.error("Erro ao criar figurinha. Tente novamente.");
+            return { ok: false, message: "Erro ao criar figurinha. Tente novamente." };
+          }
+          // Success — Task 6 chains the image upload here.
+          setCreateOpen(false);
+          toast.success(`Figurinha ${result.data.code} criada.`);
+          router.refresh();
+          return { ok: true };
         }}
       />
 

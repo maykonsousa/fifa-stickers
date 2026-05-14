@@ -5,11 +5,12 @@ import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase/client";
 import { MarkFU } from "@/components/brand/Logo";
 import Link from "next/link";
-import { isInAppBrowser, getExternalBrowserUrl } from "@/lib/detect-in-app-browser";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/detect-in-app-browser";
 
 export default function LoginPage() {
   const [inAppBrowser, setInAppBrowser] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,8 +31,11 @@ export default function LoginPage() {
   };
 
   const handleOpenExternal = () => {
-    const url = getExternalBrowserUrl(window.location.origin + "/login");
-    window.open(url, "_system");
+    const url = window.location.origin + "/login";
+    const { opened } = openInExternalBrowser(url);
+    if (!opened) {
+      setLinkCopied(true);
+    }
   };
 
   const handleMagicLink = async (e: React.FormEvent) => {
@@ -162,6 +166,11 @@ export default function LoginPage() {
                     </svg>
                     Abrir no navegador
                   </button>
+                  {linkCopied && (
+                    <p className="text-center text-sm text-yellow-300">
+                      Link copiado! Cole no Safari ou Chrome para continuar.
+                    </p>
+                  )}
                   <button
                     onClick={() => setShowEmailForm(true)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/30 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-white/10"

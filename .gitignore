@@ -17,6 +17,12 @@
 /.next/
 /out/
 
+# scratchpad
+/work/
+
+# supabase CLI artifacts
+/supabase/.temp/
+
 # production
 /build
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronsUpDown, Check, Search } from "lucide-react";
+import { ChevronsUpDown, Check, Search, Loader2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -16,7 +16,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { PaginationControl } from "@/components/ui/pagination";
 import { TradeProposalDialog } from "./trade-proposal-dialog";
 
 interface Group {
@@ -62,13 +61,14 @@ export function ProfileStickers({
   const [groupId, setGroupId] = useState<number | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
-  const [page, setPage] = useState(1);
   const [results, setResults] = useState<StickerResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [tradeOpen, setTradeOpen] = useState(false);
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const pageRef = useRef(1);
+  const fetchVersionRef = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const effectiveMissingCount = tradeFilterActive
     ? tradeMissingCount ?? 0
@@ -80,36 +80,79 @@ export function ProfileStickers({
   const tradeButtonDisabled =
     (tradeMissingCount ?? 0) + (tradeDuplicatesCount ?? 0) === 0;
 
-  const fetchStickers = useCallback(async () => {
+  const hasMore = results.length < totalCount;
+  const isInitialLoad = loading && results.length === 0;
+  const isLoadingMore = loading && results.length > 0;
+
+  // Reset and load page 1 whenever filters change.
+  useEffect(() => {
+    const myVersion = ++fetchVersionRef.current;
+    pageRef.current = 1;
+    setResults([]);
+    setTotalCount(0);
     setLoading(true);
+
     const supabase = createClient();
-    const { data } = await supabase.rpc("get_public_stickers", {
-      p_user_id: userId,
-      p_tab: tab,
-      p_group_id: groupId,
-      p_keyword: keyword || null,
-      p_page: page,
-      p_page_size: PAGE_SIZE,
-      p_viewer_id: viewerId,
-    });
+    supabase
+      .rpc("get_public_stickers", {
+        p_user_id: userId,
+        p_tab: tab,
+        p_group_id: groupId,
+        p_keyword: keyword || null,
+        p_page: 1,
+        p_page_size: PAGE_SIZE,
+        p_viewer_id: viewerId,
+      })
+      .then(({ data }) => {
+        if (myVersion !== fetchVersionRef.current) return;
+        const rows = (data as StickerResult[] | null) ?? [];
+        setResults(rows);
+        setTotalCount(rows[0]?.total_count ?? 0);
+        setLoading(false);
+      });
+  }, [userId, tab, groupId, keyword, viewerId]);
 
-    if (data && data.length > 0) {
-      setResults(data as StickerResult[]);
-      setTotalCount((data as StickerResult[])[0].total_count);
-    } else {
-      setResults([]);
-      setTotalCount(0);
-    }
-    setLoading(false);
-  }, [userId, tab, groupId, keyword, page, viewerId]);
-
+  // Infinite scroll: observe the sentinel and fetch the next page when it
+  // enters the viewport. Re-runs when loading flips so the observer
+  // reattaches after each load completes.
   useEffect(() => {
-    fetchStickers();
-  }, [fetchStickers]);
+    const node = sentinelRef.current;
+    if (!node || loading || !hasMore) return;
 
-  useEffect(() => {
-    setPage(1);
-  }, [tab, groupId, keyword]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+
+        const myVersion = ++fetchVersionRef.current;
+        const nextPage = pageRef.current + 1;
+        setLoading(true);
+
+        const supabase = createClient();
+        supabase
+          .rpc("get_public_stickers", {
+            p_user_id: userId,
+            p_tab: tab,
+            p_group_id: groupId,
+            p_keyword: keyword || null,
+            p_page: nextPage,
+            p_page_size: PAGE_SIZE,
+            p_viewer_id: viewerId,
+          })
+          .then(({ data }) => {
+            if (myVersion !== fetchVersionRef.current) return;
+            const rows = (data as StickerResult[] | null) ?? [];
+            pageRef.current = nextPage;
+            setResults((prev) => [...prev, ...rows]);
+            setLoading(false);
+          });
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loading, hasMore, userId, tab, groupId, keyword, viewerId]);
 
   return (
     <div className="space-y-4">
@@ -215,7 +258,7 @@ export function ProfileStickers({
       )}
 
       {/* Grid */}
-      <div className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 transition-opacity ${loading ? "opacity-50" : ""}`}>
+      <div className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 transition-opacity ${isInitialLoad ? "opacity-50" : ""}`}>
         {results.map((sticker) => (
           <StickerCard key={sticker.id} sticker={sticker} tab={tab} />
         ))}
@@ -232,13 +275,14 @@ export function ProfileStickers({
         </div>
       )}
 
-      {/* Pagination */}
-      <PaginationControl
-        page={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        disabled={loading}
-      />
+      {/* Infinite scroll sentinel + loader */}
+      {hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-4">
+          {isLoadingMore && (
+            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+          )}
+        </div>
+      )}
 
       <TradeProposalDialog open={tradeOpen} onOpenChange={setTradeOpen} />
     </div>

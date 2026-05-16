@@ -88,35 +88,6 @@ export function InstallAppBanner({
       const dismissed = wasDismissedRecently();
       const p = detectPlatform();
 
-      // Debug log temporário — abra chrome://inspect com USB conectado pra ver.
-      if (typeof window !== "undefined") {
-        console.log("[InstallAppBanner]", {
-          standalone,
-          mobile,
-          dismissed,
-          platform: p,
-          displayModeStandalone: window.matchMedia(
-            "(display-mode: standalone)",
-          ).matches,
-          displayModeMinimalUi: window.matchMedia(
-            "(display-mode: minimal-ui)",
-          ).matches,
-          displayModeFullscreen: window.matchMedia(
-            "(display-mode: fullscreen)",
-          ).matches,
-          iosStandalone:
-            (window.navigator as { standalone?: boolean }).standalone === true,
-          referrer: document.referrer,
-          installedFlag: (() => {
-            try {
-              return window.localStorage.getItem(INSTALLED_KEY);
-            } catch {
-              return "<n/a>";
-            }
-          })(),
-        });
-      }
-
       if (standalone || !mobile || dismissed || !p) {
         setPlatform(null);
         setVisible(false);

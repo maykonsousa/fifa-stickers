@@ -22,7 +22,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { ChevronsUpDown, Check, Loader2, X } from "lucide-react";
+import { ChevronsUpDown, Check, Loader2 } from "lucide-react";
 import type { StickerOption } from "../lib/types";
 
 interface Group {
@@ -39,12 +39,19 @@ interface StickerPickerProps {
   trigger: React.ReactNode;
   ownerUserId: string | null; // null = catálogo puro (lead)
   ownerLabel?: string;
-  onSelect: (sticker: StickerOption, quantity: number) => void;
+  selectedStickerIds: number[];
+  onToggle: (sticker: StickerOption) => void;
 }
 
 const PAGE_SIZE = 20;
 
-export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: StickerPickerProps) {
+export function StickerPicker({
+  trigger,
+  ownerUserId,
+  ownerLabel,
+  selectedStickerIds,
+  onToggle,
+}: StickerPickerProps) {
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [keyword, setKeyword] = useState("");
@@ -57,20 +64,11 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [selected, setSelected] = useState<StickerOption | null>(null);
-  const [quantity, setQuantity] = useState(1);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const canShowStatus = !!ownerUserId;
   const hasMore = results.length < totalCount;
-
-  // Reset estado quando o drawer fecha
-  useEffect(() => {
-    if (!open) {
-      setSelected(null);
-      setQuantity(1);
-    }
-  }, [open]);
+  const selectedSet = new Set(selectedStickerIds);
 
   // Busca grupos uma vez ao abrir
   useEffect(() => {
@@ -117,24 +115,24 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
     [ownerUserId, keyword, groupId, status, canShowStatus],
   );
 
-  // Refetch quando filtros mudam (e drawer aberto, sem sticker selecionado)
+  // Refetch quando filtros mudam (e drawer aberto)
   useEffect(() => {
-    if (!open || selected) return;
+    if (!open) return;
     setPage(1);
     fetchStickers(1, false);
-  }, [open, selected, fetchStickers]);
+  }, [open, fetchStickers]);
 
   // Carrega próximas páginas
   useEffect(() => {
-    if (page > 1 && open && !selected) {
+    if (page > 1 && open) {
       fetchStickers(page, true);
     }
-  }, [page, open, selected, fetchStickers]);
+  }, [page, open, fetchStickers]);
 
   // Infinite scroll
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel || !open || selected) return;
+    if (!sentinel || !open) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
@@ -145,10 +143,10 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore, open, selected]);
+  }, [hasMore, loading, loadingMore, open]);
 
-  function handleSelectSticker(sticker: StickerRow) {
-    setSelected({
+  function handleToggleSticker(sticker: StickerRow) {
+    onToggle({
       id: sticker.id,
       group_id: sticker.group_id,
       code: sticker.code,
@@ -157,13 +155,6 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
       image_url: sticker.image_url,
       owned_count: sticker.owned_count,
     });
-    setQuantity(1);
-  }
-
-  function handleConfirm() {
-    if (!selected) return;
-    onSelect(selected, quantity);
-    setOpen(false);
   }
 
   const statusLabel =
@@ -181,13 +172,12 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
       <DrawerContent className="max-h-[92vh] bg-gray-900 text-white border-white/10">
         <DrawerHeader className="pb-6">
           <DrawerTitle className="font-sans text-white text-base font-medium">
-            {selected ? "Quantidade" : "Selecionar figurinha"}
+            Selecionar figurinhas
           </DrawerTitle>
-          {!selected && ownerLabel && <p className="text-xs text-gray-400">{ownerLabel}</p>}
+          {ownerLabel && <p className="text-xs text-gray-400">{ownerLabel}</p>}
         </DrawerHeader>
 
-        {!selected ? (
-          <div className="px-4 pb-4 flex flex-col gap-3 flex-1 min-h-0">
+        <div className="px-4 pb-4 flex flex-col gap-3 flex-1 min-h-0">
             {/* Filtros */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
@@ -300,7 +290,8 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
                       key={sticker.id}
                       sticker={sticker}
                       ownerUserId={ownerUserId}
-                      onClick={() => handleSelectSticker(sticker)}
+                      isSelected={selectedSet.has(sticker.id)}
+                      onClick={() => handleToggleSticker(sticker)}
                     />
                   ))}
                 </div>
@@ -312,69 +303,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
                 </div>
               )}
             </div>
-          </div>
-        ) : (
-          <div className="px-4 pb-6 space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="w-24 flex-shrink-0">
-                  <StickerCardThumb sticker={selected} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-mono text-gray-400">#{selected.code}</p>
-                  <p className="text-base text-white font-medium">
-                    {selected.title ?? `Sticker ${selected.number}`}
-                  </p>
-                  {ownerUserId && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      {selected.owned_count}{" "}
-                      {selected.owned_count === 1 ? "cópia disponível" : "cópias disponíveis"}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setSelected(null)}
-                className="p-2 rounded-md hover:bg-white/10 flex-shrink-0"
-                aria-label="Voltar"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
-
-            <div>
-              <label className="text-xs uppercase tracking-wide text-gray-500">Quantidade</label>
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 rounded-md border border-white/10 bg-white/5 text-white hover:bg-white/10 text-lg"
-                >
-                  −
-                </button>
-                <input
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-20 text-center px-2 py-2 rounded-md border border-white/10 bg-white/5 text-white text-base"
-                />
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 rounded-md border border-white/10 bg-white/5 text-white hover:bg-white/10 text-lg"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <button
-              onClick={handleConfirm}
-              className="w-full rounded-lg bg-brand-grass px-4 py-3 text-sm font-medium text-white hover:brightness-110"
-            >
-              Adicionar {quantity > 1 ? `${quantity} cópias` : "1 cópia"}
-            </button>
-          </div>
-        )}
+        </div>
       </DrawerContent>
     </Drawer>
   );
@@ -383,10 +312,12 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
 function StickerCard({
   sticker,
   ownerUserId,
+  isSelected,
   onClick,
 }: {
   sticker: StickerRow;
   ownerUserId: string | null;
+  isSelected: boolean;
   onClick: () => void;
 }) {
   const hasIt = sticker.owned_count > 0;
@@ -402,7 +333,15 @@ function StickerCard({
 
   return (
     <button onClick={onClick} className="group relative text-left">
-      <div className={`rounded-lg p-[2px] cursor-pointer ${showOwnership && hasIt ? borderClass : ""}`}>
+      <div
+        className={`rounded-lg p-[2px] cursor-pointer transition-all ${
+          isSelected
+            ? "ring-2 ring-brand-grass ring-offset-2 ring-offset-gray-900"
+            : showOwnership && hasIt
+              ? borderClass
+              : ""
+        }`}
+      >
         <div
           className={`relative aspect-[2/3] overflow-hidden rounded-lg ${
             showOwnership && !hasIt
@@ -438,32 +377,19 @@ function StickerCard({
             </div>
           )}
 
-          {isDuplicate && (
+          {isDuplicate && !isSelected && (
             <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow">
               {sticker.owned_count - 1}
+            </span>
+          )}
+
+          {isSelected && (
+            <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-grass text-white shadow">
+              <Check className="w-3 h-3" strokeWidth={3} />
             </span>
           )}
         </div>
       </div>
     </button>
-  );
-}
-
-function StickerCardThumb({ sticker }: { sticker: StickerOption }) {
-  return (
-    <div className="aspect-[2/3] overflow-hidden rounded-lg bg-gray-800 border border-white/10">
-      {sticker.image_url ? (
-        <img src={sticker.image_url} alt={sticker.code} className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full flex-col items-start p-2">
-          <span className="text-xs font-bold text-white/50">{sticker.code}</span>
-          <div className="flex flex-1 w-full items-center justify-center">
-            <svg className="h-10 w-10 text-white/15" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-            </svg>
-          </div>
-        </div>
-      )}
-    </div>
   );
 }

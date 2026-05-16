@@ -8,13 +8,15 @@ import type { Counterparty, StickerOption, Swap } from "../lib/types";
 function ScoreSide({
   label,
   value,
-  onSelect,
+  selectedStickerIds,
+  onToggle,
   ownerUserId,
   ownerLabel,
 }: {
   label: string;
   value: number;
-  onSelect: (sticker: StickerOption, quantity: number) => void;
+  selectedStickerIds: number[];
+  onToggle: (sticker: StickerOption) => void;
   ownerUserId: string | null;
   ownerLabel?: string;
 }) {
@@ -22,7 +24,8 @@ function ScoreSide({
     <StickerPicker
       ownerUserId={ownerUserId}
       ownerLabel={ownerLabel}
-      onSelect={onSelect}
+      selectedStickerIds={selectedStickerIds}
+      onToggle={onToggle}
       trigger={
         <button
           type="button"
@@ -73,14 +76,12 @@ export function StepItems({
     setSwaps((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   }
 
-  function addSticker(swapIndex: number, side: "given" | "received", sticker: StickerOption, quantity: number) {
+  function toggleSticker(swapIndex: number, side: "given" | "received", sticker: StickerOption) {
     const swap = swaps[swapIndex];
     const existing = swap[side].find((it) => it.sticker_id === sticker.id);
     const updated = existing
-      ? swap[side].map((it) =>
-          it.sticker_id === sticker.id ? { ...it, quantity: it.quantity + quantity } : it,
-        )
-      : [...swap[side], { sticker_id: sticker.id, quantity }];
+      ? swap[side].filter((it) => it.sticker_id !== sticker.id)
+      : [...swap[side], { sticker_id: sticker.id, quantity: 1 }];
     updateSwap(swapIndex, { [side]: updated });
   }
 
@@ -129,17 +130,19 @@ export function StepItems({
                 <ScoreSide
                   label={initiatorFirstName}
                   value={givenSum}
+                  selectedStickerIds={swap.given.map((it) => it.sticker_id)}
                   ownerUserId={initiatorUserId}
                   ownerLabel="Sua coleção"
-                  onSelect={(s, q) => addSticker(idx, "given", s, q)}
+                  onToggle={(s) => toggleSticker(idx, "given", s)}
                 />
                 <div className="font-display text-3xl sm:text-4xl text-gray-500 leading-none">×</div>
                 <ScoreSide
                   label={counterpartyFirstName}
                   value={receivedSum}
+                  selectedStickerIds={swap.received.map((it) => it.sticker_id)}
                   ownerUserId={counterpartyId}
                   ownerLabel={counterpartyLabel}
-                  onSelect={(s, q) => addSticker(idx, "received", s, q)}
+                  onToggle={(s) => toggleSticker(idx, "received", s)}
                 />
               </div>
             </div>

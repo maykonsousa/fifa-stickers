@@ -102,13 +102,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       .select("sticker_id")
       .eq("user_id", user.id);
 
-    const viewerCount = new Map<number, number>();
-    for (const vs of viewerStickers ?? []) {
-      viewerCount.set(vs.sticker_id, (viewerCount.get(vs.sticker_id) ?? 0) + 1);
-    }
+    const viewerOwned = new Set<number>();
     const viewerDupes = new Set<number>();
-    for (const [id, c] of viewerCount) {
-      if (c > 1) viewerDupes.add(id);
+    for (const vs of viewerStickers ?? []) {
+      if (viewerOwned.has(vs.sticker_id)) viewerDupes.add(vs.sticker_id);
+      viewerOwned.add(vs.sticker_id);
     }
 
     // Faltam pro dono que o viewer tem repetida
@@ -121,7 +119,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     // Repetidas do dono que o viewer não tem
     let dupesMatch = 0;
     for (const id of ownerDupes) {
-      if (!viewerCount.has(id)) dupesMatch++;
+      if (!viewerOwned.has(id)) dupesMatch++;
     }
     tradeDuplicatesCount = dupesMatch;
   }

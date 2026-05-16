@@ -189,16 +189,16 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
         {!selected ? (
           <div className="px-4 pb-4 flex flex-col gap-3 flex-1 min-h-0">
             {/* Filtros */}
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="Buscar por código ou nome..."
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
-            />
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="Buscar por código ou nome..."
+                className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
+              />
               <Popover open={groupOpen} onOpenChange={setGroupOpen}>
-                <PopoverTrigger className="flex flex-1 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors">
+                <PopoverTrigger className="flex w-full sm:w-52 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors">
                   <span className={groupId ? "text-white" : "text-gray-400"}>
                     {groupId
                       ? groups.find((g) => g.id === groupId)?.name ?? "Grupo"
@@ -254,7 +254,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
 
               {canShowStatus && (
                 <Popover open={statusOpen} onOpenChange={setStatusOpen}>
-                  <PopoverTrigger className="flex w-32 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors">
+                  <PopoverTrigger className="flex w-full sm:w-36 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors">
                     <span>{statusLabel}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
                   </PopoverTrigger>
@@ -271,7 +271,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
                           setStatus(opt.value);
                           setStatusOpen(false);
                         }}
-                        className="flex w-full items-center rounded-md px-2 py-1.5 text-sm text-popover-foreground hover:bg-accent"
+                        className="flex w-full items-center rounded-md px-2 py-1.5 text-sm text-white hover:bg-white/10"
                       >
                         <Check
                           className={`mr-2 h-4 w-4 ${status === opt.value ? "opacity-100" : "opacity-0"}`}

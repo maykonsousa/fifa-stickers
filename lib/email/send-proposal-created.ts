@@ -6,20 +6,16 @@ interface ProposalCreatedInput {
   proposerName: string;
   recipientEmail: string;
   recipientName: string;
-  itemsWant: { stickerLabel: string; quantity: number }[];
-  itemsOffer: { stickerLabel: string; quantity: number }[];
+  itemsWant: { stickerLabel: string }[];
+  itemsOffer: { stickerLabel: string }[];
   appUrl: string;
 }
 
 export async function sendProposalCreated(input: ProposalCreatedInput) {
   const supabase = await createClient();
 
-  const wantList = input.itemsWant
-    .map((i) => `<li>${i.stickerLabel} — ${i.quantity} ${i.quantity === 1 ? "cópia" : "cópias"}</li>`)
-    .join("");
-  const offerList = input.itemsOffer
-    .map((i) => `<li>${i.stickerLabel} — ${i.quantity} ${i.quantity === 1 ? "cópia" : "cópias"}</li>`)
-    .join("");
+  const wantList = input.itemsWant.map((i) => `<li>${i.stickerLabel}</li>`).join("");
+  const offerList = input.itemsOffer.map((i) => `<li>${i.stickerLabel}</li>`).join("");
 
   const html = `
     <h2>${input.proposerName} fez uma proposta de troca</h2>

@@ -53,10 +53,10 @@ export async function createProposalAction(input: CreateProposalInput): Promise<
 
   const itemsWant = input.items
     .filter((i) => i.direction === "want")
-    .map((i) => ({ stickerLabel: stickerLabel(i.sticker_id), quantity: i.quantity }));
+    .map((i) => ({ stickerLabel: stickerLabel(i.sticker_id) }));
   const itemsOffer = input.items
     .filter((i) => i.direction === "offer")
-    .map((i) => ({ stickerLabel: stickerLabel(i.sticker_id), quantity: i.quantity }));
+    .map((i) => ({ stickerLabel: stickerLabel(i.sticker_id) }));
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://faltauma.com";
 

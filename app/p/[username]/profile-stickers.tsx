@@ -167,8 +167,6 @@ export function ProfileStickers({
           code: sticker.code,
           title: sticker.title,
           image_url: sticker.image_url,
-          quantity: 1,
-          maxQuantity: Math.max(1, sticker.duplicate_count),
         },
       ];
     });

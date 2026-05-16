@@ -47,8 +47,6 @@ export interface SelectedWant {
   code: string;
   title: string | null;
   image_url: string | null;
-  quantity: number;
-  maxQuantity: number;
 }
 
 interface SelectedOffer {
@@ -56,7 +54,6 @@ interface SelectedOffer {
   code: string;
   title: string | null;
   image_url: string | null;
-  quantity: number;
 }
 
 interface Props {
@@ -181,18 +178,9 @@ export function ProposalOfferPicker({
           code: sticker.code,
           title: sticker.title,
           image_url: sticker.image_url,
-          quantity: 1,
         },
       ];
     });
-  };
-
-  const setOfferQuantity = (stickerId: number, qty: number) => {
-    setOffers((prev) =>
-      prev.map((x) =>
-        x.sticker_id === stickerId ? { ...x, quantity: Math.max(1, Math.min(9, qty)) } : x,
-      ),
-    );
   };
 
   const removeOffer = (stickerId: number) => {
@@ -203,8 +191,8 @@ export function ProposalOfferPicker({
     if (wants.length === 0 || offers.length === 0 || submitting) return;
     setError(null);
     const items: ProposalItem[] = [
-      ...wants.map((x) => ({ sticker_id: x.sticker_id, direction: "want" as const, quantity: x.quantity })),
-      ...offers.map((x) => ({ sticker_id: x.sticker_id, direction: "offer" as const, quantity: x.quantity })),
+      ...wants.map((x) => ({ sticker_id: x.sticker_id, direction: "want" as const, quantity: 1 })),
+      ...offers.map((x) => ({ sticker_id: x.sticker_id, direction: "offer" as const, quantity: 1 })),
     ];
     startTransition(async () => {
       try {
@@ -221,8 +209,6 @@ export function ProposalOfferPicker({
     : rows;
 
   const selectedIds = new Set(offers.map((o) => o.sticker_id));
-  const offersTotal = offers.reduce((s, o) => s + o.quantity, 0);
-  const wantsTotal = wants.reduce((s, w) => s + w.quantity, 0);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -311,29 +297,14 @@ export function ProposalOfferPicker({
                     <p className="flex-1 text-xs text-white truncate">
                       #{item.code} {item.title ?? ""}
                     </p>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setOfferQuantity(item.sticker_id, item.quantity - 1)}
-                        className="h-6 w-6 rounded bg-white/10 text-white text-sm"
-                        aria-label="Diminuir"
-                      >–</button>
-                      <span className="text-xs text-white w-5 text-center">{item.quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() => setOfferQuantity(item.sticker_id, item.quantity + 1)}
-                        className="h-6 w-6 rounded bg-white/10 text-white text-sm"
-                        aria-label="Aumentar"
-                      >+</button>
-                      <button
-                        type="button"
-                        onClick={() => removeOffer(item.sticker_id)}
-                        className="ml-1 h-6 w-6 rounded text-gray-400 hover:text-red-400"
-                        aria-label="Remover"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeOffer(item.sticker_id)}
+                      className="h-6 w-6 rounded text-gray-400 hover:text-red-400 flex items-center justify-center"
+                      aria-label="Remover"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -394,8 +365,8 @@ export function ProposalOfferPicker({
           {error && <p className="text-xs text-red-400">{error}</p>}
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-gray-400">
-              {wantsTotal} {wantsTotal === 1 ? "figurinha" : "figurinhas"} por {offersTotal}{" "}
-              {offersTotal === 1 ? "figurinha" : "figurinhas"}
+              {wants.length} {wants.length === 1 ? "figurinha" : "figurinhas"} por {offers.length}{" "}
+              {offers.length === 1 ? "figurinha" : "figurinhas"}
             </p>
             <button
               type="button"

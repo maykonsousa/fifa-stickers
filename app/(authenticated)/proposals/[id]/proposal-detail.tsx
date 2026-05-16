@@ -46,7 +46,9 @@ function StickerItem({ item }: { item: ProposalItemDetail }) {
         <p className="text-sm text-white">
           #{item.code} {item.title ?? ""}
         </p>
-        <p className="text-xs text-gray-500">×{item.quantity}</p>
+        {item.quantity > 1 && (
+          <p className="text-xs text-gray-500">×{item.quantity}</p>
+        )}
       </div>
     </li>
   );

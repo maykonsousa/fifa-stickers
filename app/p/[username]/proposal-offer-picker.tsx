@@ -341,7 +341,7 @@ export function ProposalOfferPicker({
           )}
 
           {/* Grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 gap-1.5">
             {visibleRows.map((sticker) => {
               const isSelected = selectedIds.has(sticker.id);
               return (
@@ -359,26 +359,15 @@ export function ProposalOfferPicker({
                     {sticker.image_url ? (
                       <img src={sticker.image_url} alt={sticker.code} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full flex-col items-start p-2 pt-1.5">
-                        <span className="text-xs font-bold text-white/50">{sticker.code}</span>
-                        <div className="flex flex-1 w-full items-center justify-center -mt-1">
-                          <svg className="h-12 w-12 text-white/15" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                          </svg>
-                        </div>
-                        <div className="w-full space-y-0.5 text-center">
-                          {sticker.title ? (
-                            <p className="text-[10px] font-bold text-white/80 truncate">{sticker.title}</p>
-                          ) : (
-                            <div className="mx-auto h-2 w-3/4 rounded bg-white/10" />
-                          )}
-                          <div className="mx-auto h-1.5 w-1/2 rounded bg-white/5" />
-                        </div>
+                      <div className="flex h-full flex-col items-center justify-center p-1">
+                        <svg className="h-8 w-8 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                        </svg>
                       </div>
                     )}
                   </div>
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-1 pb-0.5 pt-2">
-                    <span className="text-[10px] font-bold text-white">{sticker.code}</span>
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-1 pb-0.5 pt-1.5">
+                    <span className="text-[9px] font-bold text-white">{sticker.code}</span>
                   </div>
                 </button>
               );

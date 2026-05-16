@@ -10,12 +10,20 @@ interface Props {
   onComplete: (c: Counterparty) => void;
 }
 
+type Found =
+  | { kind: "member"; counterparty: Extract<Counterparty, { type: "member" }> }
+  | { kind: "lead"; counterparty: Extract<Counterparty, { type: "lead" }> };
+
 export function StepCounterparty({ initial, onComplete }: Props) {
   const [email, setEmail] = useState(initial?.email ?? "");
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [member, setMember] = useState<Extract<Counterparty, { type: "member" }> | null>(
-    initial?.type === "member" ? initial : null,
+  const [found, setFound] = useState<Found | null>(
+    initial?.type === "member"
+      ? { kind: "member", counterparty: initial }
+      : initial?.type === "lead" && initial.id
+        ? { kind: "lead", counterparty: initial }
+        : null,
   );
   const [leadFields, setLeadFields] = useState({
     name: initial?.type === "lead" ? initial.name : "",
@@ -27,23 +35,36 @@ export function StepCounterparty({ initial, onComplete }: Props) {
   async function handleSearch() {
     setSearching(true);
     setSearched(false);
-    setMember(null);
-    const found = await searchCounterpartyByEmail(email);
-    if (found) {
-      setMember({
-        type: "member",
-        id: found.id,
-        display_name: found.display_name,
-        avatar_url: found.avatar_url,
-        email: found.email,
+    setFound(null);
+    const result = await searchCounterpartyByEmail(email);
+    if (result?.kind === "member") {
+      setFound({
+        kind: "member",
+        counterparty: {
+          type: "member",
+          id: result.id,
+          display_name: result.display_name,
+          avatar_url: result.avatar_url,
+          email: result.email,
+        },
+      });
+    } else if (result?.kind === "lead") {
+      setFound({
+        kind: "lead",
+        counterparty: {
+          type: "lead",
+          id: result.id,
+          email: result.email,
+          name: result.name,
+        },
       });
     }
     setSearched(true);
     setSearching(false);
   }
 
-  function handleMemberContinue() {
-    if (member) onComplete(member);
+  function handleFoundContinue() {
+    if (found) onComplete(found.counterparty);
   }
 
   function handleLeadContinue() {
@@ -74,7 +95,7 @@ export function StepCounterparty({ initial, onComplete }: Props) {
           onChange={(e) => {
             setEmail(e.target.value);
             setSearched(false);
-            setMember(null);
+            setFound(null);
           }}
           placeholder="email@exemplo.com"
           className="flex-1 px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-gray-500 focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
@@ -88,31 +109,51 @@ export function StepCounterparty({ initial, onComplete }: Props) {
         </button>
       </div>
 
-      {searched && member && (
+      {searched && found && (
         <div className="rounded-lg border border-brand-grass/20 bg-brand-grass/5 p-4 space-y-3">
           <div className="flex items-center gap-3">
-            {member.avatar_url ? (
-              <img src={member.avatar_url} alt={member.display_name} className="h-10 w-10 rounded-full" />
+            {found.kind === "member" && found.counterparty.avatar_url ? (
+              <img
+                src={found.counterparty.avatar_url}
+                alt={found.counterparty.display_name}
+                className="h-10 w-10 rounded-full"
+              />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-grass/20 text-sm font-bold text-brand-grass">
-                {member.display_name.charAt(0).toUpperCase()}
+                {(found.kind === "member"
+                  ? found.counterparty.display_name
+                  : found.counterparty.name
+                )
+                  .charAt(0)
+                  .toUpperCase()}
               </div>
             )}
             <div>
-              <p className="text-sm font-medium text-white">{member.display_name}</p>
-              <p className="text-xs text-gray-400">{member.email}</p>
+              <p className="text-sm font-medium text-white">
+                {found.kind === "member" ? found.counterparty.display_name : found.counterparty.name}
+              </p>
+              <p className="text-xs text-gray-400">{found.counterparty.email}</p>
+              {found.kind === "lead" && (
+                <span className="mt-1 inline-block text-[10px] uppercase tracking-wide bg-brand-gold/20 text-brand-gold rounded px-1.5 py-0.5">
+                  lead já cadastrado
+                </span>
+              )}
             </div>
           </div>
           <button
-            onClick={handleMemberContinue}
+            onClick={handleFoundContinue}
             className="w-full rounded-lg bg-brand-grass px-4 py-2 text-sm font-medium text-white hover:brightness-110"
           >
-            Continuar com {member.display_name.split(" ")[0]}
+            Continuar com{" "}
+            {(found.kind === "member"
+              ? found.counterparty.display_name
+              : found.counterparty.name
+            ).split(" ")[0]}
           </button>
         </div>
       )}
 
-      {searched && !member && (
+      {searched && !found && (
         <div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3">
           <p className="text-sm text-gray-300">
             Usuário não cadastrado. Forneça as informações básicas para iniciar a troca.

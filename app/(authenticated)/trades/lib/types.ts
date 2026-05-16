@@ -16,6 +16,8 @@ export interface CounterpartyMember {
 
 export interface CounterpartyLead {
   type: "lead";
+  /** Presente quando o lead já existe no banco (busca por email achou). */
+  id?: string;
   email: string;
   name: string;
   city?: string;

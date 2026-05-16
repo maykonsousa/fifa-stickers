@@ -24,7 +24,13 @@ export async function createTradeAction(input: CreateTradeInput) {
     counterpartyUserId = input.counterparty.id;
     recipientEmail = input.counterparty.email;
     recipientName = input.counterparty.display_name;
+  } else if (input.counterparty.id) {
+    // Lead já existente (busca por email achou) — reaproveita
+    counterpartyLeadId = input.counterparty.id;
+    recipientEmail = input.counterparty.email;
+    recipientName = input.counterparty.name;
   } else {
+    // Lead novo (criado via form do Step 1)
     const { data: leadId, error: leadError } = await supabase.rpc("find_or_create_lead", {
       p_email: input.counterparty.email,
       p_name: input.counterparty.name,

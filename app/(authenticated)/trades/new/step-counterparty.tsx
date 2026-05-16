@@ -115,8 +115,7 @@ export function StepCounterparty({ initial, onComplete }: Props) {
       {searched && !member && (
         <div className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3">
           <p className="text-sm text-gray-300">
-            Esse email não tá cadastrado. Vamos criar um lead — quando essa pessoa
-            criar conta, as figurinhas vão aparecer pra ela.
+            Usuário não cadastrado. Forneça as informações básicas para iniciar a troca.
           </p>
           <div className="space-y-2">
             <label className="block">

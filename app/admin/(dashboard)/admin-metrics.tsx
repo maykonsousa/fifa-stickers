@@ -85,12 +85,20 @@ export function AdminMetrics() {
         p_end: end.toISOString(),
         p_bucket: bucket,
       }),
-    ]).then(([g, e]) => {
-      if (myVersion !== fetchVersionRef.current) return;
-      setGrowth((g.data as Row[] | null) ?? []);
-      setEngagement((e.data as Row[] | null) ?? []);
-      setLoading(false);
-    });
+    ])
+      .then(([g, e]) => {
+        if (myVersion !== fetchVersionRef.current) return;
+        setGrowth((g.data as Row[] | null) ?? []);
+        setEngagement((e.data as Row[] | null) ?? []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (myVersion !== fetchVersionRef.current) return;
+        console.error("[AdminMetrics] RPC failure", err);
+        setGrowth([]);
+        setEngagement([]);
+        setLoading(false);
+      });
   }, [range, bucket]);
 
   const bucketOptions = BUCKET_OPTIONS[range];

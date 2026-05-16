@@ -12,6 +12,8 @@ function ScoreSide({
   onToggle,
   ownerUserId,
   ownerLabel,
+  viewerUserId,
+  defaultStatus,
 }: {
   label: string;
   value: number;
@@ -19,11 +21,15 @@ function ScoreSide({
   onToggle: (sticker: StickerOption) => void;
   ownerUserId: string | null;
   ownerLabel?: string;
+  viewerUserId?: string;
+  defaultStatus?: "owned" | "missing" | "duplicate" | null;
 }) {
   return (
     <StickerPicker
       ownerUserId={ownerUserId}
       ownerLabel={ownerLabel}
+      viewerUserId={viewerUserId}
+      defaultStatus={defaultStatus}
       selectedStickerIds={selectedStickerIds}
       onToggle={onToggle}
       trigger={
@@ -69,8 +75,19 @@ export function StepItems({
     counterparty.type === "member" ? counterparty.display_name : counterparty.name;
   const initiatorFirstName = initiatorName.split(" ")[0];
   const counterpartyFirstName = counterpartyFullName.split(" ")[0];
-  const counterpartyLabel =
-    counterparty.type === "member" ? `Coleção de ${counterpartyFirstName}` : undefined;
+
+  // Configuração do picker para o lado "Recebi":
+  // - Membro: mostra a coleção do membro, default Repetidas, desabilita as que iniciador já tem
+  // - Lead: mostra catálogo do iniciador, default Faltam (não há coleção do lead pra exibir)
+  const recebiOwnerUserId = counterparty.type === "member" ? counterpartyId : initiatorUserId;
+  const recebiOwnerLabel =
+    counterparty.type === "member"
+      ? `Coleção de ${counterpartyFirstName}`
+      : "Suas figurinhas faltantes";
+  const recebiViewerUserId =
+    counterparty.type === "member" ? initiatorUserId : undefined;
+  const recebiDefaultStatus: "duplicate" | "missing" =
+    counterparty.type === "member" ? "duplicate" : "missing";
 
   function updateSwap(index: number, patch: Partial<Swap>) {
     setSwaps((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
@@ -140,8 +157,10 @@ export function StepItems({
                   label={counterpartyFirstName}
                   value={receivedSum}
                   selectedStickerIds={swap.received.map((it) => it.sticker_id)}
-                  ownerUserId={counterpartyId}
-                  ownerLabel={counterpartyLabel}
+                  ownerUserId={recebiOwnerUserId}
+                  ownerLabel={recebiOwnerLabel}
+                  viewerUserId={recebiViewerUserId}
+                  defaultStatus={recebiDefaultStatus}
                   onToggle={(s) => toggleSticker(idx, "received", s)}
                 />
               </div>

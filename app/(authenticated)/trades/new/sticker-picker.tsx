@@ -33,12 +33,19 @@ interface Group {
 
 interface StickerRow extends StickerOption {
   total_count: number;
+  viewer_owned_count?: number;
 }
+
+type StatusFilter = "owned" | "missing" | "duplicate" | null;
 
 interface StickerPickerProps {
   trigger: React.ReactNode;
   ownerUserId: string | null; // null = catálogo puro (lead)
   ownerLabel?: string;
+  /** Quando definido (e diferente do dono), cards já em poder do viewer ficam desabilitados. */
+  viewerUserId?: string;
+  /** Status default ao abrir; cai pra null se ownerUserId for null e nada for passado. */
+  defaultStatus?: StatusFilter;
   selectedStickerIds: number[];
   onToggle: (sticker: StickerOption) => void;
 }
@@ -49,15 +56,19 @@ export function StickerPicker({
   trigger,
   ownerUserId,
   ownerLabel,
+  viewerUserId,
+  defaultStatus,
   selectedStickerIds,
   onToggle,
 }: StickerPickerProps) {
+  const initialStatus: StatusFilter =
+    defaultStatus !== undefined ? defaultStatus : ownerUserId ? "duplicate" : null;
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [keyword, setKeyword] = useState("");
   const [groupId, setGroupId] = useState<number | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
-  const [status, setStatus] = useState<string | null>(ownerUserId ? "duplicate" : null);
+  const [status, setStatus] = useState<StatusFilter>(initialStatus);
   const [statusOpen, setStatusOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [results, setResults] = useState<StickerRow[]>([]);
@@ -83,10 +94,10 @@ export function StickerPicker({
       });
   }, [open, groups.length]);
 
-  // Status default acompanha ownerUserId (Repetidas pra owner, Todas pra lead)
+  // Status default acompanha mudanças nos props (raro, mas mantém coerência)
   useEffect(() => {
-    setStatus(ownerUserId ? "duplicate" : null);
-  }, [ownerUserId]);
+    setStatus(initialStatus);
+  }, [initialStatus]);
 
   const fetchStickers = useCallback(
     async (pageNum: number, append: boolean) => {
@@ -100,6 +111,7 @@ export function StickerPicker({
         p_status: canShowStatus ? status : null,
         p_page: pageNum,
         p_page_size: PAGE_SIZE,
+        p_viewer_user_id: viewerUserId ?? null,
       });
       if (data && (data as StickerRow[]).length > 0) {
         const typed = data as StickerRow[];
@@ -112,7 +124,7 @@ export function StickerPicker({
       setLoading(false);
       setLoadingMore(false);
     },
-    [ownerUserId, keyword, groupId, status, canShowStatus],
+    [ownerUserId, keyword, groupId, status, canShowStatus, viewerUserId],
   );
 
   // Refetch quando filtros mudam (e drawer aberto)
@@ -248,12 +260,14 @@ export function StickerPicker({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
                   </PopoverTrigger>
                   <PopoverContent className="w-36 p-1" align="end">
-                    {[
-                      { value: null, label: "Todas" },
-                      { value: "owned", label: "Tenho" },
-                      { value: "missing", label: "Faltam" },
-                      { value: "duplicate", label: "Repetidas" },
-                    ].map((opt) => (
+                    {(
+                      [
+                        { value: null, label: "Todas" },
+                        { value: "owned", label: "Tenho" },
+                        { value: "missing", label: "Faltam" },
+                        { value: "duplicate", label: "Repetidas" },
+                      ] as { value: StatusFilter; label: string }[]
+                    ).map((opt) => (
                       <button
                         key={opt.label}
                         onClick={() => {
@@ -285,15 +299,20 @@ export function StickerPicker({
                 </div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-3">
-                  {results.map((sticker) => (
-                    <StickerCard
-                      key={sticker.id}
-                      sticker={sticker}
-                      ownerUserId={ownerUserId}
-                      isSelected={selectedSet.has(sticker.id)}
-                      onClick={() => handleToggleSticker(sticker)}
-                    />
-                  ))}
+                  {results.map((sticker) => {
+                    const viewerHas = (sticker.viewer_owned_count ?? 0) > 0;
+                    const disabled = !!viewerUserId && viewerHas;
+                    return (
+                      <StickerCard
+                        key={sticker.id}
+                        sticker={sticker}
+                        ownerUserId={ownerUserId}
+                        isSelected={selectedSet.has(sticker.id)}
+                        isDisabled={disabled}
+                        onClick={() => handleToggleSticker(sticker)}
+                      />
+                    );
+                  })}
                 </div>
               )}
               <div ref={sentinelRef} className="h-1" />
@@ -313,11 +332,13 @@ function StickerCard({
   sticker,
   ownerUserId,
   isSelected,
+  isDisabled,
   onClick,
 }: {
   sticker: StickerRow;
   ownerUserId: string | null;
   isSelected: boolean;
+  isDisabled: boolean;
   onClick: () => void;
 }) {
   const hasIt = sticker.owned_count > 0;
@@ -332,21 +353,30 @@ function StickerCard({
       : "";
 
   return (
-    <button onClick={onClick} className="group relative text-left">
+    <button
+      onClick={onClick}
+      disabled={isDisabled}
+      className="group relative text-left disabled:cursor-not-allowed"
+      title={isDisabled ? "Você já tem essa figurinha" : undefined}
+    >
       <div
-        className={`rounded-lg p-[2px] cursor-pointer transition-all ${
-          isSelected
-            ? "ring-2 ring-brand-grass ring-offset-2 ring-offset-gray-900"
-            : showOwnership && hasIt
-              ? borderClass
-              : ""
+        className={`rounded-lg p-[2px] transition-all ${
+          isDisabled
+            ? ""
+            : isSelected
+              ? "ring-2 ring-brand-grass ring-offset-2 ring-offset-gray-900"
+              : showOwnership && hasIt
+                ? borderClass
+                : ""
         }`}
       >
         <div
           className={`relative aspect-[2/3] overflow-hidden rounded-lg ${
-            showOwnership && !hasIt
-              ? "bg-gray-800/50 border border-white/10 opacity-60"
-              : "bg-gray-800"
+            isDisabled
+              ? "bg-gray-800/40 border border-white/5 opacity-40 grayscale"
+              : showOwnership && !hasIt
+                ? "bg-gray-800/50 border border-white/10 opacity-60"
+                : "bg-gray-800"
           }`}
         >
           {sticker.image_url ? (

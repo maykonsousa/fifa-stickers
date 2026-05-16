@@ -24,10 +24,21 @@ function detectPlatform(): Platform {
 
 function isStandalone() {
   if (typeof window === "undefined") return false;
-  return (
+  // Chrome Android (standalone), Firefox Android (minimal-ui em algumas
+  // versões) e PWAs fullscreen.
+  const displayModeMatches =
     window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as { standalone?: boolean }).standalone === true
-  );
+    window.matchMedia("(display-mode: minimal-ui)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches;
+  // iOS Safari legacy flag.
+  const iosStandalone =
+    (window.navigator as { standalone?: boolean }).standalone === true;
+  // Chrome Android lança a PWA com referrer android-app:// ao abrir
+  // pelo ícone da tela inicial — fallback caso o display-mode falhe.
+  const androidAppReferrer =
+    typeof document !== "undefined" &&
+    document.referrer.startsWith("android-app://");
+  return displayModeMatches || iosStandalone || androidAppReferrer;
 }
 
 function isMobileViewport() {

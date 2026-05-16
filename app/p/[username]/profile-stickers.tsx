@@ -415,7 +415,7 @@ function StickerCard({
 }) {
   const innerContent = (
     <>
-      <div className="aspect-[2/3] relative">
+      <div className="aspect-[2/3] relative bg-gray-800">
         {sticker.image_url ? (
           <img
             src={sticker.image_url}
@@ -424,11 +424,21 @@ function StickerCard({
             loading="lazy"
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-gray-800/50">
-            <svg className="h-12 w-12 text-white/15" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-            </svg>
-            <span className="text-xs text-white/40 mt-1">{sticker.code}</span>
+          <div className="flex h-full flex-col items-start p-3 pt-2">
+            <span className="text-sm font-bold text-white/50">{sticker.code}</span>
+            <div className="flex flex-1 w-full items-center justify-center -mt-2">
+              <svg className="h-20 w-20 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+              </svg>
+            </div>
+            <div className="w-full space-y-1 text-center">
+              {sticker.title ? (
+                <p className="text-sm font-bold text-white/80 truncate">{sticker.title}</p>
+              ) : (
+                <div className="mx-auto h-3 w-3/4 rounded bg-white/10" />
+              )}
+              <div className="mx-auto h-2 w-1/2 rounded bg-white/5" />
+            </div>
           </div>
         )}
 

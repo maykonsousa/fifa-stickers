@@ -1,8 +1,6 @@
 -- Extend get_public_stickers with an optional p_viewer_id parameter.
 -- When p_viewer_id is non-null and different from p_user_id, the RPC
--- returns only the trade-viable intersection:
---   missing tab     -> owner is missing AND viewer has a duplicate (cnt > 1)
---   duplicates tab  -> owner has a duplicate (cnt > 1) AND viewer is missing
+-- returns only the trade-viable intersection between viewer and owner.
 -- When p_viewer_id is null (or equals p_user_id), the function behaves
 -- byte-for-byte like the previous version.
 

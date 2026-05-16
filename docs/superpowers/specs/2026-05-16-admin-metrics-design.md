@@ -346,10 +346,12 @@ export function AdminMetrics() {
 
   const fetchVersionRef = useRef(0);
 
-  // When range changes, reset bucket to its default.
-  useEffect(() => {
-    setBucket(DEFAULT_BUCKET[range]);
-  }, [range]);
+  // Update both range and bucket together so the [range, bucket] effect
+  // fires only once per user action.
+  const handleRangeChange = (r: RangePreset) => {
+    setRange(r);
+    setBucket(DEFAULT_BUCKET[r]);
+  };
 
   useEffect(() => {
     const myVersion = ++fetchVersionRef.current;
@@ -391,7 +393,7 @@ export function AdminMetrics() {
           <button
             key={r}
             type="button"
-            onClick={() => setRange(r)}
+            onClick={() => handleRangeChange(r)}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               range === r
                 ? "bg-brand-grass text-white border border-brand-grass"
@@ -502,14 +504,21 @@ export function MetricChart({
               <Tooltip
                 contentStyle={{ background: "#0a3d2a", border: "1px solid #155236" }}
                 labelStyle={{ color: "#fff" }}
-                formatter={(value: number, name) =>
-                  name === "new_count"
-                    ? [value, `Novos por ${BUCKET_LABEL[bucket]}`]
-                    : [value, "Acumulado"]
-                }
               />
-              <Bar dataKey="new_count" fill="#2d7d4f" radius={[4, 4, 0, 0]} />
-              <Line type="monotone" dataKey="cumulative" stroke="#fbbf24" strokeWidth={2} dot={false} />
+              <Bar
+                dataKey="new_count"
+                name={`Novos por ${BUCKET_LABEL[bucket]}`}
+                fill="#2d7d4f"
+                radius={[4, 4, 0, 0]}
+              />
+              <Line
+                type="monotone"
+                dataKey="cumulative"
+                name="Acumulado"
+                stroke="#fbbf24"
+                strokeWidth={2}
+                dot={false}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

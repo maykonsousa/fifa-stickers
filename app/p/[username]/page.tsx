@@ -85,6 +85,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const totalMissing = total - uniqueOwned;
   const totalDuplicates = ownerDupes.size;
   const percent = total > 0 ? Math.round((uniqueOwned / total) * 100) : 0;
+  const ownerHasTradeable = ownerDupes.size > 0 && totalMissing > 0;
 
   // Trade intersection stats — only when a different logged-in viewer is looking.
   const isOwnProfile = user?.id === profile.id;
@@ -149,6 +150,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           viewerId={viewerId}
           tradeFilterActive={tradeFilterActive}
           ownerUsername={profile.username}
+          ownerHasTradeable={ownerHasTradeable}
           groups={groups ?? []}
           missingCount={totalMissing}
           duplicatesCount={totalDuplicates}

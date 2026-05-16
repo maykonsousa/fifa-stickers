@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ChevronsUpDown, Check, Search, Loader2 } from "lucide-react";
 import {
@@ -16,7 +17,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { TradeProposalDialog } from "./trade-proposal-dialog";
 
 interface Group {
   id: number;
@@ -41,6 +41,7 @@ export function ProfileStickers({
   viewerId = null,
   tradeFilterActive = false,
   ownerUsername,
+  ownerHasTradeable = false,
   groups,
   missingCount,
   duplicatesCount,
@@ -51,6 +52,7 @@ export function ProfileStickers({
   viewerId?: string | null;
   tradeFilterActive?: boolean;
   ownerUsername: string;
+  ownerHasTradeable?: boolean;
   groups: Group[];
   missingCount: number;
   duplicatesCount: number;
@@ -64,8 +66,6 @@ export function ProfileStickers({
   const [results, setResults] = useState<StickerResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [tradeOpen, setTradeOpen] = useState(false);
-
   const pageRef = useRef(1);
   const fetchVersionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -77,8 +77,7 @@ export function ProfileStickers({
     ? tradeDuplicatesCount ?? 0
     : duplicatesCount;
 
-  const tradeButtonDisabled =
-    (tradeMissingCount ?? 0) + (tradeDuplicatesCount ?? 0) === 0;
+  const tradeButtonDisabled = !ownerHasTradeable;
 
   const hasMore = results.length < totalCount;
   const isInitialLoad = loading && results.length === 0;
@@ -161,15 +160,23 @@ export function ProfileStickers({
           <p className="text-sm text-white">
             Quer trocar com <span className="font-semibold">@{ownerUsername}</span>?
           </p>
-          <button
-            type="button"
-            disabled={tradeButtonDisabled}
-            title={tradeButtonDisabled ? "Sem trocas viáveis no momento" : undefined}
-            onClick={() => setTradeOpen(true)}
-            className="w-full sm:w-auto rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 transition-colors"
-          >
-            Propor troca
-          </button>
+          {tradeButtonDisabled ? (
+            <button
+              type="button"
+              disabled
+              title="Sem trocas viáveis no momento"
+              className="w-full sm:w-auto rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white cursor-not-allowed"
+            >
+              Propor troca
+            </button>
+          ) : (
+            <Link
+              href={`/proposals/new?to=${ownerUsername}`}
+              className="w-full sm:w-auto text-center rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 transition-colors"
+            >
+              Propor troca
+            </Link>
+          )}
         </div>
       )}
 
@@ -284,7 +291,6 @@ export function ProfileStickers({
         </div>
       )}
 
-      <TradeProposalDialog open={tradeOpen} onOpenChange={setTradeOpen} />
     </div>
   );
 }

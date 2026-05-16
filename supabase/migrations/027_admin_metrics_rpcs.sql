@@ -2,8 +2,8 @@
 -- the same structure; the only difference is which table they aggregate.
 -- p_start = NULL means "since the first record"; used by the "Tudo" preset.
 -- The cumulative column is a true running total from the dawn of the
--- table, not just within the requested window (the `baseline` CTE
--- carries the count of rows that fell before v_start).
+-- table, not just within the requested window (v_baseline holds the count
+-- of rows that fell before v_start, computed once into a plpgsql variable).
 
 CREATE OR REPLACE FUNCTION get_admin_growth(
   p_start TIMESTAMPTZ DEFAULT NULL,
@@ -18,6 +18,7 @@ DECLARE
   v_start TIMESTAMPTZ;
   v_end TIMESTAMPTZ;
   v_interval INTERVAL;
+  v_baseline BIGINT;
 BEGIN
   IF NOT public.is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Forbidden: admin only';
@@ -36,6 +37,10 @@ BEGIN
 
   v_interval := ('1 ' || p_bucket)::INTERVAL;
 
+  SELECT COUNT(*)::BIGINT INTO v_baseline
+  FROM public.profiles
+  WHERE created_at < date_trunc(p_bucket, v_start);
+
   RETURN QUERY
   WITH buckets AS (
     SELECT generate_series(
@@ -49,13 +54,9 @@ BEGIN
       date_trunc(p_bucket, p.created_at) AS b,
       COUNT(*) AS cnt
     FROM public.profiles p
-    WHERE p.created_at < date_trunc(p_bucket, v_end) + v_interval
+    WHERE p.created_at >= date_trunc(p_bucket, v_start)
+      AND p.created_at < date_trunc(p_bucket, v_end) + v_interval
     GROUP BY 1
-  ),
-  baseline AS (
-    SELECT COALESCE(SUM(cnt), 0)::BIGINT AS total
-    FROM all_buckets
-    WHERE b < date_trunc(p_bucket, v_start)
   ),
   joined AS (
     SELECT bk.b, COALESCE(ab.cnt, 0)::INT AS cnt
@@ -65,8 +66,7 @@ BEGIN
   SELECT
     j.b AS bucket,
     j.cnt AS new_count,
-    ((SELECT total FROM baseline) +
-     SUM(j.cnt) OVER (ORDER BY j.b))::BIGINT AS cumulative
+    (v_baseline + SUM(j.cnt) OVER (ORDER BY j.b))::BIGINT AS cumulative
   FROM joined j
   ORDER BY j.b;
 END;
@@ -85,6 +85,7 @@ DECLARE
   v_start TIMESTAMPTZ;
   v_end TIMESTAMPTZ;
   v_interval INTERVAL;
+  v_baseline BIGINT;
 BEGIN
   IF NOT public.is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Forbidden: admin only';
@@ -103,6 +104,10 @@ BEGIN
 
   v_interval := ('1 ' || p_bucket)::INTERVAL;
 
+  SELECT COUNT(*)::BIGINT INTO v_baseline
+  FROM public.user_stickers
+  WHERE created_at < date_trunc(p_bucket, v_start);
+
   RETURN QUERY
   WITH buckets AS (
     SELECT generate_series(
@@ -116,13 +121,9 @@ BEGIN
       date_trunc(p_bucket, us.created_at) AS b,
       COUNT(*) AS cnt
     FROM public.user_stickers us
-    WHERE us.created_at < date_trunc(p_bucket, v_end) + v_interval
+    WHERE us.created_at >= date_trunc(p_bucket, v_start)
+      AND us.created_at < date_trunc(p_bucket, v_end) + v_interval
     GROUP BY 1
-  ),
-  baseline AS (
-    SELECT COALESCE(SUM(cnt), 0)::BIGINT AS total
-    FROM all_buckets
-    WHERE b < date_trunc(p_bucket, v_start)
   ),
   joined AS (
     SELECT bk.b, COALESCE(ab.cnt, 0)::INT AS cnt
@@ -132,8 +133,7 @@ BEGIN
   SELECT
     j.b AS bucket,
     j.cnt AS new_count,
-    ((SELECT total FROM baseline) +
-     SUM(j.cnt) OVER (ORDER BY j.b))::BIGINT AS cumulative
+    (v_baseline + SUM(j.cnt) OVER (ORDER BY j.b))::BIGINT AS cumulative
   FROM joined j
   ORDER BY j.b;
 END;

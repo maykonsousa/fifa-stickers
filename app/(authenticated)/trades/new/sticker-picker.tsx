@@ -192,7 +192,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Buscar por código ou nome..."
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
             />
             <div className="flex gap-2">
               <Popover open={groupOpen} onOpenChange={setGroupOpen}>
@@ -285,7 +285,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
             <div className="overflow-y-auto flex-1 min-h-0 -mx-1 px-1">
               {loading && results.length === 0 ? (
                 <div className="py-8 flex justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-green-400" />
+                  <Loader2 className="h-6 w-6 animate-spin text-brand-grass" />
                 </div>
               ) : results.length === 0 ? (
                 <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-center">
@@ -306,7 +306,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
               <div ref={sentinelRef} className="h-1" />
               {loadingMore && (
                 <div className="py-4 flex justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-green-400" />
+                  <Loader2 className="h-5 w-5 animate-spin text-brand-grass" />
                 </div>
               )}
             </div>
@@ -367,7 +367,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
 
             <button
               onClick={handleConfirm}
-              className="w-full rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white hover:bg-green-700"
+              className="w-full rounded-lg bg-brand-grass px-4 py-3 text-sm font-medium text-white hover:brightness-110"
             >
               Adicionar {quantity > 1 ? `${quantity} cópias` : "1 cópia"}
             </button>

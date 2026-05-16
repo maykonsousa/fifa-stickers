@@ -109,7 +109,7 @@ export function StepReview({ counterparty, swaps, onBack, onConfirm }: Props) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-3 text-xs text-yellow-200">
+      <div className="rounded-lg border border-brand-gold/20 bg-brand-gold/5 p-3 text-xs text-brand-gold">
         {counterparty.type === "member" ? (
           <>{counterpartyName.split(" ")[0]} vai ser notificado por email. Sua coleção será atualizada.</>
         ) : (
@@ -128,7 +128,7 @@ export function StepReview({ counterparty, swaps, onBack, onConfirm }: Props) {
         <button
           onClick={handleConfirm}
           disabled={submitting}
-          className="px-4 py-2 rounded-lg bg-green-600 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 rounded-lg bg-brand-grass text-sm font-medium text-white hover:brightness-110 disabled:opacity-50 flex items-center gap-2"
         >
           {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
           Confirmar troca

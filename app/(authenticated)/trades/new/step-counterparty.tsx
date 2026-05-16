@@ -77,24 +77,24 @@ export function StepCounterparty({ initial, onComplete }: Props) {
             setMember(null);
           }}
           placeholder="email@exemplo.com"
-          className="flex-1 px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+          className="flex-1 px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white placeholder:text-gray-500 focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
         />
         <button
           onClick={handleSearch}
           disabled={!isEmailValid || searching}
-          className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 rounded-lg bg-brand-grass text-white text-sm font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-2"
         >
           {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Buscar"}
         </button>
       </div>
 
       {searched && member && (
-        <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4 space-y-3">
+        <div className="rounded-lg border border-brand-grass/20 bg-brand-grass/5 p-4 space-y-3">
           <div className="flex items-center gap-3">
             {member.avatar_url ? (
               <img src={member.avatar_url} alt={member.display_name} className="h-10 w-10 rounded-full" />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-sm font-bold text-green-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-grass/20 text-sm font-bold text-brand-grass">
                 {member.display_name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -105,7 +105,7 @@ export function StepCounterparty({ initial, onComplete }: Props) {
           </div>
           <button
             onClick={handleMemberContinue}
-            className="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            className="w-full rounded-lg bg-brand-grass px-4 py-2 text-sm font-medium text-white hover:brightness-110"
           >
             Continuar com {member.display_name.split(" ")[0]}
           </button>
@@ -125,7 +125,7 @@ export function StepCounterparty({ initial, onComplete }: Props) {
                 type="text"
                 value={leadFields.name}
                 onChange={(e) => setLeadFields({ ...leadFields, name: e.target.value })}
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
               />
             </label>
             <label className="block">
@@ -134,7 +134,7 @@ export function StepCounterparty({ initial, onComplete }: Props) {
                 type="text"
                 value={leadFields.city}
                 onChange={(e) => setLeadFields({ ...leadFields, city: e.target.value })}
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
               />
             </label>
             <label className="block">
@@ -143,7 +143,7 @@ export function StepCounterparty({ initial, onComplete }: Props) {
                 type="text"
                 value={leadFields.state}
                 onChange={(e) => setLeadFields({ ...leadFields, state: e.target.value })}
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
               />
             </label>
             <label className="block">
@@ -152,14 +152,14 @@ export function StepCounterparty({ initial, onComplete }: Props) {
                 type="tel"
                 value={leadFields.whatsapp}
                 onChange={(e) => setLeadFields({ ...leadFields, whatsapp: e.target.value })}
-                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                className="mt-1 w-full px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-white focus:border-brand-grass focus:ring-1 focus:ring-brand-grass"
               />
             </label>
           </div>
           <button
             onClick={handleLeadContinue}
             disabled={!leadFields.name.trim()}
-            className="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            className="w-full rounded-lg bg-brand-grass px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
           >
             Continuar →
           </button>

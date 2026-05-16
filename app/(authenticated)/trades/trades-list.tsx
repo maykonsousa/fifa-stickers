@@ -37,7 +37,7 @@ export function TradesList({ rows }: { rows: TradeHistoryRow[] }) {
                 className="h-10 w-10 rounded-full flex-shrink-0"
               />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-sm font-bold text-green-400 flex-shrink-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-grass/20 text-sm font-bold text-brand-grass flex-shrink-0">
                 {row.counterparty_name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -45,10 +45,10 @@ export function TradesList({ rows }: { rows: TradeHistoryRow[] }) {
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-white truncate">{row.counterparty_name}</p>
                 {row.is_unseen && (
-                  <span className="inline-block w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                  <span className="inline-block w-2 h-2 rounded-full bg-brand-grass flex-shrink-0" />
                 )}
                 {row.counterparty_kind === "lead" && (
-                  <span className="text-[10px] uppercase tracking-wide bg-yellow-500/20 text-yellow-400 rounded px-1.5 py-0.5 flex-shrink-0">
+                  <span className="text-[10px] uppercase tracking-wide bg-brand-gold/20 text-brand-gold rounded px-1.5 py-0.5 flex-shrink-0">
                     lead
                   </span>
                 )}

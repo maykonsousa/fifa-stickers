@@ -94,11 +94,23 @@ export function AdminMetrics({ kpis }: { kpis: Kpi[] }) {
     ])
       .then(([g, e]) => {
         if (myVersion !== fetchVersionRef.current) return;
-        if (g.error || e.error) {
-          console.error("[AdminMetrics] RPC error", {
-            growthError: g.error,
-            engagementError: e.error,
-          });
+        if (g.error) {
+          console.error(
+            "[AdminMetrics] growth RPC error:",
+            g.error.message,
+            g.error.code,
+            g.error.details,
+            g.error.hint,
+          );
+        }
+        if (e.error) {
+          console.error(
+            "[AdminMetrics] engagement RPC error:",
+            e.error.message,
+            e.error.code,
+            e.error.details,
+            e.error.hint,
+          );
         }
         setGrowth((g.data as Row[] | null) ?? []);
         setEngagement((e.data as Row[] | null) ?? []);

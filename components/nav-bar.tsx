@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, Grid3X3, Users, Repeat2, Settings, LogOut, Menu, X, Shield } from "lucide-react";
+import { LayoutDashboard, Grid3X3, Users, Repeat2, Settings, LogOut, Menu, X, Shield, MessageSquare } from "lucide-react";
 import { MarkFU } from "./brand/Logo";
 import Image from "next/image";
 
@@ -14,9 +14,10 @@ const links = [
   { href: "/collection", label: "Coleção", icon: Grid3X3 },
   { href: "/friends", label: "Amigos", icon: Users },
   { href: "/trades", label: "Trocas", icon: Repeat2 },
+  { href: "/proposals", label: "Propostas", icon: MessageSquare },
 ];
 
-export function NavBar({ isAdmin = false }: { isAdmin?: boolean }) {
+export function NavBar({ isAdmin = false, proposalsBadge = 0 }: { isAdmin?: boolean; proposalsBadge?: number }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -78,6 +79,11 @@ export function NavBar({ isAdmin = false }: { isAdmin?: boolean }) {
                 >
                   <Icon className="h-4 w-4" />
                   {link.label}
+                  {link.href === "/proposals" && proposalsBadge > 0 && (
+                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-grass px-1.5 text-[10px] font-bold text-white">
+                      {proposalsBadge > 9 ? "9+" : proposalsBadge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -146,6 +152,7 @@ export function NavBar({ isAdmin = false }: { isAdmin?: boolean }) {
         onLogout={handleLogout}
         avatarUrl={avatarUrl}
         isAdmin={isAdmin}
+        proposalsBadge={proposalsBadge}
       />
     </>
   );
@@ -158,6 +165,7 @@ function MobileDrawer({
   onLogout,
   avatarUrl,
   isAdmin,
+  proposalsBadge,
 }: {
   open: boolean;
   onClose: () => void;
@@ -165,6 +173,7 @@ function MobileDrawer({
   onLogout: () => void;
   avatarUrl: string | null;
   isAdmin: boolean;
+  proposalsBadge: number;
 }) {
   useEffect(() => {
     onClose();
@@ -220,6 +229,11 @@ function MobileDrawer({
               >
                 <Icon className="h-5 w-5" />
                 {link.label}
+                {link.href === "/proposals" && proposalsBadge > 0 && (
+                  <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-grass px-1.5 text-[10px] font-bold text-white">
+                    {proposalsBadge > 9 ? "9+" : proposalsBadge}
+                  </span>
+                )}
               </Link>
             );
           })}

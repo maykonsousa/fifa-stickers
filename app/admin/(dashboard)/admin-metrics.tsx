@@ -9,12 +9,6 @@ type BucketType = "hour" | "day" | "week" | "month";
 
 type Row = { bucket: string; new_count: number; cumulative: number };
 
-type Kpi = {
-  label: string;
-  value: number | null;
-  comingSoon?: boolean;
-};
-
 const BUCKET_OPTIONS: Record<RangePreset, BucketType[]> = {
   "24h": ["hour"],
   "7d": ["hour", "day"],
@@ -55,7 +49,7 @@ const BUCKET_LABEL: Record<BucketType, string> = {
 
 const RANGE_ORDER: RangePreset[] = ["24h", "7d", "30d", "90d", "all"];
 
-export function AdminMetrics({ kpis }: { kpis: Kpi[] }) {
+export function AdminMetrics() {
   const [range, setRange] = useState<RangePreset>("30d");
   const [bucket, setBucket] = useState<BucketType>(DEFAULT_BUCKET["30d"]);
   const [growth, setGrowth] = useState<Row[]>([]);
@@ -127,6 +121,22 @@ export function AdminMetrics({ kpis }: { kpis: Kpi[] }) {
 
   const bucketOptions = BUCKET_OPTIONS[range];
 
+  // KPIs refletem o período filtrado: soma dos new_count em cada bucket.
+  // Durante o initial load, deixamos null pra renderizar "—".
+  const isInitialLoad = loading && growth.length === 0 && engagement.length === 0;
+  const periodGrowth = isInitialLoad
+    ? null
+    : growth.reduce((sum, r) => sum + r.new_count, 0);
+  const periodEngagement = isInitialLoad
+    ? null
+    : engagement.reduce((sum, r) => sum + r.new_count, 0);
+
+  const kpis: Array<{ label: string; value: number | null; comingSoon?: boolean }> = [
+    { label: "Novos usuários", value: periodGrowth },
+    { label: "Figurinhas adicionadas", value: periodEngagement },
+    { label: "Figurinhas trocadas", value: null, comingSoon: true },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -165,7 +175,7 @@ export function AdminMetrics({ kpis }: { kpis: Kpi[] }) {
         </div>
       )}
 
-      {/* KPI cards (3, all-time) */}
+      {/* KPI cards (3, refletem o período filtrado) */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         {kpis.map((k) => (
           <div

@@ -47,10 +47,7 @@ export function MetricChart({
   bucket: BucketType;
   loading: boolean;
 }) {
-  const isEmpty =
-    !loading && data.length > 0 && data.every((r) => r.new_count === 0);
-  const isNoData = !loading && data.length === 0;
-  const showEmptyState = isEmpty || isNoData;
+  const showEmptyState = !loading && data.every((r) => r.new_count === 0);
 
   const chartData = data.map((r) => ({
     ...r,

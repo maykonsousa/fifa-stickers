@@ -60,18 +60,19 @@ export function MetricChart({
       <h2 className="text-lg font-semibold text-white">{title}</h2>
 
       {isInitialLoad ? (
-        <div className="h-60 sm:h-80 rounded bg-white/5 animate-pulse" />
+        <div
+          style={{ height: 280 }}
+          className="rounded bg-white/5 animate-pulse"
+        />
       ) : showEmptyState ? (
         <div className="flex items-center justify-center py-12 text-sm text-gray-400">
           Sem dados nesse período.
         </div>
       ) : (
         <div
-          className={`h-60 sm:h-80 transition-opacity ${
-            loading ? "opacity-50" : ""
-          }`}
+          className={`transition-opacity ${loading ? "opacity-50" : ""}`}
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={280}>
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis

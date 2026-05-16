@@ -66,10 +66,9 @@ export function ProfileStickers({
   const [results, setResults] = useState<StickerResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [tradeOpen, setTradeOpen] = useState(false);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-  const [tradeOpen, setTradeOpen] = useState(false);
 
   const effectiveMissingCount = tradeFilterActive
     ? tradeMissingCount ?? 0

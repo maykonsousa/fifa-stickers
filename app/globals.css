@@ -175,3 +175,31 @@
   background-color: #fffaf0;
   background-image: radial-gradient(circle at 20% 10%, rgba(10, 61, 42, 0.04), transparent 60%);
 }
+
+/* Scrollbars finos no padrão do app (Firefox + WebKit) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

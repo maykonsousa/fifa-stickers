@@ -48,20 +48,29 @@ function wasDismissedRecently() {
   }
 }
 
-export function InstallAppBanner() {
+export function InstallAppBanner({
+  onVisibleChange,
+}: {
+  onVisibleChange?: (visible: boolean) => void;
+}) {
   const [platform, setPlatform] = useState<Platform>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (isStandalone() || !isMobileViewport() || wasDismissedRecently()) {
+      onVisibleChange?.(false);
       return;
     }
     const p = detectPlatform();
-    if (!p) return;
+    if (!p) {
+      onVisibleChange?.(false);
+      return;
+    }
     setPlatform(p);
+    onVisibleChange?.(true);
     const t = setTimeout(() => setVisible(true), 1000);
     return () => clearTimeout(t);
-  }, []);
+  }, [onVisibleChange]);
 
   if (!platform) return null;
 
@@ -72,6 +81,7 @@ export function InstallAppBanner() {
       // ignore — sem persistência, mas o banner ainda some na sessão
     }
     setVisible(false);
+    onVisibleChange?.(false);
   };
 
   const message =

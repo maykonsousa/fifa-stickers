@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo_Black, Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
-import { ContactWidget } from "@/components/contact-widget";
-import { InstallAppBanner } from "@/components/install-app-banner";
+import { FloatingChrome } from "@/components/floating-chrome";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -75,8 +74,7 @@ export default function RootLayout({
       </head>
       <body className="font-body min-h-full flex flex-col">
         {children}
-        <ContactWidget />
-        <InstallAppBanner />
+        <FloatingChrome />
         <Toaster position="bottom-right" theme="dark" richColors />
       </body>
     </html>

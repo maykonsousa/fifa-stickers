@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getUserEmail } from "@/lib/supabase/get-user-email";
 import { sendProposalMessage } from "@/lib/email/send-proposal-message";
 
 const EXCERPT_MAX = 200;
@@ -50,9 +51,7 @@ export async function postMessageAction(proposalId: string, body: string) {
       .select("display_name")
       .eq("id", recipientId)
       .single();
-    const { data: recipientEmail } = await supabase.rpc("get_user_email", {
-      p_user_id: recipientId,
-    });
+    const recipientEmail = await getUserEmail(supabase, recipientId);
 
     if (recipientEmail) {
       const excerpt =
@@ -60,7 +59,7 @@ export async function postMessageAction(proposalId: string, body: string) {
       await sendProposalMessage({
         proposalId,
         senderName: senderProfile?.display_name ?? "Alguém",
-        recipientEmail: recipientEmail as string,
+        recipientEmail,
         recipientName: recipientProfile?.display_name ?? "Colecionador",
         messageExcerpt: excerpt,
         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://faltauma.com",

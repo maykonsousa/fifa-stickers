@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getUserEmail } from "@/lib/supabase/get-user-email";
 import { sendProposalCreated } from "@/lib/email/send-proposal-created";
 import type { ProposalItem } from "./types";
 
@@ -34,10 +35,7 @@ export async function createProposalAction(input: CreateProposalInput): Promise<
     .eq("id", input.ownerUserId)
     .single();
 
-  // Email do dono vem de auth.users via RPC `get_user_email` (criada na Task 12).
-  const { data: ownerEmail } = await supabase.rpc("get_user_email", {
-    p_user_id: input.ownerUserId,
-  });
+  const ownerEmail = await getUserEmail(supabase, input.ownerUserId);
 
   // Busca dados das figurinhas
   const stickerIds = input.items.map((i) => i.sticker_id);
@@ -64,7 +62,7 @@ export async function createProposalAction(input: CreateProposalInput): Promise<
     await sendProposalCreated({
       proposalId: proposalId as string,
       proposerName: proposerProfile?.display_name ?? "Alguém",
-      recipientEmail: ownerEmail as string,
+      recipientEmail: ownerEmail,
       recipientName: ownerData?.display_name ?? "Colecionador",
       itemsWant,
       itemsOffer,

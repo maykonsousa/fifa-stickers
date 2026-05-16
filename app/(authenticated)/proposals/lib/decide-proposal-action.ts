@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getUserEmail } from "@/lib/supabase/get-user-email";
 import { sendProposalDecided } from "@/lib/email/send-proposal-decided";
 
 export async function decideProposalAction(proposalId: string, accept: boolean) {
@@ -35,15 +36,13 @@ export async function decideProposalAction(proposalId: string, accept: boolean) 
       .eq("id", proposal.proposer_user_id)
       .single();
 
-    const { data: proposerEmail } = await supabase.rpc("get_user_email", {
-      p_user_id: proposal.proposer_user_id,
-    });
+    const proposerEmail = await getUserEmail(supabase, proposal.proposer_user_id);
 
     if (proposerEmail) {
       await sendProposalDecided({
         proposalId,
         ownerName: ownerProfile?.display_name ?? "Colecionador",
-        recipientEmail: proposerEmail as string,
+        recipientEmail: proposerEmail,
         recipientName: proposerProfile?.display_name ?? "Alguém",
         accepted: accept,
         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://faltauma.com",

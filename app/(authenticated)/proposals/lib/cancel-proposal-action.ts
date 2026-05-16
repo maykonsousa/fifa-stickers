@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getUserEmail } from "@/lib/supabase/get-user-email";
 import { sendProposalCancelled } from "@/lib/email/send-proposal-cancelled";
 
 export async function cancelProposalAction(proposalId: string) {
@@ -32,15 +33,13 @@ export async function cancelProposalAction(proposalId: string) {
       .select("display_name")
       .eq("id", proposal.owner_user_id)
       .single();
-    const { data: ownerEmail } = await supabase.rpc("get_user_email", {
-      p_user_id: proposal.owner_user_id,
-    });
+    const ownerEmail = await getUserEmail(supabase, proposal.owner_user_id);
 
     if (ownerEmail) {
       await sendProposalCancelled({
         proposalId,
         proposerName: proposerProfile?.display_name ?? "Alguém",
-        recipientEmail: ownerEmail as string,
+        recipientEmail: ownerEmail,
         recipientName: ownerProfile?.display_name ?? "Colecionador",
         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://faltauma.com",
       });

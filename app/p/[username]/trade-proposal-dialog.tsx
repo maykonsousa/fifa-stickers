@@ -4,6 +4,7 @@ import { Construction } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -26,10 +27,10 @@ export function TradeProposalDialog({
             Em construção
           </DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-300">
+        <DialogDescription className="text-sm text-gray-300">
           Em breve você vai poder selecionar as figurinhas pra oferecer e as que
           quer receber, e enviar uma proposta de troca direto por aqui.
-        </p>
+        </DialogDescription>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Fechar

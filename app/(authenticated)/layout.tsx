@@ -20,9 +20,12 @@ export default async function AuthenticatedLayout({
     .eq("user_id", user.id)
     .single();
 
+  const { data: unseenCount } = await supabase.rpc("count_unseen_proposals");
+  const proposalsBadge = (unseenCount as number | null) ?? 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-green-950 flex flex-col">
-      <NavBar isAdmin={!!admin} />
+      <NavBar isAdmin={!!admin} proposalsBadge={proposalsBadge} />
       <main className="mx-auto max-w-6xl px-4 py-6 flex-1 w-full">
         {children}
       </main>

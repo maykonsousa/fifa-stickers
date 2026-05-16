@@ -16,7 +16,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { TradeProposalDialog } from "./trade-proposal-dialog";
+import { ProposalOfferPicker, type SelectedWant } from "./proposal-offer-picker";
 
 interface Group {
   id: number;
@@ -41,31 +41,36 @@ export function ProfileStickers({
   viewerId = null,
   tradeFilterActive = false,
   ownerUsername,
+  ownerHasTradeable = false,
   groups,
   missingCount,
   duplicatesCount,
   tradeMissingCount = null,
   tradeDuplicatesCount = null,
+  viewerOwnedCounts = {},
 }: {
   userId: string;
   viewerId?: string | null;
   tradeFilterActive?: boolean;
   ownerUsername: string;
+  ownerHasTradeable?: boolean;
   groups: Group[];
   missingCount: number;
   duplicatesCount: number;
   tradeMissingCount?: number | null;
   tradeDuplicatesCount?: number | null;
+  viewerOwnedCounts?: Record<number, number>;
 }) {
-  const [tab, setTab] = useState<"missing" | "duplicates">("missing");
+  const initialTab: "missing" | "duplicates" = tradeFilterActive ? "duplicates" : "missing";
+  const [tab, setTab] = useState<"missing" | "duplicates">(initialTab);
   const [groupId, setGroupId] = useState<number | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<StickerResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [tradeOpen, setTradeOpen] = useState(false);
-
+  const [wants, setWants] = useState<SelectedWant[]>([]);
+  const [offerOpen, setOfferOpen] = useState(false);
   const pageRef = useRef(1);
   const fetchVersionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -77,8 +82,7 @@ export function ProfileStickers({
     ? tradeDuplicatesCount ?? 0
     : duplicatesCount;
 
-  const tradeButtonDisabled =
-    (tradeMissingCount ?? 0) + (tradeDuplicatesCount ?? 0) === 0;
+  const selectionEnabled = tradeFilterActive && tab === "duplicates" && ownerHasTradeable;
 
   const hasMore = results.length < totalCount;
   const isInitialLoad = loading && results.length === 0;
@@ -112,9 +116,7 @@ export function ProfileStickers({
       });
   }, [userId, tab, groupId, keyword, viewerId]);
 
-  // Infinite scroll: observe the sentinel and fetch the next page when it
-  // enters the viewport. Re-runs when loading flips so the observer
-  // reattaches after each load completes.
+  // Infinite scroll.
   useEffect(() => {
     const node = sentinelRef.current;
     if (!node || loading || !hasMore) return;
@@ -154,50 +156,63 @@ export function ProfileStickers({
     return () => observer.disconnect();
   }, [loading, hasMore, userId, tab, groupId, keyword, viewerId]);
 
-  return (
-    <div className="space-y-4">
-      {tradeFilterActive && (
-        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <p className="text-sm text-white">
-            Quer trocar com <span className="font-semibold">@{ownerUsername}</span>?
-          </p>
-          <button
-            type="button"
-            disabled={tradeButtonDisabled}
-            title={tradeButtonDisabled ? "Sem trocas viáveis no momento" : undefined}
-            onClick={() => setTradeOpen(true)}
-            className="w-full sm:w-auto rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 transition-colors"
-          >
-            Propor troca
-          </button>
-        </div>
-      )}
+  const toggleWant = (sticker: StickerResult) => {
+    setWants((prev) => {
+      const existing = prev.find((x) => x.sticker_id === sticker.id);
+      if (existing) return prev.filter((x) => x.sticker_id !== sticker.id);
+      return [
+        ...prev,
+        {
+          sticker_id: sticker.id,
+          code: sticker.code,
+          title: sticker.title,
+          image_url: sticker.image_url,
+          quantity: 1,
+          maxQuantity: Math.max(1, sticker.duplicate_count),
+        },
+      ];
+    });
+  };
 
+  const wantsSelectedIds = new Set(wants.map((w) => w.sticker_id));
+
+  // Tabs: when tradeFilterActive, show Repetidas first.
+  const tabsOrder: ("duplicates" | "missing")[] = tradeFilterActive
+    ? ["duplicates", "missing"]
+    : ["missing", "duplicates"];
+
+  return (
+    <div className="space-y-4 pb-32">
       {/* Tabs */}
       <div className="flex border-b border-white/10">
-        <button
-          onClick={() => setTab("missing")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
-            tab === "missing" ? "text-white" : "text-gray-400 hover:text-gray-200"
-          }`}
-        >
-          Faltam ({effectiveMissingCount})
-          {tab === "missing" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
-          )}
-        </button>
-        <button
-          onClick={() => setTab("duplicates")}
-          className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
-            tab === "duplicates" ? "text-white" : "text-gray-400 hover:text-gray-200"
-          }`}
-        >
-          Repetidas ({effectiveDuplicatesCount})
-          {tab === "duplicates" && (
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
-          )}
-        </button>
+        {tabsOrder.map((t) => {
+          const label = t === "missing" ? `Faltam (${effectiveMissingCount})` : `Repetidas (${effectiveDuplicatesCount})`;
+          const isActive = tab === t;
+          return (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                isActive ? "text-white" : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              {label}
+              {isActive && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Hint inside Repetidas when tradeFilterActive and there's actual filtering happening */}
+      {tab === "duplicates" && tradeFilterActive && (tradeDuplicatesCount ?? 0) > 0 && (
+        <p className="text-xs text-gray-400">
+          Toque pra selecionar o que você quer trocar com{" "}
+          <span className="font-medium text-white">@{ownerUsername}</span>. Mostrando só
+          figurinhas que combinam com seu álbum.
+        </p>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -219,18 +234,16 @@ export function ProfileStickers({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
           </PopoverTrigger>
           <PopoverContent className="w-52 p-0" align="start">
-            <Command filter={(value, search) => {
-              if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-              return 0;
-            }}>
+            <Command
+              filter={(value, search) =>
+                value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+              }
+            >
               <CommandInput placeholder="Buscar grupo..." />
               <CommandList>
                 <CommandEmpty>Nenhum grupo encontrado.</CommandEmpty>
                 <CommandGroup>
-                  <CommandItem
-                    value="all"
-                    onSelect={() => { setGroupId(null); setGroupOpen(false); }}
-                  >
+                  <CommandItem value="all" onSelect={() => { setGroupId(null); setGroupOpen(false); }}>
                     <Check className={`mr-2 h-4 w-4 ${groupId === null ? "opacity-100" : "opacity-0"}`} />
                     Todos os grupos
                   </CommandItem>
@@ -251,16 +264,17 @@ export function ProfileStickers({
         </Popover>
       </div>
 
-      {tradeFilterActive && (
-        <p className="text-xs text-gray-400">
-          Mostrando só figurinhas que combinam com seu álbum.
-        </p>
-      )}
-
       {/* Grid */}
       <div className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 transition-opacity ${isInitialLoad ? "opacity-50" : ""}`}>
         {results.map((sticker) => (
-          <StickerCard key={sticker.id} sticker={sticker} tab={tab} />
+          <StickerCard
+            key={sticker.id}
+            sticker={sticker}
+            tab={tab}
+            selectable={selectionEnabled}
+            selected={wantsSelectedIds.has(sticker.id)}
+            onToggle={selectionEnabled ? () => toggleWant(sticker) : undefined}
+          />
         ))}
       </div>
 
@@ -284,15 +298,65 @@ export function ProfileStickers({
         </div>
       )}
 
-      <TradeProposalDialog open={tradeOpen} onOpenChange={setTradeOpen} />
+      {/* Sticky proposal CTA */}
+      {tradeFilterActive && (
+        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-gray-900/95 backdrop-blur px-4 py-3">
+          <div className="mx-auto max-w-4xl flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              {wants.length === 0 ? (
+                <p className="text-xs text-gray-400">
+                  {ownerHasTradeable
+                    ? `Selecione na aba Repetidas pra propor troca com @${ownerUsername}.`
+                    : `@${ownerUsername} não tem trocas viáveis no momento.`}
+                </p>
+              ) : (
+                <p className="text-sm text-white">
+                  <span className="font-semibold">{wants.length}</span>{" "}
+                  {wants.length === 1 ? "figurinha selecionada" : "figurinhas selecionadas"}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setOfferOpen(true)}
+              disabled={wants.length === 0}
+              className="rounded-lg bg-green-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+            >
+              Propor troca
+            </button>
+          </div>
+        </div>
+      )}
+
+      <ProposalOfferPicker
+        open={offerOpen}
+        onOpenChange={setOfferOpen}
+        ownerUserId={userId}
+        ownerDisplayName={`@${ownerUsername}`}
+        groups={groups}
+        viewerOwnedCounts={viewerOwnedCounts}
+        wants={wants}
+      />
     </div>
   );
 }
 
-function StickerCard({ sticker, tab }: { sticker: StickerResult; tab: string }) {
-  return (
-    <div className="group relative rounded-lg border border-white/10 bg-white/5 overflow-hidden hover:scale-[1.03] hover:border-white/20 transition-all">
-      <div className="aspect-[2/3] relative">
+function StickerCard({
+  sticker,
+  tab,
+  selectable = false,
+  selected = false,
+  onToggle,
+}: {
+  sticker: StickerResult;
+  tab: string;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggle?: () => void;
+}) {
+  const innerContent = (
+    <>
+      <div className="aspect-[2/3] relative bg-gray-800">
         {sticker.image_url ? (
           <img
             src={sticker.image_url}
@@ -301,15 +365,24 @@ function StickerCard({ sticker, tab }: { sticker: StickerResult; tab: string }) 
             loading="lazy"
           />
         ) : (
-          <div className="h-full w-full flex flex-col items-center justify-center bg-gray-800/50">
-            <svg className="h-12 w-12 text-white/15" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-            </svg>
-            <span className="text-xs text-white/40 mt-1">{sticker.code}</span>
+          <div className="flex h-full flex-col items-start p-3 pt-2">
+            <span className="text-sm font-bold text-white/50">{sticker.code}</span>
+            <div className="flex flex-1 w-full items-center justify-center -mt-2">
+              <svg className="h-20 w-20 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+              </svg>
+            </div>
+            <div className="w-full space-y-1 text-center">
+              {sticker.title ? (
+                <p className="text-sm font-bold text-white/80 truncate">{sticker.title}</p>
+              ) : (
+                <div className="mx-auto h-3 w-3/4 rounded bg-white/10" />
+              )}
+              <div className="mx-auto h-2 w-1/2 rounded bg-white/5" />
+            </div>
           </div>
         )}
 
-        {/* Player name overlay on hover */}
         {sticker.image_url && sticker.title && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <span className="text-sm font-bold text-white text-center px-2 leading-tight">
@@ -318,20 +391,49 @@ function StickerCard({ sticker, tab }: { sticker: StickerResult; tab: string }) 
           </div>
         )}
 
-        {/* Code badge */}
         {sticker.image_url && (
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4">
             <span className="text-[10px] font-bold text-white">{sticker.code}</span>
           </div>
         )}
 
-        {/* Duplicate badge */}
         {tab === "duplicates" && sticker.duplicate_count > 0 && (
           <span className="absolute top-1 right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white shadow">
             ×{sticker.duplicate_count}
           </span>
         )}
+
+        {selectable && selected && (
+          <div className="absolute inset-0 ring-2 ring-green-500 rounded-lg pointer-events-none" />
+        )}
+        {selectable && selected && (
+          <span className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow">
+            <Check className="h-3 w-3" />
+          </span>
+        )}
       </div>
+    </>
+  );
+
+  if (selectable && onToggle) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`group relative rounded-lg border overflow-hidden text-left transition-all ${
+          selected
+            ? "border-green-500"
+            : "border-white/10 hover:scale-[1.03] hover:border-white/20"
+        }`}
+      >
+        {innerContent}
+      </button>
+    );
+  }
+
+  return (
+    <div className="group relative rounded-lg border border-white/10 bg-white/5 overflow-hidden hover:scale-[1.03] hover:border-white/20 transition-all">
+      {innerContent}
     </div>
   );
 }

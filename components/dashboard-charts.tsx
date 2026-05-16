@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   PieChart,
@@ -8,7 +7,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import { Trophy, Layers, CheckCircle2, Plus, Share2, Check } from "lucide-react";
+import { Trophy, Layers, CheckCircle2, Plus, User } from "lucide-react";
 
 interface GroupData {
   id: number;
@@ -50,15 +49,6 @@ export function DashboardCharts({
   groups,
   username,
 }: DashboardProps) {
-  const [copied, setCopied] = useState(false);
-
-  const handleShare = () => {
-    const url = `https://faltauma.com/p/${username}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const stats = [
     { icon: Trophy, label: "Figurinhas", value: `${totalOwned}/${totalStickers}`, color: "text-yellow-400" },
     { icon: Layers, label: "Repetidas", value: `${totalRepeats}`, color: "text-orange-400" },
@@ -93,14 +83,14 @@ export function DashboardCharts({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
+            <Link
+              href={`/p/${username}`}
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 border border-white/20 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white/10 transition-colors"
               style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', fontSize: 11, letterSpacing: 0.5 }}
             >
-              {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
-              {copied ? "COPIADO" : "COMPARTILHAR"}
-            </button>
+              <User className="w-4 h-4" />
+              MEU PERFIL
+            </Link>
             <Link
               href="/collection"
               className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-yellow-400 text-zinc-900 px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-300 transition-colors"

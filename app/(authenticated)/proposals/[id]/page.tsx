@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProposalDetail } from "./proposal-detail";
 import { ProposalChat } from "./proposal-chat";
+import { ProposalActions } from "./proposal-actions";
 import { markSeenAction } from "../lib/mark-seen-action";
 import type { ProposalItemDetail, ProposalStatus, ProposalMessageRow } from "../lib/types";
 
@@ -111,7 +112,12 @@ export default async function ProposalDetailPage({
         messages={messages}
       />
 
-      {/* Ações (aceitar/recusar/cancelar) serão adicionadas na Task 21 */}
+      <ProposalActions
+        proposalId={id}
+        isOwner={isOwner}
+        isProposer={isProposer}
+        isPending={proposal.status === "pending"}
+      />
     </div>
   );
 }

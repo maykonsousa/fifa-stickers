@@ -5,6 +5,39 @@ import { Plus, X } from "lucide-react";
 import { StickerPicker } from "./sticker-picker";
 import type { Counterparty, StickerOption, Swap } from "../lib/types";
 
+function ScoreSide({
+  label,
+  value,
+  onSelect,
+  ownerUserId,
+  ownerLabel,
+}: {
+  label: string;
+  value: number;
+  onSelect: (sticker: StickerOption, quantity: number) => void;
+  ownerUserId: string | null;
+  ownerLabel?: string;
+}) {
+  return (
+    <StickerPicker
+      ownerUserId={ownerUserId}
+      ownerLabel={ownerLabel}
+      onSelect={onSelect}
+      trigger={
+        <button
+          type="button"
+          className="text-center rounded-md hover:bg-white/5 active:bg-white/10 px-4 py-2 transition-colors"
+        >
+          <div className="font-display text-4xl text-white tabular-nums leading-none">{value}</div>
+          <div className="text-[10px] uppercase tracking-widest text-gray-400 mt-1 flex items-center justify-center gap-1">
+            {label} <Plus className="w-3 h-3" />
+          </div>
+        </button>
+      }
+    />
+  );
+}
+
 interface Props {
   counterparty: Counterparty;
   initiatorUserId: string;
@@ -35,12 +68,6 @@ export function StepItems({ counterparty, initiatorUserId, initial, onComplete, 
         )
       : [...swap[side], { sticker_id: sticker.id, quantity }];
     updateSwap(swapIndex, { [side]: updated });
-  }
-
-  function removeSticker(swapIndex: number, side: "given" | "received", stickerId: number) {
-    updateSwap(swapIndex, {
-      [side]: swaps[swapIndex][side].filter((it) => it.sticker_id !== stickerId),
-    });
   }
 
   function addSwap() {
@@ -83,40 +110,24 @@ export function StepItems({ counterparty, initiatorUserId, initial, onComplete, 
                 )}
               </div>
 
-              {/* Placar */}
-              <div className="flex items-center justify-center gap-6 py-1">
-                <div className="text-center">
-                  <div className="font-display text-4xl text-white tabular-nums leading-none">
-                    {givenSum}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-widest text-gray-400 mt-1">Dei</div>
-                </div>
+              {/* Placar — cada lado é o trigger da drawer */}
+              <div className="flex items-center justify-center gap-4 py-1">
+                <ScoreSide
+                  label="Dei"
+                  value={givenSum}
+                  ownerUserId={initiatorUserId}
+                  ownerLabel="Sua coleção"
+                  onSelect={(s, q) => addSticker(idx, "given", s, q)}
+                />
                 <div className="text-2xl text-gray-500 leading-none">×</div>
-                <div className="text-center">
-                  <div className="font-display text-4xl text-white tabular-nums leading-none">
-                    {receivedSum}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-widest text-gray-400 mt-1">Recebi</div>
-                </div>
+                <ScoreSide
+                  label="Recebi"
+                  value={receivedSum}
+                  ownerUserId={counterpartyId}
+                  ownerLabel={counterpartyLabel}
+                  onSelect={(s, q) => addSticker(idx, "received", s, q)}
+                />
               </div>
-
-              <SideEditor
-                title="Dei"
-                items={swap.given}
-                ownerUserId={initiatorUserId}
-                ownerLabel="Sua coleção"
-                onAdd={(s, q) => addSticker(idx, "given", s, q)}
-                onRemove={(stickerId) => removeSticker(idx, "given", stickerId)}
-              />
-
-              <SideEditor
-                title="Recebi"
-                items={swap.received}
-                ownerUserId={counterpartyId}
-                ownerLabel={counterpartyLabel}
-                onAdd={(s, q) => addSticker(idx, "received", s, q)}
-                onRemove={(stickerId) => removeSticker(idx, "received", stickerId)}
-              />
             </div>
           );
         })}
@@ -146,50 +157,3 @@ export function StepItems({ counterparty, initiatorUserId, initial, onComplete, 
   );
 }
 
-function SideEditor({
-  title,
-  items,
-  ownerUserId,
-  ownerLabel,
-  onAdd,
-  onRemove,
-}: {
-  title: string;
-  items: { sticker_id: number; quantity: number }[];
-  ownerUserId: string | null;
-  ownerLabel?: string;
-  onAdd: (sticker: StickerOption, quantity: number) => void;
-  onRemove: (stickerId: number) => void;
-}) {
-  return (
-    <div>
-      <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">{title}</p>
-      <div className="space-y-1">
-        {items.map((it) => (
-          <div key={it.sticker_id} className="flex items-center justify-between px-2 py-1 rounded bg-white/5">
-            <span className="text-sm text-white">
-              <span className="font-mono text-gray-300">#{it.sticker_id}</span> ×{it.quantity}
-            </span>
-            <button
-              onClick={() => onRemove(it.sticker_id)}
-              className="p-1 rounded hover:bg-white/10"
-              aria-label="Remover"
-            >
-              <X className="w-3 h-3 text-gray-400" />
-            </button>
-          </div>
-        ))}
-        <StickerPicker
-          ownerUserId={ownerUserId}
-          ownerLabel={ownerLabel}
-          onSelect={onAdd}
-          trigger={
-            <button className="text-xs text-brand-grass hover:brightness-110 px-2 py-1">
-              + figurinha
-            </button>
-          }
-        />
-      </div>
-    </div>
-  );
-}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronsUpDown, Check, Search, Loader2, Plus, Minus, X } from "lucide-react";
+import { ChevronsUpDown, Check, Search, Loader2 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -174,22 +174,7 @@ export function ProfileStickers({
     });
   };
 
-  const setWantQuantity = (stickerId: number, qty: number) => {
-    setWants((prev) =>
-      prev.map((x) =>
-        x.sticker_id === stickerId
-          ? { ...x, quantity: Math.max(1, Math.min(x.maxQuantity, qty)) }
-          : x,
-      ),
-    );
-  };
-
-  const removeWant = (stickerId: number) => {
-    setWants((prev) => prev.filter((x) => x.sticker_id !== stickerId));
-  };
-
   const wantsSelectedIds = new Set(wants.map((w) => w.sticker_id));
-  const wantsTotalQty = wants.reduce((s, w) => s + w.quantity, 0);
 
   // Tabs: when tradeFilterActive, show Repetidas first.
   const tabsOrder: ("duplicates" | "missing")[] = tradeFilterActive
@@ -327,8 +312,7 @@ export function ProfileStickers({
               ) : (
                 <p className="text-sm text-white">
                   <span className="font-semibold">{wants.length}</span>{" "}
-                  {wants.length === 1 ? "figurinha selecionada" : "figurinhas selecionadas"}{" "}
-                  <span className="text-gray-400">({wantsTotalQty} no total)</span>
+                  {wants.length === 1 ? "figurinha selecionada" : "figurinhas selecionadas"}
                 </p>
               )}
             </div>
@@ -341,49 +325,6 @@ export function ProfileStickers({
               Propor troca
             </button>
           </div>
-
-          {/* Selected wants quick preview (scrollable horizontal) */}
-          {wants.length > 0 && (
-            <div className="mx-auto max-w-4xl mt-3 flex gap-2 overflow-x-auto pb-1">
-              {wants.map((w) => (
-                <div
-                  key={w.sticker_id}
-                  className="flex items-center gap-1.5 rounded-md bg-white/10 px-2 py-1 flex-shrink-0"
-                >
-                  {w.image_url ? (
-                    <img src={w.image_url} alt={w.code} className="h-6 w-4 rounded object-cover" />
-                  ) : null}
-                  <span className="text-[11px] text-white font-medium">#{w.code}</span>
-                  <button
-                    type="button"
-                    onClick={() => setWantQuantity(w.sticker_id, w.quantity - 1)}
-                    className="h-5 w-5 rounded bg-white/10 text-white text-xs flex items-center justify-center"
-                    aria-label="Diminuir"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span className="text-[11px] text-white w-4 text-center">{w.quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setWantQuantity(w.sticker_id, w.quantity + 1)}
-                    disabled={w.quantity >= w.maxQuantity}
-                    className="h-5 w-5 rounded bg-white/10 text-white text-xs flex items-center justify-center disabled:opacity-40"
-                    aria-label="Aumentar"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeWant(w.sticker_id)}
-                    className="h-5 w-5 rounded text-gray-400 hover:text-red-400 flex items-center justify-center"
-                    aria-label="Remover"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 

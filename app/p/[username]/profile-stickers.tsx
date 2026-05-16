@@ -298,7 +298,7 @@ export function ProfileStickers({
 
       {/* Sticky proposal CTA */}
       {tradeFilterActive && (
-        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-gray-900/95 backdrop-blur px-4 py-3">
+        <div className="fixed bottom-0 inset-x-0 z-[60] border-t border-white/10 bg-gray-900/95 backdrop-blur px-4 py-3">
           <div className="mx-auto max-w-4xl flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               {wants.length === 0 ? (

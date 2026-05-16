@@ -344,11 +344,6 @@ export function ProposalOfferPicker({
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {visibleRows.map((sticker) => {
               const isSelected = selectedIds.has(sticker.id);
-              const viewerHas = viewerOwnedCounts[sticker.id] ?? 0;
-              const viewerLabel =
-                viewerHas === 0 ? "Falta"
-                : viewerHas === 1 ? "Você tem"
-                : `Repetida ×${viewerHas - 1}`;
               return (
                 <button
                   type="button"
@@ -381,9 +376,6 @@ export function ProposalOfferPicker({
                         </div>
                       </div>
                     )}
-                  </div>
-                  <div className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white">
-                    {viewerLabel}
                   </div>
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-1 pb-0.5 pt-2">
                     <span className="text-[10px] font-bold text-white">{sticker.code}</span>

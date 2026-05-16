@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Mailbox, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardCharts } from "@/components/dashboard-charts";
 
@@ -10,6 +12,13 @@ export default async function DashboardPage() {
     .select("username")
     .eq("id", user!.id)
     .single();
+
+  const { count: pendingProposalsCount } = await supabase
+    .from("proposals")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_user_id", user!.id)
+    .eq("status", "pending");
+  const pendingCount = pendingProposalsCount ?? 0;
 
   const { data: groups } = await supabase
     .from("sticker_groups")
@@ -53,15 +62,40 @@ export default async function DashboardPage() {
   }));
 
   return (
-    <DashboardCharts
-      totalOwned={totalOwned}
-      totalStickers={totalStickers}
-      totalRepeats={totalRepeats}
-      totalPercent={totalPercent}
-      completedGroups={completedGroups}
-      totalGroups={groups?.length ?? 0}
-      groups={groupsData}
-      username={profile?.username ?? ""}
-    />
+    <>
+      {pendingCount > 0 && (
+        <Link
+          href="/proposals?tab=received"
+          className="mb-6 flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 flex-shrink-0">
+            <Mailbox className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white">
+              {pendingCount === 1
+                ? "Você tem 1 proposta pendente"
+                : `Você tem ${pendingCount} propostas pendentes`}
+            </p>
+            <p className="text-xs text-amber-200/80">
+              {pendingCount === 1
+                ? "Alguém quer trocar figurinhas com você."
+                : "Pessoas querem trocar figurinhas com você."}
+            </p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-amber-400 flex-shrink-0" />
+        </Link>
+      )}
+      <DashboardCharts
+        totalOwned={totalOwned}
+        totalStickers={totalStickers}
+        totalRepeats={totalRepeats}
+        totalPercent={totalPercent}
+        completedGroups={completedGroups}
+        totalGroups={groups?.length ?? 0}
+        groups={groupsData}
+        username={profile?.username ?? ""}
+      />
+    </>
   );
 }

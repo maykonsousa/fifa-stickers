@@ -65,40 +65,61 @@ export function StepItems({ counterparty, initiatorUserId, initial, onComplete, 
       </div>
 
       <div className="space-y-3">
-        {swaps.map((swap, idx) => (
-          <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-white">Lançamento #{idx + 1}</p>
-              {swaps.length > 1 && (
-                <button
-                  onClick={() => removeSwap(idx)}
-                  className="p-1 rounded hover:bg-white/10"
-                  aria-label="Remover lançamento"
-                >
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-              )}
+        {swaps.map((swap, idx) => {
+          const givenSum = swap.given.reduce((a, b) => a + b.quantity, 0);
+          const receivedSum = swap.received.reduce((a, b) => a + b.quantity, 0);
+          return (
+            <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-white">Lançamento #{idx + 1}</p>
+                {swaps.length > 1 && (
+                  <button
+                    onClick={() => removeSwap(idx)}
+                    className="p-1 rounded hover:bg-white/10"
+                    aria-label="Remover lançamento"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                  </button>
+                )}
+              </div>
+
+              {/* Placar */}
+              <div className="flex items-center justify-center gap-6 py-1">
+                <div className="text-center">
+                  <div className="font-display text-4xl text-white tabular-nums leading-none">
+                    {givenSum}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-widest text-gray-400 mt-1">Dei</div>
+                </div>
+                <div className="text-2xl text-gray-500 leading-none">×</div>
+                <div className="text-center">
+                  <div className="font-display text-4xl text-white tabular-nums leading-none">
+                    {receivedSum}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-widest text-gray-400 mt-1">Recebi</div>
+                </div>
+              </div>
+
+              <SideEditor
+                title="Dei"
+                items={swap.given}
+                ownerUserId={initiatorUserId}
+                ownerLabel="Sua coleção"
+                onAdd={(s, q) => addSticker(idx, "given", s, q)}
+                onRemove={(stickerId) => removeSticker(idx, "given", stickerId)}
+              />
+
+              <SideEditor
+                title="Recebi"
+                items={swap.received}
+                ownerUserId={counterpartyId}
+                ownerLabel={counterpartyLabel}
+                onAdd={(s, q) => addSticker(idx, "received", s, q)}
+                onRemove={(stickerId) => removeSticker(idx, "received", stickerId)}
+              />
             </div>
-
-            <SideEditor
-              title="Dei"
-              items={swap.given}
-              ownerUserId={initiatorUserId}
-              ownerLabel="Sua coleção"
-              onAdd={(s, q) => addSticker(idx, "given", s, q)}
-              onRemove={(stickerId) => removeSticker(idx, "given", stickerId)}
-            />
-
-            <SideEditor
-              title="Recebi"
-              items={swap.received}
-              ownerUserId={counterpartyId}
-              ownerLabel={counterpartyLabel}
-              onAdd={(s, q) => addSticker(idx, "received", s, q)}
-              onRemove={(stickerId) => removeSticker(idx, "received", stickerId)}
-            />
-          </div>
-        ))}
+          );
+        })}
 
         <button
           onClick={addSwap}

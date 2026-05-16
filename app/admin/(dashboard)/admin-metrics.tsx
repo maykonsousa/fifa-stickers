@@ -9,6 +9,12 @@ type BucketType = "hour" | "day" | "week" | "month";
 
 type Row = { bucket: string; new_count: number; cumulative: number };
 
+type Kpi = {
+  label: string;
+  value: number | null;
+  comingSoon?: boolean;
+};
+
 const BUCKET_OPTIONS: Record<RangePreset, BucketType[]> = {
   "24h": ["hour"],
   "7d": ["hour", "day"],
@@ -49,7 +55,7 @@ const BUCKET_LABEL: Record<BucketType, string> = {
 
 const RANGE_ORDER: RangePreset[] = ["24h", "7d", "30d", "90d", "all"];
 
-export function AdminMetrics() {
+export function AdminMetrics({ kpis }: { kpis: Kpi[] }) {
   const [range, setRange] = useState<RangePreset>("30d");
   const [bucket, setBucket] = useState<BucketType>(DEFAULT_BUCKET["30d"]);
   const [growth, setGrowth] = useState<Row[]>([]);
@@ -88,6 +94,12 @@ export function AdminMetrics() {
     ])
       .then(([g, e]) => {
         if (myVersion !== fetchVersionRef.current) return;
+        if (g.error || e.error) {
+          console.error("[AdminMetrics] RPC error", {
+            growthError: g.error,
+            engagementError: e.error,
+          });
+        }
         setGrowth((g.data as Row[] | null) ?? []);
         setEngagement((e.data as Row[] | null) ?? []);
         setLoading(false);
@@ -140,6 +152,28 @@ export function AdminMetrics() {
           ))}
         </div>
       )}
+
+      {/* KPI cards (3, all-time) */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        {kpis.map((k) => (
+          <div
+            key={k.label}
+            className="rounded-lg border border-gray-700 bg-gray-800 p-5 relative"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-400">{k.label}</p>
+              {k.comingSoon && (
+                <span className="rounded bg-brand-gold/20 px-2 py-0.5 text-[10px] font-semibold text-brand-gold">
+                  Em breve
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-3xl font-bold text-white">
+              {k.value === null ? "—" : k.value.toLocaleString("pt-BR")}
+            </p>
+          </div>
+        ))}
+      </div>
 
       <MetricChart
         title="Crescimento"

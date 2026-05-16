@@ -26,11 +26,13 @@ function ScoreSide({
       trigger={
         <button
           type="button"
-          className="text-center rounded-md hover:bg-white/5 active:bg-white/10 px-4 py-2 transition-colors"
+          className="flex-1 text-center rounded-lg hover:bg-white/5 active:bg-white/10 px-4 sm:px-6 py-4 transition-colors"
         >
-          <div className="font-display text-4xl text-white tabular-nums leading-none">{value}</div>
-          <div className="text-[10px] uppercase tracking-widest text-gray-400 mt-1 flex items-center justify-center gap-1">
-            {label} <Plus className="w-3 h-3" />
+          <div className="font-display text-6xl sm:text-7xl text-white tabular-nums leading-none">
+            {value}
+          </div>
+          <div className="text-xs sm:text-sm uppercase tracking-wider text-gray-300 mt-2 flex items-center justify-center gap-1 truncate">
+            {label} <Plus className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
           </div>
         </button>
       }
@@ -41,19 +43,31 @@ function ScoreSide({
 interface Props {
   counterparty: Counterparty;
   initiatorUserId: string;
+  initiatorName: string;
   initial: Swap[];
   onComplete: (swaps: Swap[]) => void;
   onBack: () => void;
 }
 
-export function StepItems({ counterparty, initiatorUserId, initial, onComplete, onBack }: Props) {
+export function StepItems({
+  counterparty,
+  initiatorUserId,
+  initiatorName,
+  initial,
+  onComplete,
+  onBack,
+}: Props) {
   const [swaps, setSwaps] = useState<Swap[]>(
     initial.length ? initial : [{ given: [], received: [] }],
   );
 
   const counterpartyId = counterparty.type === "member" ? counterparty.id : null;
+  const counterpartyFullName =
+    counterparty.type === "member" ? counterparty.display_name : counterparty.name;
+  const initiatorFirstName = initiatorName.split(" ")[0];
+  const counterpartyFirstName = counterpartyFullName.split(" ")[0];
   const counterpartyLabel =
-    counterparty.type === "member" ? `Coleção de ${counterparty.display_name.split(" ")[0]}` : undefined;
+    counterparty.type === "member" ? `Coleção de ${counterpartyFirstName}` : undefined;
 
   function updateSwap(index: number, patch: Partial<Swap>) {
     setSwaps((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
@@ -91,14 +105,14 @@ export function StepItems({ counterparty, initiatorUserId, initial, onComplete, 
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {swaps.map((swap, idx) => {
           const givenSum = swap.given.reduce((a, b) => a + b.quantity, 0);
           const receivedSum = swap.received.reduce((a, b) => a + b.quantity, 0);
           return (
-            <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-4">
+            <div key={idx} className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-5">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-white">Lançamento #{idx + 1}</p>
+                <p className="text-xs uppercase tracking-widest text-gray-400">Lançamento #{idx + 1}</p>
                 {swaps.length > 1 && (
                   <button
                     onClick={() => removeSwap(idx)}
@@ -111,17 +125,17 @@ export function StepItems({ counterparty, initiatorUserId, initial, onComplete, 
               </div>
 
               {/* Placar — cada lado é o trigger da drawer */}
-              <div className="flex items-center justify-center gap-4 py-1">
+              <div className="flex items-center justify-center gap-4 sm:gap-8 py-2">
                 <ScoreSide
-                  label="Dei"
+                  label={initiatorFirstName}
                   value={givenSum}
                   ownerUserId={initiatorUserId}
                   ownerLabel="Sua coleção"
                   onSelect={(s, q) => addSticker(idx, "given", s, q)}
                 />
-                <div className="text-2xl text-gray-500 leading-none">×</div>
+                <div className="font-display text-3xl sm:text-4xl text-gray-500 leading-none">×</div>
                 <ScoreSide
-                  label="Recebi"
+                  label={counterpartyFirstName}
                   value={receivedSum}
                   ownerUserId={counterpartyId}
                   ownerLabel={counterpartyLabel}

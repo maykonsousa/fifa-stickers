@@ -9,7 +9,13 @@ import { StepReview } from "./step-review";
 import { createTradeAction } from "../lib/create-trade-action";
 import type { Counterparty, Swap, TradeItem } from "../lib/types";
 
-export function NewTradeWizard({ initiatorUserId }: { initiatorUserId: string }) {
+export function NewTradeWizard({
+  initiatorUserId,
+  initiatorName,
+}: {
+  initiatorUserId: string;
+  initiatorName: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [counterparty, setCounterparty] = useState<Counterparty | null>(null);
@@ -53,6 +59,7 @@ export function NewTradeWizard({ initiatorUserId }: { initiatorUserId: string })
         <StepItems
           counterparty={counterparty}
           initiatorUserId={initiatorUserId}
+          initiatorName={initiatorName}
           initial={swaps}
           onComplete={(s) => {
             setSwaps(s);

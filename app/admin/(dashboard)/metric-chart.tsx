@@ -47,6 +47,7 @@ export function MetricChart({
   bucket: BucketType;
   loading: boolean;
 }) {
+  const isInitialLoad = loading && data.length === 0;
   const showEmptyState = !loading && data.every((r) => r.new_count === 0);
 
   const chartData = data.map((r) => ({
@@ -58,7 +59,9 @@ export function MetricChart({
     <div className="rounded-lg border border-gray-700 bg-gray-800 p-5 space-y-3">
       <h2 className="text-lg font-semibold text-white">{title}</h2>
 
-      {showEmptyState ? (
+      {isInitialLoad ? (
+        <div className="h-60 sm:h-80 rounded bg-white/5 animate-pulse" />
+      ) : showEmptyState ? (
         <div className="flex items-center justify-center py-12 text-sm text-gray-400">
           Sem dados nesse período.
         </div>

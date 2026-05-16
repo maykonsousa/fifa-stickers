@@ -1,5 +1,6 @@
 import { Trophy, AlertCircle, Layers } from "lucide-react";
 import { InstagramLogo, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
+import { ShareProfileButton } from "./share-profile-button";
 
 interface ProfileHeroProps {
   displayName: string;
@@ -43,26 +44,33 @@ export function ProfileHero({
   return (
     <div className="space-y-6 mb-8">
       {/* Identity */}
-      <div className="flex items-center gap-4">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={displayName} className="h-20 w-20 rounded-full ring-2 ring-white/10" />
-        ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20 ring-2 ring-white/10 text-2xl font-bold text-green-400">
-            {displayName.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div>
-          <h1
-            className="text-2xl text-white"
-            style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-0.5px' }}
-          >
-            {displayName}
-          </h1>
-          <p className="text-sm text-gray-400">@{username}</p>
-          {city && state && (
-            <p className="text-sm text-gray-400">{city}, {state}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={displayName} className="h-20 w-20 rounded-full ring-2 ring-white/10 shrink-0" />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20 ring-2 ring-white/10 text-2xl font-bold text-green-400 shrink-0">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
           )}
+          <div className="min-w-0">
+            <h1
+              className="text-2xl text-white truncate"
+              style={{ fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif', letterSpacing: '-0.5px' }}
+            >
+              {displayName}
+            </h1>
+            <p className="text-sm text-gray-400 truncate">@{username}</p>
+            {city && state && (
+              <p className="text-sm text-gray-400 truncate">{city}, {state}</p>
+            )}
+          </div>
         </div>
+        <ShareProfileButton
+          username={username}
+          displayName={displayName}
+          className="sm:ml-auto shrink-0"
+        />
       </div>
 
       {/* Stats */}

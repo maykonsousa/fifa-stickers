@@ -3,8 +3,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProposalDetail } from "./proposal-detail";
+import { ProposalChat } from "./proposal-chat";
 import { markSeenAction } from "../lib/mark-seen-action";
-import type { ProposalItemDetail, ProposalStatus } from "../lib/types";
+import type { ProposalItemDetail, ProposalStatus, ProposalMessageRow } from "../lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,15 @@ export default async function ProposalDetailPage({
   const itemsWant = items.filter((i) => i.direction === "want");
   const itemsOffer = items.filter((i) => i.direction === "offer");
 
+  const { data: messagesData } = await supabase
+    .from("proposal_messages")
+    .select("id, sender_user_id, body, created_at")
+    .eq("proposal_id", id)
+    .order("created_at", { ascending: true })
+    .limit(50);
+
+  const messages: ProposalMessageRow[] = (messagesData ?? []) as ProposalMessageRow[];
+
   await markSeenAction(id);
 
   return (
@@ -94,7 +104,14 @@ export default async function ProposalDetailPage({
         itemsOffer={itemsOffer}
       />
 
-      {/* Chat e ações serão adicionados nas Tasks 20 e 21 */}
+      <ProposalChat
+        proposalId={id}
+        currentUserId={user!.id}
+        otherName={otherProfile?.display_name ?? "Usuário"}
+        messages={messages}
+      />
+
+      {/* Ações (aceitar/recusar/cancelar) serão adicionadas na Task 21 */}
     </div>
   );
 }

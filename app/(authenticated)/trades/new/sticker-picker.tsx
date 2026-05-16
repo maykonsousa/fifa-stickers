@@ -178,7 +178,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-      <DrawerContent className="max-h-[92vh]">
+      <DrawerContent className="max-h-[92vh] bg-brand-field text-white border-white/15">
         <DrawerHeader className="pb-2">
           <DrawerTitle>{selected ? "Quantidade" : "Selecionar figurinha"}</DrawerTitle>
           {!selected && ownerLabel && <p className="text-xs text-gray-400">{ownerLabel}</p>}
@@ -204,8 +204,9 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-0" align="start">
+                <PopoverContent className="w-64 p-0 bg-brand-field text-white border-white/15" align="start">
                   <Command
+                    className="bg-transparent text-white [&_[cmdk-input-wrapper]]:border-white/15"
                     filter={(value, search) =>
                       value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
                     }
@@ -255,7 +256,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
                     <span>{statusLabel}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
                   </PopoverTrigger>
-                  <PopoverContent className="w-36 p-1" align="end">
+                  <PopoverContent className="w-36 p-1 bg-brand-field text-white border-white/15" align="end">
                     {[
                       { value: null, label: "Todas" },
                       { value: "owned", label: "Tenho" },

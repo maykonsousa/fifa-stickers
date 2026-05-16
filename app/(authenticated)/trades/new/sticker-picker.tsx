@@ -179,7 +179,7 @@ export function StickerPicker({ trigger, ownerUserId, ownerLabel, onSelect }: St
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent className="max-h-[92vh] bg-gray-900 text-white border-white/10">
-        <DrawerHeader className="pb-2">
+        <DrawerHeader className="pb-6">
           <DrawerTitle className="font-sans text-white text-base font-medium">
             {selected ? "Quantidade" : "Selecionar figurinha"}
           </DrawerTitle>

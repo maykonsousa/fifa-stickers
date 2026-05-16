@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, Share, X } from "lucide-react";
 
 const DISMISS_KEY = "faltauma_install_banner_dismissed_at";
+const INSTALLED_KEY = "faltauma_pwa_installed_at";
 const DISMISS_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 type Platform = "ios-safari" | "ios-other" | "android-other" | null;
@@ -38,7 +39,18 @@ function isStandalone() {
   const androidAppReferrer =
     typeof document !== "undefined" &&
     document.referrer.startsWith("android-app://");
-  return displayModeMatches || iosStandalone || androidAppReferrer;
+  // Flag persistido por nós quando o evento 'appinstalled' dispara — cobre
+  // o caso em que o browser não reporta display-mode standalone mas o user
+  // efetivamente instalou.
+  let installedFlag = false;
+  try {
+    installedFlag = window.localStorage.getItem(INSTALLED_KEY) !== null;
+  } catch {
+    // ignore — localStorage indisponível
+  }
+  return (
+    displayModeMatches || iosStandalone || androidAppReferrer || installedFlag
+  );
 }
 
 function isMobileViewport() {
@@ -68,19 +80,80 @@ export function InstallAppBanner({
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (isStandalone() || !isMobileViewport() || wasDismissedRecently()) {
-      onVisibleChange?.(false);
-      return;
-    }
-    const p = detectPlatform();
-    if (!p) {
-      onVisibleChange?.(false);
-      return;
-    }
-    setPlatform(p);
-    onVisibleChange?.(true);
-    const t = setTimeout(() => setVisible(true), 1000);
-    return () => clearTimeout(t);
+    let showTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const evaluate = () => {
+      const standalone = isStandalone();
+      const mobile = isMobileViewport();
+      const dismissed = wasDismissedRecently();
+      const p = detectPlatform();
+
+      // Debug log temporário — abra chrome://inspect com USB conectado pra ver.
+      if (typeof window !== "undefined") {
+        console.log("[InstallAppBanner]", {
+          standalone,
+          mobile,
+          dismissed,
+          platform: p,
+          displayModeStandalone: window.matchMedia(
+            "(display-mode: standalone)",
+          ).matches,
+          displayModeMinimalUi: window.matchMedia(
+            "(display-mode: minimal-ui)",
+          ).matches,
+          displayModeFullscreen: window.matchMedia(
+            "(display-mode: fullscreen)",
+          ).matches,
+          iosStandalone:
+            (window.navigator as { standalone?: boolean }).standalone === true,
+          referrer: document.referrer,
+          installedFlag: (() => {
+            try {
+              return window.localStorage.getItem(INSTALLED_KEY);
+            } catch {
+              return "<n/a>";
+            }
+          })(),
+        });
+      }
+
+      if (standalone || !mobile || dismissed || !p) {
+        setPlatform(null);
+        setVisible(false);
+        onVisibleChange?.(false);
+        return;
+      }
+
+      setPlatform(p);
+      onVisibleChange?.(true);
+      if (showTimer) clearTimeout(showTimer);
+      showTimer = setTimeout(() => setVisible(true), 1000);
+    };
+
+    evaluate();
+
+    // Reavalia quando o display-mode mudar (alguns Androids reportam com
+    // atraso o standalone após o launch do WebAPK).
+    const mql = window.matchMedia("(display-mode: standalone)");
+    mql.addEventListener("change", evaluate);
+
+    // Persiste o flag de instalado quando o evento dispara — assim mesmo
+    // visitas futuras (sem o evento) reconhecem que o user já instalou.
+    const handleInstalled = () => {
+      try {
+        window.localStorage.setItem(INSTALLED_KEY, String(Date.now()));
+      } catch {
+        // ignore
+      }
+      evaluate();
+    };
+    window.addEventListener("appinstalled", handleInstalled);
+
+    return () => {
+      if (showTimer) clearTimeout(showTimer);
+      mql.removeEventListener("change", evaluate);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
   }, [onVisibleChange]);
 
   if (!platform) return null;

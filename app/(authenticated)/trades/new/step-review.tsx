@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import type { Counterparty, Swap, TradeItem } from "../lib/types";
@@ -38,7 +38,7 @@ function flattenSwaps(swaps: Swap[]): TradeItem[] {
 }
 
 export function StepReview({ counterparty, swaps, onBack, onConfirm }: Props) {
-  const items = flattenSwaps(swaps);
+  const items = useMemo(() => flattenSwaps(swaps), [swaps]);
   const [labels, setLabels] = useState<Record<number, string>>({});
   const [submitting, setSubmitting] = useState(false);
 

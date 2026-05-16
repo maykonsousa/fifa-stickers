@@ -17,6 +17,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { PaginationControl } from "@/components/ui/pagination";
+import { TradeProposalDialog } from "./trade-proposal-dialog";
 
 interface Group {
   id: number;
@@ -38,14 +39,24 @@ const PAGE_SIZE = 20;
 
 export function ProfileStickers({
   userId,
+  viewerId = null,
+  tradeFilterActive = false,
+  ownerUsername,
   groups,
   missingCount,
   duplicatesCount,
+  tradeMissingCount = null,
+  tradeDuplicatesCount = null,
 }: {
   userId: string;
+  viewerId?: string | null;
+  tradeFilterActive?: boolean;
+  ownerUsername: string;
   groups: Group[];
   missingCount: number;
   duplicatesCount: number;
+  tradeMissingCount?: number | null;
+  tradeDuplicatesCount?: number | null;
 }) {
   const [tab, setTab] = useState<"missing" | "duplicates">("missing");
   const [groupId, setGroupId] = useState<number | null>(null);
@@ -58,6 +69,18 @@ export function ProfileStickers({
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
+  const [tradeOpen, setTradeOpen] = useState(false);
+
+  const effectiveMissingCount = tradeFilterActive
+    ? tradeMissingCount ?? 0
+    : missingCount;
+  const effectiveDuplicatesCount = tradeFilterActive
+    ? tradeDuplicatesCount ?? 0
+    : duplicatesCount;
+
+  const tradeButtonDisabled =
+    (tradeMissingCount ?? 0) + (tradeDuplicatesCount ?? 0) === 0;
+
   const fetchStickers = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
@@ -68,6 +91,7 @@ export function ProfileStickers({
       p_keyword: keyword || null,
       p_page: page,
       p_page_size: PAGE_SIZE,
+      p_viewer_id: viewerId,
     });
 
     if (data && data.length > 0) {
@@ -78,7 +102,7 @@ export function ProfileStickers({
       setTotalCount(0);
     }
     setLoading(false);
-  }, [userId, tab, groupId, keyword, page]);
+  }, [userId, tab, groupId, keyword, page, viewerId]);
 
   useEffect(() => {
     fetchStickers();
@@ -90,6 +114,23 @@ export function ProfileStickers({
 
   return (
     <div className="space-y-4">
+      {tradeFilterActive && (
+        <div className="rounded-lg border border-white/10 bg-white/5 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-sm text-white">
+            Quer trocar com <span className="font-semibold">@{ownerUsername}</span>?
+          </p>
+          <button
+            type="button"
+            disabled={tradeButtonDisabled}
+            title={tradeButtonDisabled ? "Sem trocas viáveis no momento" : undefined}
+            onClick={() => setTradeOpen(true)}
+            className="w-full sm:w-auto rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:hover:bg-gray-600 transition-colors"
+          >
+            Propor troca
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex border-b border-white/10">
         <button
@@ -98,7 +139,7 @@ export function ProfileStickers({
             tab === "missing" ? "text-white" : "text-gray-400 hover:text-gray-200"
           }`}
         >
-          Faltam ({missingCount})
+          Faltam ({effectiveMissingCount})
           {tab === "missing" && (
             <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
           )}
@@ -109,7 +150,7 @@ export function ProfileStickers({
             tab === "duplicates" ? "text-white" : "text-gray-400 hover:text-gray-200"
           }`}
         >
-          Repetidas ({duplicatesCount})
+          Repetidas ({effectiveDuplicatesCount})
           {tab === "duplicates" && (
             <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500 rounded-full" />
           )}
@@ -168,6 +209,12 @@ export function ProfileStickers({
         </Popover>
       </div>
 
+      {tradeFilterActive && (
+        <p className="text-xs text-gray-400">
+          Mostrando só figurinhas que combinam com seu álbum.
+        </p>
+      )}
+
       {/* Grid */}
       <div className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 transition-opacity ${loading ? "opacity-50" : ""}`}>
         {results.map((sticker) => (
@@ -178,7 +225,11 @@ export function ProfileStickers({
       {/* Empty */}
       {!loading && results.length === 0 && (
         <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
-          <p className="text-gray-400 text-sm">Nenhuma figurinha encontrada.</p>
+          <p className="text-gray-400 text-sm">
+            {tradeFilterActive
+              ? "Nenhuma troca viável aqui. Vocês não têm sobreposição nessa categoria no momento."
+              : "Nenhuma figurinha encontrada."}
+          </p>
         </div>
       )}
 
@@ -189,6 +240,8 @@ export function ProfileStickers({
         onPageChange={setPage}
         disabled={loading}
       />
+
+      <TradeProposalDialog open={tradeOpen} onOpenChange={setTradeOpen} />
     </div>
   );
 }

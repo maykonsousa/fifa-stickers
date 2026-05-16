@@ -44,10 +44,11 @@ export interface StickerOption {
 
 export interface TradeHistoryRow {
   id: string;
-  counterparty_kind: "member" | "lead";
-  counterparty_name: string;
-  counterparty_email: string;
-  counterparty_avatar_url: string | null;
+  /** Dados da pessoa do "outro lado" — iniciador ou counterparty conforme o viewer. */
+  other_kind: "member" | "lead" | "removed";
+  other_name: string;
+  other_email: string;
+  other_avatar_url: string | null;
   given_count: number;
   received_count: number;
   created_at: string;

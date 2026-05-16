@@ -25,8 +25,9 @@ export function TradeProposalDialog({
             Em construção
           </DialogTitle>
           <DialogDescription className="text-sm text-white/80">
-            Em breve você vai poder selecionar as figurinhas pra oferecer e as
-            que quer receber, e enviar uma proposta de troca direto por aqui.
+            Essa funcionalidade ainda está sendo desenvolvida. Aproveite para
+            convidar os seus amigos, pois quanto mais amigos usando, mais útil
+            se torna a plataforma.
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end">

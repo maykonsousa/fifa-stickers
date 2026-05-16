@@ -36,8 +36,9 @@ export async function sendLeadInvite(input: LeadInviteInput) {
     <h2>Você fez uma troca de figurinhas com ${input.initiatorName} — bem-vindo ao FaltaUma!</h2>
     <p>Oi ${input.recipientName},</p>
     <p>${input.initiatorName} registrou uma troca de figurinhas com você no FaltaUma, um app gratuito pra controlar seu álbum da Copa.</p>
-    <p>Crie sua conta e suas ${totalReceived} ${totalReceived === 1 ? "figurinha vai aparecer" : "figurinhas vão aparecer"} na sua coleção:</p>
+    <p>Crie sua conta pra começar a controlar seu álbum. Você recebeu ${totalReceived} ${totalReceived === 1 ? "figurinha" : "figurinhas"} nessa troca:</p>
     <ul>${receivedList}</ul>
+    <p>Quando colar elas no álbum, adicione no app.</p>
     <p><a href="${signupUrl}">Criar conta com Google</a></p>
     <p><small>Conta vinculada a ${input.recipientEmail} — depois você pode trocar.</small></p>
   `;

@@ -29,8 +29,8 @@ export async function sendTradeNotification(input: TradeNotificationInput) {
     <ul>${receivedList}</ul>
     <p><strong>Você deu:</strong></p>
     <ul>${givenList}</ul>
-    <p>Sua coleção foi atualizada automaticamente.</p>
-    <p>Se discorda da troca, fale diretamente com ${input.initiatorName}. Você pode editar sua coleção manualmente em <a href="${input.appUrl}/collection">${input.appUrl}/collection</a>.</p>
+    <p>As figurinhas que você deu foram removidas do seu álbum automaticamente. Quando colar fisicamente as recebidas, adicione elas no seu álbum em <a href="${input.appUrl}/collection">${input.appUrl}/collection</a>.</p>
+    <p>Se discorda da troca, fale diretamente com ${input.initiatorName}.</p>
     <p><a href="${input.appUrl}/trades">Ver no app</a></p>
   `;
 

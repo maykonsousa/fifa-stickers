@@ -94,6 +94,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   let viewerId: string | null = null;
   let tradeMissingCount: number | null = null;
   let tradeDuplicatesCount: number | null = null;
+  let viewerOwnedCounts: Record<number, number> = {};
 
   if (tradeFilterActive && user) {
     viewerId = user.id;
@@ -108,6 +109,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     for (const vs of viewerStickers ?? []) {
       if (viewerOwned.has(vs.sticker_id)) viewerDupes.add(vs.sticker_id);
       viewerOwned.add(vs.sticker_id);
+      viewerOwnedCounts[vs.sticker_id] = (viewerOwnedCounts[vs.sticker_id] ?? 0) + 1;
     }
 
     // Faltam pro dono que o viewer tem repetida
@@ -156,6 +158,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           duplicatesCount={totalDuplicates}
           tradeMissingCount={tradeMissingCount}
           tradeDuplicatesCount={tradeDuplicatesCount}
+          viewerOwnedCounts={viewerOwnedCounts}
         />
       </div>
     </div>

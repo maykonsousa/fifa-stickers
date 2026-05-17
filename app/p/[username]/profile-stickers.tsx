@@ -272,7 +272,6 @@ export function ProfileStickers({
           <StickerCard
             key={sticker.id}
             sticker={sticker}
-            tab={tab}
             selectable={selectionEnabled}
             selected={wantsSelectedIds.has(sticker.id)}
             onToggle={selectionEnabled ? () => toggleWant(sticker) : undefined}
@@ -346,13 +345,11 @@ export function ProfileStickers({
 
 function StickerCard({
   sticker,
-  tab,
   selectable = false,
   selected = false,
   onToggle,
 }: {
   sticker: StickerResult;
-  tab: string;
   selectable?: boolean;
   selected?: boolean;
   onToggle?: () => void;
@@ -398,12 +395,6 @@ function StickerCard({
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4">
             <span className="text-[10px] font-bold text-white">{sticker.code}</span>
           </div>
-        )}
-
-        {tab === "duplicates" && sticker.duplicate_count > 0 && (
-          <span className="absolute top-1 right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white shadow">
-            ×{sticker.duplicate_count}
-          </span>
         )}
 
         {selectable && selected && (

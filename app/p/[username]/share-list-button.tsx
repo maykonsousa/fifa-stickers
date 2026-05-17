@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { Layers, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getShareableStickerList } from "./lib/get-shareable-list";
@@ -22,9 +22,16 @@ const LABEL: Record<ShareKind, string> = {
 export function ShareListButton({ username, displayName, kind, disabled, className }: ShareListButtonProps) {
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+  }, []);
 
   const handleClick = () => {
     if (pending || disabled) return;
+    setCopied(false);
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
     startTransition(async () => {
       const result = await getShareableStickerList({ username, kind });
       if (!result.ok) {
@@ -47,7 +54,7 @@ export function ShareListButton({ username, displayName, kind, disabled, classNa
         await navigator.clipboard.writeText(result.text);
         toast.success("Lista copiada! Cole no WhatsApp 💬");
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
       } catch {
         toast.error("Não foi possível copiar a lista");
       }
@@ -62,6 +69,7 @@ export function ShareListButton({ username, displayName, kind, disabled, classNa
       type="button"
       onClick={handleClick}
       disabled={pending || disabled}
+      aria-busy={pending}
       className={`inline-flex items-center justify-center gap-2 border border-white/20 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${className ?? ""}`}
       style={{
         fontFamily: '"Archivo Black", "Arial Black", system-ui, sans-serif',

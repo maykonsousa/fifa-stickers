@@ -23,6 +23,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check, Loader2 } from "lucide-react";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { StickerOption } from "../lib/types";
 
 interface Group {
@@ -179,11 +180,15 @@ export function StickerPicker({
           : "Todas";
 
   const drawerContentRef = useRef<HTMLDivElement>(null);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
+    <Drawer open={open} onOpenChange={setOpen} direction={isDesktop ? "right" : "bottom"}>
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-      <DrawerContent ref={drawerContentRef} className="max-h-[92vh] bg-gray-900 text-white border-white/10">
+      <DrawerContent
+        ref={drawerContentRef}
+        className="bg-gray-900 text-white border-white/10 data-[vaul-drawer-direction=bottom]:max-h-[92vh] data-[vaul-drawer-direction=right]:sm:max-w-2xl"
+      >
         <DrawerHeader className="pb-6">
           <DrawerTitle className="font-sans text-white text-base font-medium">
             Selecionar figurinhas

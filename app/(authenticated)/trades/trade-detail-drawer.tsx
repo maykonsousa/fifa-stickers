@@ -10,6 +10,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { Loader2 } from "lucide-react";
 
 interface StickerDetail {
@@ -207,9 +208,15 @@ export function TradeDetailDrawer({ tradeId, userId, onClose }: Props) {
     setBusy(false);
   }
 
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+
   return (
-    <Drawer open={!!tradeId} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="max-h-[92vh] bg-gray-900 text-white border-white/10">
+    <Drawer
+      open={!!tradeId}
+      onOpenChange={(open) => !open && onClose()}
+      direction={isDesktop ? "right" : "bottom"}
+    >
+      <DrawerContent className="bg-gray-900 text-white border-white/10 data-[vaul-drawer-direction=bottom]:max-h-[92vh] data-[vaul-drawer-direction=right]:sm:max-w-md">
         <DrawerHeader className="pb-4">
           <DrawerTitle className="font-sans text-white text-base font-medium">
             Detalhes da troca

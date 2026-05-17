@@ -28,28 +28,10 @@ DECLARE
   v_offset INT := (p_page - 1) * p_page_size;
   v_viewer_city TEXT;
   v_viewer_state TEXT;
-  v_total BIGINT;
 BEGIN
   SELECT p.city, p.state INTO v_viewer_city, v_viewer_state
   FROM public.profiles p
   WHERE p.id = p_viewer_id;
-
-  -- Count distinct candidate users (for pagination).
-  SELECT COUNT(DISTINCT cd.user_id) INTO v_total
-  FROM (
-    SELECT us.user_id
-    FROM public.user_stickers us
-    JOIN public.stickers s ON s.id = us.sticker_id
-    WHERE us.user_id <> p_viewer_id
-      AND (p_group_id IS NULL OR s.group_id = p_group_id)
-      AND NOT EXISTS (
-        SELECT 1 FROM public.user_stickers vs
-        WHERE vs.user_id = p_viewer_id AND vs.sticker_id = us.sticker_id
-      )
-    GROUP BY us.user_id, us.sticker_id HAVING COUNT(*) > 1
-  ) cd
-  JOIN public.profiles p ON p.id = cd.user_id
-  WHERE (NOT p_only_nearby OR p.state = v_viewer_state);
 
   RETURN QUERY
   WITH viewer_missing AS (
@@ -62,6 +44,7 @@ BEGIN
     AND (p_group_id IS NULL OR s.group_id = p_group_id)
   ),
   candidate_duplicates AS (
+    -- Rows are distinct on (user_id, sticker_id) by construction.
     SELECT us.user_id, us.sticker_id
     FROM public.user_stickers us
     JOIN viewer_missing vm ON vm.sticker_id = us.sticker_id
@@ -72,31 +55,46 @@ BEGIN
     SELECT
       cd.user_id,
       COUNT(*)::INT AS match_count,
+      -- First 4 sticker IDs for the card preview.
       (ARRAY_AGG(cd.sticker_id ORDER BY cd.sticker_id))[1:4] AS preview_sticker_ids
     FROM candidate_duplicates cd
     GROUP BY cd.user_id
+  ),
+  filtered AS (
+    SELECT
+      p.id AS user_id,
+      p.username::TEXT AS username,
+      p.display_name,
+      p.avatar_url,
+      p.city,
+      p.state,
+      a.match_count,
+      a.preview_sticker_ids,
+      CASE
+        WHEN p.city = v_viewer_city AND p.state = v_viewer_state THEN 2
+        WHEN p.state = v_viewer_state THEN 1
+        ELSE 0
+      END AS proximity_score,
+      (SELECT MAX(us.created_at) FROM public.user_stickers us WHERE us.user_id = p.id) AS last_activity
+    FROM aggregated a
+    JOIN public.profiles p ON p.id = a.user_id
+    WHERE (NOT p_only_nearby OR p.state = v_viewer_state)
   )
   SELECT
-    p.id AS user_id,
-    p.username,
-    p.display_name,
-    p.avatar_url,
-    p.city,
-    p.state,
-    a.match_count,
-    a.preview_sticker_ids,
-    v_total AS total_count
-  FROM aggregated a
-  JOIN public.profiles p ON p.id = a.user_id
-  WHERE (NOT p_only_nearby OR p.state = v_viewer_state)
+    f.user_id,
+    f.username,
+    f.display_name,
+    f.avatar_url,
+    f.city,
+    f.state,
+    f.match_count,
+    f.preview_sticker_ids,
+    COUNT(*) OVER () AS total_count
+  FROM filtered f
   ORDER BY
-    a.match_count DESC,
-    CASE
-      WHEN p.city = v_viewer_city AND p.state = v_viewer_state THEN 2
-      WHEN p.state = v_viewer_state THEN 1
-      ELSE 0
-    END DESC,
-    (SELECT MAX(us.created_at) FROM public.user_stickers us WHERE us.user_id = p.id) DESC NULLS LAST
+    f.match_count DESC,
+    f.proximity_score DESC,
+    f.last_activity DESC NULLS LAST
   LIMIT p_page_size OFFSET v_offset;
 END;
 $$;

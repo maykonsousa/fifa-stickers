@@ -376,11 +376,16 @@ export function ProposalOfferPicker({
                         {ownedCount - 1}
                       </span>
                     )}
-                    {isSelected && (
-                      <span className="absolute top-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white shadow">
-                        <Check className="h-2.5 w-2.5" />
-                      </span>
-                    )}
+                    <span
+                      className={`absolute top-1 left-1 flex h-4 w-4 items-center justify-center rounded-full shadow transition-colors ${
+                        isSelected
+                          ? "bg-green-500 text-white"
+                          : "border-2 border-white/80 bg-black/40 backdrop-blur-sm"
+                      }`}
+                      aria-hidden
+                    >
+                      {isSelected && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                    </span>
                   </div>
                 </button>
               );

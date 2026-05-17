@@ -400,9 +400,16 @@ function StickerCard({
         {selectable && selected && (
           <div className="absolute inset-0 ring-2 ring-green-500 rounded-lg pointer-events-none" />
         )}
-        {selectable && selected && (
-          <span className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow">
-            <Check className="h-3 w-3" />
+        {selectable && (
+          <span
+            className={`absolute top-1.5 left-1.5 flex h-5 w-5 items-center justify-center rounded-full shadow transition-colors ${
+              selected
+                ? "bg-green-500 text-white"
+                : "border-2 border-white/80 bg-black/40 backdrop-blur-sm"
+            }`}
+            aria-hidden
+          >
+            {selected && <Check className="h-3 w-3" strokeWidth={3} />}
           </span>
         )}
       </div>

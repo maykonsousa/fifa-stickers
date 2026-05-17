@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard", "/collection", "/friends", "/trades", "/profile", "/user", "/admin"],
+        disallow: ["/dashboard", "/collection", "/colecionadores", "/trades", "/profile", "/admin"],
       },
     ],
     sitemap: "https://faltauma.com/sitemap.xml",

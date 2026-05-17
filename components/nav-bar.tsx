@@ -5,14 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { LayoutDashboard, Grid3X3, Users, Repeat2, Settings, LogOut, Menu, X, Shield, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Grid3X3, UserSearch, Repeat2, Settings, LogOut, Menu, X, Shield, MessageSquare } from "lucide-react";
 import { MarkFU } from "./brand/Logo";
 import Image from "next/image";
 
 const links = [
   { href: "/dashboard", label: "Álbum", icon: LayoutDashboard },
   { href: "/collection", label: "Coleção", icon: Grid3X3 },
-  { href: "/friends", label: "Amigos", icon: Users },
+  { href: "/colecionadores", label: "Colecionadores", icon: UserSearch },
   { href: "/trades", label: "Trocas", icon: Repeat2 },
   { href: "/proposals", label: "Propostas", icon: MessageSquare },
 ];

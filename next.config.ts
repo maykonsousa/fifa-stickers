@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/friends", destination: "/colecionadores", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

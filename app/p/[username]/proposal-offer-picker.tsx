@@ -10,6 +10,16 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -64,6 +74,7 @@ interface Props {
   groups: Group[];
   viewerOwnedCounts: Record<number, number>;
   wants: SelectedWant[];
+  isLoggedIn?: boolean;
 }
 
 const PAGE_SIZE = 24;
@@ -76,6 +87,7 @@ export function ProposalOfferPicker({
   groups,
   viewerOwnedCounts,
   wants,
+  isLoggedIn = true,
 }: Props) {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
@@ -88,6 +100,7 @@ export function ProposalOfferPicker({
   const [offers, setOffers] = useState<SelectedOffer[]>([]);
   const [submitting, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [loginPromptOpen, setLoginPromptOpen] = useState(false);
   const pageRef = useRef(1);
   const versionRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -189,6 +202,10 @@ export function ProposalOfferPicker({
 
   const submit = () => {
     if (wants.length === 0 || offers.length === 0 || submitting) return;
+    if (!isLoggedIn) {
+      setLoginPromptOpen(true);
+      return;
+    }
     setError(null);
     const items: ProposalItem[] = [
       ...wants.map((x) => ({ sticker_id: x.sticker_id, direction: "want" as const, quantity: 1 })),
@@ -204,6 +221,7 @@ export function ProposalOfferPicker({
     });
   };
 
+
   const visibleRows = onlyOwned
     ? rows.filter((s) => (viewerOwnedCounts[s.id] ?? 0) > 0)
     : rows;
@@ -211,6 +229,7 @@ export function ProposalOfferPicker({
   const selectedIds = new Set(offers.map((o) => o.sticker_id));
 
   return (
+    <>
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="bg-gray-900 border-t border-white/10 max-h-[92vh]">
         <DrawerHeader className="pb-3">
@@ -315,20 +334,31 @@ export function ProposalOfferPicker({
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 gap-1.5">
             {visibleRows.map((sticker) => {
               const isSelected = selectedIds.has(sticker.id);
+              const ownedCount = viewerOwnedCounts[sticker.id] ?? 0;
+              const hasIt = ownedCount > 0;
+              const isDuplicate = ownedCount > 1;
+              const ownershipBorder = hasIt
+                ? isDuplicate
+                  ? "bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-500"
+                  : "bg-gradient-to-br from-gray-300 via-white to-gray-400"
+                : "bg-white/10";
               return (
                 <button
                   type="button"
                   key={sticker.id}
                   onClick={() => toggleOffer(sticker)}
-                  className={`relative rounded-lg border overflow-hidden transition-all ${
-                    isSelected
-                      ? "border-green-500 ring-2 ring-green-500"
-                      : "border-white/10 hover:border-white/30"
+                  aria-pressed={isSelected}
+                  className={`relative rounded-lg p-[2px] overflow-hidden transition-all ${ownershipBorder} ${
+                    isSelected ? "ring-2 ring-green-500 ring-offset-2 ring-offset-gray-900" : "hover:opacity-90"
                   }`}
                 >
-                  <div className="aspect-[2/3] bg-gray-800 relative">
+                  <div className={`relative aspect-[2/3] overflow-hidden rounded-md ${hasIt ? "bg-gray-800" : "bg-gray-800/50 opacity-60"}`}>
                     {sticker.image_url ? (
-                      <img src={sticker.image_url} alt={sticker.code} className="h-full w-full object-cover" />
+                      <img
+                        src={sticker.image_url}
+                        alt={sticker.code}
+                        className={`h-full w-full object-cover ${!hasIt ? "grayscale" : ""}`}
+                      />
                     ) : (
                       <div className="flex h-full flex-col items-center justify-center p-1">
                         <svg className="h-8 w-8 text-white/15" fill="currentColor" viewBox="0 0 24 24">
@@ -336,9 +366,19 @@ export function ProposalOfferPicker({
                         </svg>
                       </div>
                     )}
-                  </div>
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-1 pb-0.5 pt-1.5">
-                    <span className="text-[9px] font-bold text-white">{sticker.code}</span>
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-1 pb-0.5 pt-1.5">
+                      <span className="text-[9px] font-bold text-white">{sticker.code}</span>
+                    </div>
+                    {isDuplicate && (
+                      <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white shadow">
+                        {ownedCount - 1}
+                      </span>
+                    )}
+                    {isSelected && (
+                      <span className="absolute top-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white shadow">
+                        <Check className="h-2.5 w-2.5" />
+                      </span>
+                    )}
                   </div>
                 </button>
               );
@@ -380,5 +420,32 @@ export function ProposalOfferPicker({
         </div>
       </DrawerContent>
     </Drawer>
+
+    <AlertDialog open={loginPromptOpen} onOpenChange={setLoginPromptOpen}>
+      <AlertDialogContent className="bg-gray-900 border-white/10 text-white">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-white">
+            Quase lá! Faça login pra enviar a proposta
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-300">
+            Trocas no faltaUma só rolam entre colecionadores cadastrados. Crie sua conta
+            grátis em segundos, monte seu álbum e mande sua proposta pra{" "}
+            <span className="font-medium text-white">{ownerDisplayName}</span>.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-transparent border-white/20 text-white hover:bg-white/10 hover:text-white">
+            Agora não
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => router.push("/login")}
+            className="bg-yellow-400 text-zinc-900 hover:bg-yellow-300"
+          >
+            Entrar e começar meu álbum
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

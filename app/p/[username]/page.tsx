@@ -87,9 +87,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const percent = total > 0 ? Math.round((uniqueOwned / total) * 100) : 0;
   const ownerHasTradeable = ownerDupes.size > 0 && totalMissing > 0;
 
-  // Trade intersection stats — only when a different logged-in viewer is looking.
+  // Trade UI: visible to any visitor who isn't the owner (logged or not).
+  // Intersection filter: only when a *logged* viewer is looking.
   const isOwnProfile = user?.id === profile.id;
+  const tradeUIEnabled = !isOwnProfile;
   const tradeFilterActive = !!user && !isOwnProfile;
+  const isLoggedIn = !!user;
 
   let viewerId: string | null = null;
   let tradeMissingCount: number | null = null;
@@ -150,7 +153,9 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         <ProfileStickers
           userId={profile.id}
           viewerId={viewerId}
+          tradeUIEnabled={tradeUIEnabled}
           tradeFilterActive={tradeFilterActive}
+          isLoggedIn={isLoggedIn}
           ownerUsername={profile.username}
           ownerHasTradeable={ownerHasTradeable}
           groups={groups ?? []}

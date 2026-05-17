@@ -39,7 +39,9 @@ const PAGE_SIZE = 20;
 export function ProfileStickers({
   userId,
   viewerId = null,
+  tradeUIEnabled = false,
   tradeFilterActive = false,
+  isLoggedIn = false,
   ownerUsername,
   ownerHasTradeable = false,
   groups,
@@ -51,7 +53,9 @@ export function ProfileStickers({
 }: {
   userId: string;
   viewerId?: string | null;
+  tradeUIEnabled?: boolean;
   tradeFilterActive?: boolean;
+  isLoggedIn?: boolean;
   ownerUsername: string;
   ownerHasTradeable?: boolean;
   groups: Group[];
@@ -61,7 +65,7 @@ export function ProfileStickers({
   tradeDuplicatesCount?: number | null;
   viewerOwnedCounts?: Record<number, number>;
 }) {
-  const initialTab: "missing" | "duplicates" = tradeFilterActive ? "duplicates" : "missing";
+  const initialTab: "missing" | "duplicates" = tradeUIEnabled ? "duplicates" : "missing";
   const [tab, setTab] = useState<"missing" | "duplicates">(initialTab);
   const [groupId, setGroupId] = useState<number | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -82,7 +86,7 @@ export function ProfileStickers({
     ? tradeDuplicatesCount ?? 0
     : duplicatesCount;
 
-  const selectionEnabled = tradeFilterActive && tab === "duplicates" && ownerHasTradeable;
+  const selectionEnabled = tradeUIEnabled && tab === "duplicates" && ownerHasTradeable;
 
   const hasMore = results.length < totalCount;
   const isInitialLoad = loading && results.length === 0;
@@ -174,8 +178,8 @@ export function ProfileStickers({
 
   const wantsSelectedIds = new Set(wants.map((w) => w.sticker_id));
 
-  // Tabs: when tradeFilterActive, show Repetidas first.
-  const tabsOrder: ("duplicates" | "missing")[] = tradeFilterActive
+  // Tabs: when trade UI is enabled, show Repetidas first.
+  const tabsOrder: ("duplicates" | "missing")[] = tradeUIEnabled
     ? ["duplicates", "missing"]
     : ["missing", "duplicates"];
 
@@ -203,12 +207,12 @@ export function ProfileStickers({
         })}
       </div>
 
-      {/* Hint inside Repetidas when tradeFilterActive and there's actual filtering happening */}
-      {tab === "duplicates" && tradeFilterActive && (tradeDuplicatesCount ?? 0) > 0 && (
+      {/* Hint inside Repetidas when trade UI is enabled */}
+      {tab === "duplicates" && tradeUIEnabled && ownerHasTradeable && (
         <p className="text-xs text-gray-400">
           Toque pra selecionar o que você quer trocar com{" "}
-          <span className="font-medium text-white">@{ownerUsername}</span>. Mostrando só
-          figurinhas que combinam com seu álbum.
+          <span className="font-medium text-white">@{ownerUsername}</span>.
+          {tradeFilterActive && " Mostrando só figurinhas que combinam com seu álbum."}
         </p>
       )}
 
@@ -297,7 +301,7 @@ export function ProfileStickers({
       )}
 
       {/* Sticky proposal CTA */}
-      {tradeFilterActive && (
+      {tradeUIEnabled && (
         <div className="fixed bottom-0 inset-x-0 z-[60] border-t border-white/10 bg-gray-900/95 backdrop-blur px-4 py-3">
           <div className="mx-auto max-w-4xl flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -334,6 +338,7 @@ export function ProfileStickers({
         groups={groups}
         viewerOwnedCounts={viewerOwnedCounts}
         wants={wants}
+        isLoggedIn={isLoggedIn}
       />
     </div>
   );

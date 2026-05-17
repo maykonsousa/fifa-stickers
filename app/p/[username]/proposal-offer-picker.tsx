@@ -290,15 +290,17 @@ export function ProposalOfferPicker({
                 </Command>
               </PopoverContent>
             </Popover>
-            <label className="inline-flex items-center gap-2 px-3 py-2 text-sm text-white rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-              <input
-                type="checkbox"
-                checked={onlyOwned}
-                onChange={(e) => setOnlyOwned(e.target.checked)}
-                className="accent-green-500"
-              />
-              Só as que tenho
-            </label>
+            {isLoggedIn && (
+              <label className="inline-flex items-center gap-2 px-3 py-2 text-sm text-white rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={onlyOwned}
+                  onChange={(e) => setOnlyOwned(e.target.checked)}
+                  className="accent-green-500"
+                />
+                Só as que tenho
+              </label>
+            )}
           </div>
 
           {/* Selected offers list */}

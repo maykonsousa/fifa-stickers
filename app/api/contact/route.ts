@@ -1,7 +1,5 @@
-import { Resend } from "resend";
 import { NextResponse } from "next/server";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { resend, EMAIL_FROM } from "@/lib/email/resend";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -15,7 +13,7 @@ export async function POST(request: Request) {
   }
 
   const { error } = await resend.emails.send({
-    from: "FIFA Stickers <onboarding@resend.dev>",
+    from: EMAIL_FROM,
     to: ["maykonsousa.dev@gmail.com"],
     subject: `[Contato] ${subject}`,
     replyTo: email,
@@ -30,6 +28,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
+    console.error("Contact email failed", error);
     return NextResponse.json(
       { error: "Erro ao enviar mensagem. Tente novamente." },
       { status: 500 }

@@ -178,10 +178,12 @@ export function StickerPicker({
           ? "Repetidas"
           : "Todas";
 
+  const drawerContentRef = useRef<HTMLDivElement>(null);
+
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
-      <DrawerContent className="max-h-[92vh] bg-gray-900 text-white border-white/10">
+      <DrawerContent ref={drawerContentRef} className="max-h-[92vh] bg-gray-900 text-white border-white/10">
         <DrawerHeader className="pb-6">
           <DrawerTitle className="font-sans text-white text-base font-medium">
             Selecionar figurinhas
@@ -208,7 +210,7 @@ export function StickerPicker({
                   </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-0" align="start">
+                <PopoverContent className="w-64 p-0" align="start" container={drawerContentRef}>
                   <Command
                     filter={(value, search) =>
                       value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
@@ -259,7 +261,7 @@ export function StickerPicker({
                     <span>{statusLabel}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
                   </PopoverTrigger>
-                  <PopoverContent className="w-36 p-1" align="end">
+                  <PopoverContent className="w-36 p-1" align="end" container={drawerContentRef}>
                     {(
                       [
                         { value: null, label: "Todas" },

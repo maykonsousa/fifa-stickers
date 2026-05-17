@@ -95,9 +95,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const isLoggedIn = !!user;
 
   let viewerId: string | null = null;
-  let tradeMissingCount: number | null = null;
   let tradeDuplicatesCount: number | null = null;
-  let viewerOwnedCounts: Record<number, number> = {};
+  const viewerOwnedCounts: Record<number, number> = {};
 
   if (tradeFilterActive && user) {
     viewerId = user.id;
@@ -108,21 +107,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       .eq("user_id", user.id);
 
     const viewerOwned = new Set<number>();
-    const viewerDupes = new Set<number>();
     for (const vs of viewerStickers ?? []) {
-      if (viewerOwned.has(vs.sticker_id)) viewerDupes.add(vs.sticker_id);
       viewerOwned.add(vs.sticker_id);
       viewerOwnedCounts[vs.sticker_id] = (viewerOwnedCounts[vs.sticker_id] ?? 0) + 1;
     }
 
-    // Faltam pro dono que o viewer tem repetida
-    let missingMatch = 0;
-    for (const id of viewerDupes) {
-      if (!ownerOwned.has(id)) missingMatch++;
-    }
-    tradeMissingCount = missingMatch;
-
-    // Repetidas do dono que o viewer não tem
+    // Repetidas do dono que o viewer não tem (universo viável para wants)
     let dupesMatch = 0;
     for (const id of ownerDupes) {
       if (!viewerOwned.has(id)) dupesMatch++;
@@ -161,7 +151,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           groups={groups ?? []}
           missingCount={totalMissing}
           duplicatesCount={totalDuplicates}
-          tradeMissingCount={tradeMissingCount}
           tradeDuplicatesCount={tradeDuplicatesCount}
           viewerOwnedCounts={viewerOwnedCounts}
         />

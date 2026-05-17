@@ -23,7 +23,10 @@ export async function getShareableStickerList(params: {
     return { ok: false, error: "Perfil não encontrado" };
   }
 
-  const [{ data: userStickers }, { data: allStickers }] = await Promise.all([
+  const [
+    { data: userStickers, error: userStickersErr },
+    { data: allStickers, error: allStickersErr },
+  ] = await Promise.all([
     supabase.from("user_stickers").select("sticker_id").eq("user_id", profile.id),
     supabase
       .from("stickers")
@@ -31,6 +34,10 @@ export async function getShareableStickerList(params: {
       .order("group_id", { ascending: true })
       .order("number", { ascending: true }),
   ]);
+
+  if (userStickersErr || allStickersErr) {
+    return { ok: false, error: "Erro ao carregar figurinhas" };
+  }
 
   // Owner sticker_id → count
   const ownedCounts = new Map<number, number>();
@@ -69,7 +76,7 @@ export async function getShareableStickerList(params: {
   }
 
   const groups = Array.from(groupsMap.values());
-  const totalCount = filtered.length;
+  const totalCount = groups.reduce((sum, g) => sum + g.stickers.length, 0);
 
   if (totalCount === 0) {
     return { ok: false, error: params.kind === "missing" ? "Não faltam figurinhas" : "Sem repetidas" };

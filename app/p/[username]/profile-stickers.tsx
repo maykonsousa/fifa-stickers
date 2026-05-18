@@ -30,6 +30,8 @@ import {
 import { createProposalAction } from "@/app/(authenticated)/proposals/lib/create-proposal-action";
 import type { ProposalItem } from "@/app/(authenticated)/proposals/lib/types";
 
+type ViewerFilter = "all" | "owned" | "duplicates";
+
 interface Group {
   id: number;
   name: string;
@@ -88,7 +90,9 @@ export function ProfileStickers({
   const [groupId, setGroupId] = useState<number | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
-  const [ownedOnly, setOwnedOnly] = useState(isLoggedIn);
+  const [viewerFilter, setViewerFilter] = useState<ViewerFilter>(
+    isLoggedIn ? "duplicates" : "all",
+  );
   const [results, setResults] = useState<StickerResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -112,8 +116,9 @@ export function ProfileStickers({
   const isInitialLoad = loading && results.length === 0;
   const isLoadingMore = loading && results.length > 0;
 
-  // The owned-only filter only makes sense on the missing tab with a logged viewer.
-  const effectiveOwnedOnly = tab === "missing" && isLoggedIn && ownedOnly;
+  // The viewer filter only applies on the missing tab with a logged viewer.
+  const effectiveViewerFilter: ViewerFilter =
+    tab === "missing" && isLoggedIn ? viewerFilter : "all";
 
   // Reset and load page 1 whenever filters change.
   useEffect(() => {
@@ -133,7 +138,7 @@ export function ProfileStickers({
         p_page: 1,
         p_page_size: PAGE_SIZE,
         p_viewer_id: viewerId,
-        p_owned_only: effectiveOwnedOnly,
+        p_viewer_filter: effectiveViewerFilter,
       })
       .then(({ data }) => {
         if (myVersion !== fetchVersionRef.current) return;
@@ -142,7 +147,7 @@ export function ProfileStickers({
         setTotalCount(rows[0]?.total_count ?? 0);
         setLoading(false);
       });
-  }, [userId, tab, groupId, keyword, viewerId, effectiveOwnedOnly]);
+  }, [userId, tab, groupId, keyword, viewerId, effectiveViewerFilter]);
 
   // Infinite scroll.
   useEffect(() => {
@@ -168,7 +173,7 @@ export function ProfileStickers({
             p_page: nextPage,
             p_page_size: PAGE_SIZE,
             p_viewer_id: viewerId,
-            p_owned_only: effectiveOwnedOnly,
+            p_viewer_filter: effectiveViewerFilter,
           })
           .then(({ data }) => {
             if (myVersion !== fetchVersionRef.current) return;
@@ -183,7 +188,7 @@ export function ProfileStickers({
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [loading, hasMore, userId, tab, groupId, keyword, viewerId, effectiveOwnedOnly]);
+  }, [loading, hasMore, userId, tab, groupId, keyword, viewerId, effectiveViewerFilter]);
 
   const toPicked = (sticker: StickerResult): SelectedSticker => ({
     sticker_id: sticker.id,
@@ -342,15 +347,35 @@ export function ProfileStickers({
           </PopoverContent>
         </Popover>
         {tab === "missing" && tradeUIEnabled && isLoggedIn && (
-          <label className="inline-flex items-center gap-2 px-3 py-2 text-sm text-white rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-            <input
-              type="checkbox"
-              checked={ownedOnly}
-              onChange={(e) => setOwnedOnly(e.target.checked)}
-              className="accent-green-500"
-            />
-            Só as que tenho
-          </label>
+          <div
+            role="radiogroup"
+            aria-label="Filtrar pelas minhas figurinhas"
+            className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 p-0.5 text-sm"
+          >
+            {([
+              { value: "all", label: "Todas" },
+              { value: "owned", label: "Que eu tenho" },
+              { value: "duplicates", label: "Que tenho repetidas" },
+            ] as { value: ViewerFilter; label: string }[]).map((opt) => {
+              const active = viewerFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setViewerFilter(opt.value)}
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                    active
+                      ? "bg-green-500 text-zinc-900 font-medium"
+                      : "text-gray-300 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -376,11 +401,13 @@ export function ProfileStickers({
       {!loading && results.length === 0 && (
         <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
           <p className="text-gray-400 text-sm">
-            {tab === "missing" && effectiveOwnedOnly
-              ? "Você não tem nenhuma das figurinhas que faltam pra ele. Desmarque o filtro pra ver todas."
-              : tab === "duplicates" && tradeFilterActive
-                ? "Nenhuma troca viável aqui. Vocês não têm sobreposição nessa categoria."
-                : "Nenhuma figurinha encontrada."}
+            {tab === "missing" && effectiveViewerFilter === "duplicates"
+              ? "Nenhuma repetida sua bate com o que falta pra ele. Mude o filtro pra ver mais."
+              : tab === "missing" && effectiveViewerFilter === "owned"
+                ? "Você não tem nenhuma das figurinhas que faltam pra ele. Mude o filtro pra ver todas."
+                : tab === "duplicates" && tradeFilterActive
+                  ? "Nenhuma troca viável aqui. Vocês não têm sobreposição nessa categoria."
+                  : "Nenhuma figurinha encontrada."}
           </p>
         </div>
       )}

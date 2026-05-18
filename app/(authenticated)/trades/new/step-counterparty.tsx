@@ -47,7 +47,9 @@ export function StepCounterparty({ initial, onComplete }: Props) {
   const [results, setResults] = useState<UserMatch[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<UserMatch | null>(initialSelected(initial));
-  const [creatingLead, setCreatingLead] = useState(false);
+  const [creatingLead, setCreatingLead] = useState(
+    initial?.type === "lead" && !initial.id,
+  );
   const [leadFields, setLeadFields] = useState({
     name: initial?.type === "lead" ? initial.name : "",
     email: initial?.type === "lead" ? initial.email : "",

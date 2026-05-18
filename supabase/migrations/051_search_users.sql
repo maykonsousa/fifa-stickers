@@ -12,6 +12,10 @@
 --   - Alfabético por display_name como desempate.
 -- Quando include_leads=true e o email do lead já existe em profiles,
 -- o lead é omitido (precedência ao membro).
+--
+-- IMPORTANTE: o caller é responsável por escapar `%`, `_` e `\` em
+-- p_keyword antes de invocar (LIKE wildcards). Ver
+-- `app/(authenticated)/trades/lib/search-counterparty.ts`.
 
 CREATE OR REPLACE FUNCTION search_users(
   p_keyword TEXT,
@@ -101,8 +105,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION search_users(TEXT, INT, BOOLEAN) TO authenticated;
 
-CREATE INDEX IF NOT EXISTS idx_profiles_display_name_lower
-  ON profiles ((lower(display_name)));
-
-CREATE INDEX IF NOT EXISTS idx_leads_name_lower
-  ON leads ((lower(name)));
+-- NOTA SOBRE ÍNDICES: a busca por nome usa `LIKE '%kw%'` (substring),
+-- que B-tree não acelera. O volume atual não justifica adicionar
+-- extensão pg_trgm + índices GIN com gin_trgm_ops. Se a busca virar
+-- gargalo, migrar nesse momento — não antes.

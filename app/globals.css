@@ -61,14 +61,15 @@
 @layer base {
   html {
     font-size: 16px;
+    background-color: #0a3d2a;
     @apply font-sans;
   }
 
   body {
-    background: var(--background);
+    background-color: #0a3d2a;
     color: var(--foreground);
     font-family: var(--font-body), system-ui, -apple-system, sans-serif;
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
 
   h1 {

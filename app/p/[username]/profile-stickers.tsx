@@ -347,15 +347,35 @@ export function ProfileStickers({
           </PopoverContent>
         </Popover>
         {tab === "missing" && tradeUIEnabled && isLoggedIn && (
-          <label className="inline-flex items-center gap-2 px-3 py-2 text-sm text-white rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-            <input
-              type="checkbox"
-              checked={ownedOnly}
-              onChange={(e) => setOwnedOnly(e.target.checked)}
-              className="accent-green-500"
-            />
-            Só as que tenho
-          </label>
+          <div
+            role="radiogroup"
+            aria-label="Filtrar pelas minhas figurinhas"
+            className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 p-0.5 text-sm"
+          >
+            {([
+              { value: "all", label: "Todas" },
+              { value: "owned", label: "Que eu tenho" },
+              { value: "duplicates", label: "Que tenho repetidas" },
+            ] as { value: ViewerFilter; label: string }[]).map((opt) => {
+              const active = viewerFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setViewerFilter(opt.value)}
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                    active
+                      ? "bg-green-500 text-zinc-900 font-medium"
+                      : "text-gray-300 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
 

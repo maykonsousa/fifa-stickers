@@ -1,6 +1,6 @@
 import { Trophy, AlertCircle, Layers } from "lucide-react";
 import { InstagramLogo, WhatsappLogo } from "@phosphor-icons/react/dist/ssr";
-import { ShareProfileButton } from "./share-profile-button";
+import { ShareMenu } from "./share-menu";
 
 interface ProfileHeroProps {
   displayName: string;
@@ -66,9 +66,11 @@ export function ProfileHero({
             )}
           </div>
         </div>
-        <ShareProfileButton
+        <ShareMenu
           username={username}
           displayName={displayName}
+          totalMissing={totalMissing}
+          totalDuplicates={totalDuplicates}
           className="sm:ml-auto shrink-0"
         />
       </div>

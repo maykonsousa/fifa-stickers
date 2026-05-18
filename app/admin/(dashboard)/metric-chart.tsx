@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { formatChartBucket } from "@/lib/format-datetime";
 
 type BucketType = "hour" | "day" | "week" | "month";
 
@@ -21,20 +22,6 @@ const BUCKET_LABEL: Record<BucketType, string> = {
   week: "semana",
   month: "mês",
 };
-
-function formatBucket(iso: string, bucket: BucketType): string {
-  const d = new Date(iso);
-  if (bucket === "hour") {
-    return d.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-  if (bucket === "month") {
-    return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
-  }
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-}
 
 export function MetricChart({
   title,
@@ -52,7 +39,7 @@ export function MetricChart({
 
   const chartData = data.map((r) => ({
     ...r,
-    label: formatBucket(r.bucket, bucket),
+    label: formatChartBucket(r.bucket, bucket),
   }));
 
   return (

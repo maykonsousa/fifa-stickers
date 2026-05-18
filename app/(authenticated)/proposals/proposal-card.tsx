@@ -1,16 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { formatDateTime } from "@/lib/format-datetime";
 import type { ProposalListRow, ProposalStatus } from "./lib/types";
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 const statusLabel: Record<ProposalStatus, string> = {
   pending: "Pendente",

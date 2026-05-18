@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { formatDate } from "@/lib/format-datetime";
 
 interface Profile {
   id: string;
@@ -111,7 +112,7 @@ export function UsersAdmin({ profiles, adminUserIds, page, totalPages, sort, dir
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <p className="text-xs text-gray-500">
-                    {new Date(profile.created_at).toLocaleDateString("pt-BR")}
+                    {formatDate(profile.created_at)}
                   </p>
                   <p className="text-xs text-gray-500">
                     {profile.sticker_count} figurinhas
@@ -183,7 +184,7 @@ export function UsersAdmin({ profiles, adminUserIds, page, totalPages, sort, dir
                   </td>
                   <td className="px-4 py-3 text-gray-400">{profile.sticker_count}</td>
                   <td className="px-4 py-3 text-gray-400">
-                    {new Date(profile.created_at).toLocaleDateString("pt-BR")}
+                    {formatDate(profile.created_at)}
                   </td>
                   <td className="px-4 py-3">
                     {isAdmin ? (

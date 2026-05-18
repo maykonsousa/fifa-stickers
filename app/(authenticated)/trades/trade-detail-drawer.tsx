@@ -11,6 +11,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { formatDateTimeLong } from "@/lib/format-datetime";
 import { Loader2 } from "lucide-react";
 
 interface StickerDetail {
@@ -39,17 +40,6 @@ interface Props {
   tradeId: string | null;
   userId: string;
   onClose: () => void;
-}
-
-function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export function TradeDetailDrawer({ tradeId, userId, onClose }: Props) {
@@ -244,7 +234,7 @@ export function TradeDetailDrawer({ tradeId, userId, onClose }: Props) {
               )}
               <div className="min-w-0">
                 <p className="text-sm font-medium text-white">{detail.otherName}</p>
-                <p className="text-xs text-gray-400">{formatDateTime(detail.createdAt)}</p>
+                <p className="text-xs text-gray-400">{formatDateTimeLong(detail.createdAt)}</p>
               </div>
             </div>
 

@@ -1,19 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { formatDateTime } from "@/lib/format-datetime";
 import type { TradeHistoryRow } from "./lib/types";
 import { TradeDetailDrawer } from "./trade-detail-drawer";
-
-function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function TradesList({ rows, userId }: { rows: TradeHistoryRow[]; userId: string }) {
   const [openTradeId, setOpenTradeId] = useState<string | null>(null);

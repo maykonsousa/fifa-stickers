@@ -1,3 +1,4 @@
+import { formatRelativeDateTime } from "@/lib/format-datetime";
 import type { ProposalItemDetail, ProposalStatus } from "../lib/types";
 
 interface Props {
@@ -9,29 +10,24 @@ interface Props {
   itemsOffer: ProposalItemDetail[];
 }
 
-const statusBanner: Record<ProposalStatus, { text: (n: string, d: string) => string; cls: string }> = {
-  pending: { text: () => "", cls: "" },
-  accepted: {
-    text: (_n, d) => `✅ Aceita em ${d} — combinem o encontro!`,
-    cls: "bg-green-500/10 border-green-500/30 text-green-200",
-  },
-  rejected: {
-    text: (_n, d) => `❌ Recusada em ${d}.`,
-    cls: "bg-white/5 border-white/10 text-gray-300",
-  },
-  cancelled: {
-    text: (n, d) => `Cancelada por ${n} em ${d}.`,
-    cls: "bg-white/5 border-white/10 text-gray-300",
-  },
+const bannerClass: Record<Exclude<ProposalStatus, "pending">, string> = {
+  accepted: "bg-green-500/10 border-green-500/30 text-green-200",
+  rejected: "bg-white/5 border-white/10 text-gray-300",
+  cancelled: "bg-white/5 border-white/10 text-gray-300",
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function buildBannerText(
+  status: Exclude<ProposalStatus, "pending">,
+  decidedAt: string,
+  otherName: string,
+  isOwner: boolean,
+): string {
+  const d = formatRelativeDateTime(decidedAt);
+  if (status === "accepted") return `✅ Aceita ${d} — combinem o encontro!`;
+  if (status === "rejected") return `❌ Recusada ${d}.`;
+  // Only the proposer can cancel today, so the canceler is the proposer.
+  const by = isOwner ? otherName : "você";
+  return `Cancelada por ${by} ${d}.`;
 }
 
 function StickerItem({ item }: { item: ProposalItemDetail }) {
@@ -61,8 +57,8 @@ export function ProposalDetail({ status, decidedAt, otherName, isOwner, itemsWan
   return (
     <div className="space-y-4">
       {status !== "pending" && decidedAt && (
-        <div className={`rounded-lg border px-4 py-3 text-sm ${statusBanner[status].cls}`}>
-          {statusBanner[status].text(otherName, formatDate(decidedAt))}
+        <div className={`rounded-lg border px-4 py-3 text-sm ${bannerClass[status]}`}>
+          {buildBannerText(status, decidedAt, otherName, isOwner)}
         </div>
       )}
 

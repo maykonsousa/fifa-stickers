@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { formatDate } from "@/lib/format-datetime";
 import { ProposalDetail } from "./proposal-detail";
 import { ProposalChat } from "./proposal-chat";
 import { ProposalActions } from "./proposal-actions";
@@ -92,7 +93,7 @@ export default async function ProposalDetailPage({
         )}
         <div>
           <h1 className="text-xl font-bold text-white">{otherProfile?.display_name ?? "Usuário"}</h1>
-          <p className="text-xs text-gray-500">Criada em {new Date(proposal.created_at).toLocaleDateString("pt-BR")}</p>
+          <p className="text-xs text-gray-500">Criada em {formatDate(proposal.created_at)}</p>
         </div>
       </div>
 

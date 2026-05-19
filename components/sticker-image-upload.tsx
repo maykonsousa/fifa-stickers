@@ -149,7 +149,7 @@ export function StickerImageUpload({
           <div className="flex flex-col gap-2">
             {currentImageUrl ? (
               <>
-                <div className="relative w-full aspect-[2/3] rounded-lg overflow-hidden bg-black">
+                <div className="relative w-full aspect-[49/63] rounded-lg overflow-hidden bg-black">
                   <img src={currentImageUrl} alt={stickerCode} className="h-full w-full object-cover" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -228,12 +228,12 @@ export function StickerImageUpload({
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden bg-black">
+            <div className="relative w-full aspect-[49/63] rounded-lg overflow-hidden bg-black">
               <Cropper
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={2 / 3}
+                aspect={49 / 63}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}

@@ -332,7 +332,7 @@ function StickerThumb({
         className={`relative rounded-lg p-[2px] ${showOwnership && hasIt ? borderClass : ""}`}
       >
         <div
-          className={`relative aspect-[2/3] overflow-hidden rounded-lg ${
+          className={`relative aspect-[49/63] overflow-hidden rounded-lg ${
             showOwnership && !hasIt
               ? "bg-gray-800/50 border border-white/10"
               : "bg-gray-800 border border-white/10"

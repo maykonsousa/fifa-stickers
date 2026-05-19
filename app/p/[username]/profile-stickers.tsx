@@ -604,7 +604,7 @@ function StickerCard({
 
   const innerContent = (
     <>
-      <div className={`aspect-[2/3] relative ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
+      <div className={`aspect-[49/63] relative ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
         {sticker.image_url ? (
           <img
             src={sticker.image_url}

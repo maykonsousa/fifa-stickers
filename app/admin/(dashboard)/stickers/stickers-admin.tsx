@@ -198,7 +198,7 @@ export function StickersAdmin({
             type="button"
             onClick={() => setCreateOpen(true)}
             disabled={postCreateUpload !== null}
-            className="group flex aspect-[2/3] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/60 hover:border-green-500/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/20 disabled:hover:bg-white/5 disabled:hover:text-white/60 transition-all"
+            className="group flex aspect-[49/63] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 text-white/60 hover:border-green-500/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/20 disabled:hover:bg-white/5 disabled:hover:text-white/60 transition-all"
             aria-label="Adicionar figurinha"
           >
             <span className="text-4xl leading-none">+</span>
@@ -211,7 +211,7 @@ export function StickersAdmin({
             onClick={() => handleEdit(sticker)}
             className="group relative cursor-pointer rounded-lg border border-white/10 bg-white/5 overflow-hidden hover:scale-[1.03] hover:border-white/20 transition-all"
           >
-            <div className="aspect-[2/3] relative">
+            <div className="aspect-[49/63] relative">
               {sticker.image_url ? (
                 <img
                   src={sticker.image_url}

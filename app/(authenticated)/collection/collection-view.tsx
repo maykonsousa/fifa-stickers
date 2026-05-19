@@ -312,7 +312,7 @@ export function CollectionView({
                 onClick={() => !adding && handleAdd(sticker.id)}
               >
                 <div
-                  className={`relative aspect-[2/3] overflow-hidden rounded-lg ${
+                  className={`relative aspect-[49/63] overflow-hidden rounded-lg ${
                     hasIt ? "bg-gray-800" : "bg-gray-800/50 border border-white/10 opacity-50"
                   }`}
                 >

@@ -378,7 +378,7 @@ function StickerCard({
         }`}
       >
         <div
-          className={`relative aspect-[2/3] overflow-hidden rounded-lg ${
+          className={`relative aspect-[49/63] overflow-hidden rounded-lg ${
             isDisabled
               ? "bg-gray-800/40 border border-white/5 opacity-40 grayscale"
               : showOwnership && !hasIt

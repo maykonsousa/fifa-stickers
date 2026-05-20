@@ -187,7 +187,7 @@ export function StickerPicker({
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent
         ref={drawerContentRef}
-        className="bg-gray-900 text-white border-white/10 data-[vaul-drawer-direction=bottom]:max-h-[92vh] data-[vaul-drawer-direction=right]:sm:max-w-2xl"
+        className="bg-gray-900 text-white border-white/10 data-[vaul-drawer-direction=bottom]:h-[92vh] data-[vaul-drawer-direction=bottom]:max-h-[92vh] overscroll-contain data-[vaul-drawer-direction=right]:sm:max-w-2xl"
       >
         <DrawerHeader className="pb-6">
           <DrawerTitle className="font-sans text-white text-base font-medium">
@@ -295,7 +295,7 @@ export function StickerPicker({
             </div>
 
             {/* Grid */}
-            <div className="overflow-y-auto flex-1 min-h-0 -mx-1 px-1">
+            <div className="overflow-y-auto overscroll-contain flex-1 min-h-0 -mx-1 px-1">
               {loading && results.length === 0 ? (
                 <div className="py-8 flex justify-center">
                   <Loader2 className="h-6 w-6 animate-spin text-brand-grass" />
@@ -328,6 +328,18 @@ export function StickerPicker({
                   <Loader2 className="h-5 w-5 animate-spin text-brand-grass" />
                 </div>
               )}
+            </div>
+
+            <div className="pt-3 mt-1 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="w-full rounded-lg bg-brand-grass px-4 py-3 text-sm font-medium text-gray-900 hover:bg-brand-grass/90 transition-colors"
+              >
+                {selectedStickerIds.length > 0
+                  ? `Concluir (${selectedStickerIds.length} ${selectedStickerIds.length === 1 ? "selecionada" : "selecionadas"})`
+                  : "Concluir"}
+              </button>
             </div>
         </div>
       </DrawerContent>

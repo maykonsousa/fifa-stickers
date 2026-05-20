@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Drawer,
   DrawerContent,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -329,19 +330,19 @@ export function StickerPicker({
                 </div>
               )}
             </div>
-
-            <div className="pt-3 mt-1 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="w-full rounded-lg bg-brand-grass px-4 py-3 text-sm font-medium text-gray-900 hover:bg-brand-grass/90 transition-colors"
-              >
-                {selectedStickerIds.length > 0
-                  ? `Concluir (${selectedStickerIds.length} ${selectedStickerIds.length === 1 ? "selecionada" : "selecionadas"})`
-                  : "Concluir"}
-              </button>
-            </div>
         </div>
+
+        <DrawerFooter className="border-t border-white/10 pt-3">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="w-full rounded-lg bg-brand-grass px-4 py-3 text-sm font-medium text-gray-900 hover:bg-brand-grass/90 transition-colors"
+          >
+            {selectedStickerIds.length > 0
+              ? `Concluir (${selectedStickerIds.length} ${selectedStickerIds.length === 1 ? "selecionada" : "selecionadas"})`
+              : "Concluir"}
+          </button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

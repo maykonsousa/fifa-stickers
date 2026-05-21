@@ -45,6 +45,7 @@ interface StickerResult {
   image_url: string | null;
   group_name: string;
   duplicate_count: number;
+  viewer_owned_count: number;
   total_count: number;
 }
 
@@ -69,7 +70,6 @@ export function ProfileStickers({
   missingCount,
   duplicatesCount,
   tradeDuplicatesCount = null,
-  viewerOwnedCounts = {},
 }: {
   userId: string;
   viewerId?: string | null;
@@ -82,7 +82,6 @@ export function ProfileStickers({
   missingCount: number;
   duplicatesCount: number;
   tradeDuplicatesCount?: number | null;
-  viewerOwnedCounts?: Record<number, number>;
 }) {
   const router = useRouter();
   const initialTab: "missing" | "duplicates" = tradeUIEnabled ? "duplicates" : "missing";
@@ -391,7 +390,7 @@ export function ProfileStickers({
               selectable={selectable}
               selected={selectedIds.has(sticker.id)}
               onToggle={selectable ? () => handleCardToggle(sticker) : undefined}
-              ownedCount={showOwnership ? viewerOwnedCounts[sticker.id] ?? 0 : null}
+              ownedCount={showOwnership ? sticker.viewer_owned_count : null}
             />
           );
         })}

@@ -296,6 +296,7 @@ export function StickersAdmin({
           stickerCode={postCreateUpload.code}
           userId={userId}
           currentImageUrl={null}
+          canReplace
           onSuccess={() => {
             setPostCreateUpload(null);
             router.refresh();

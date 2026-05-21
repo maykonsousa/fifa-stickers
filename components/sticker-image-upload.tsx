@@ -22,6 +22,7 @@ interface Props {
   onSkip?: () => void;
   currentImageUrl?: string | null;
   onRemove?: () => void;
+  canReplace?: boolean;
 }
 
 export function StickerImageUpload({
@@ -34,6 +35,7 @@ export function StickerImageUpload({
   onSkip,
   currentImageUrl,
   onRemove,
+  canReplace = false,
 }: Props) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -68,10 +70,14 @@ export function StickerImageUpload({
       const supabase = createClient();
       const path = `stickers/${stickerCode}.png`;
 
-      await supabase.storage.from("sticker-images").upload(path, blob, {
-        upsert: true,
-        contentType: "image/webp",
-      });
+      const { error: uploadError } = await supabase.storage
+        .from("sticker-images")
+        .upload(path, blob, {
+          upsert: canReplace,
+          contentType: "image/webp",
+        });
+
+      if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from("sticker-images").getPublicUrl(path);
       const imageUrl = `${urlData.publicUrl}?v=${Date.now()}`;

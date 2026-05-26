@@ -15,13 +15,18 @@ export function StickerCard({
   selected = false,
   onToggle,
   ownedCount = null,
+  orientation = "portrait",
 }: {
   sticker: StickerCardSticker;
   selectable?: boolean;
   selected?: boolean;
   onToggle?: () => void;
   ownedCount?: number | null;
+  orientation?: "portrait" | "landscape";
 }) {
+  // 49:63 retrato é o aspect base; landscape inverte (63:49 = 2x as wide
+  // visualmente quando o card ocupa 2 colunas do grid de mesmo tamanho).
+  const aspectClass = orientation === "landscape" ? "aspect-[63/49]" : "aspect-[49/63]";
   const showOwnership = ownedCount !== null;
   const hasIt = showOwnership && ownedCount > 0;
   const isDuplicate = showOwnership && ownedCount > 1;
@@ -35,7 +40,7 @@ export function StickerCard({
     : "";
 
   const innerContent = (
-    <div className={`aspect-[49/63] relative ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
+    <div className={`${aspectClass} relative ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
       {sticker.image_url ? (
         <img
           src={sticker.image_url}

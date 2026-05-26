@@ -1,27 +1,29 @@
 #!/usr/bin/env tsx
 /**
  * Lê data/album-pages.txt (formato espelhando o álbum físico, página por
- * página) e escreve data/album-positions.csv pronto pro generate-album-seed.ts.
+ * página, grade fixa 4×3) e escreve data/album-positions.csv pronto pro
+ * generate-album-seed.ts.
  *
  * Formato de entrada:
  *
- *   === PAGE 4 ===
- *   FWC1 FWC2
- *   FWC3 FWC4 FWC5 FWC6
- *   FWC7 FWC8 FWC9 FWC10
+ *   === PAGE 1 ===
+ *   FWC00:L FWC1:L
+ *   FWC2:L FWC3:L
+ *   _ _ FWC4 _
  *
- *   === PAGE 5 ===
- *   ...
+ * Tokens por linha:
+ *   - `CODIGO`      → figurinha retrato, ocupa 1 célula
+ *   - `CODIGO:L`    → figurinha paisagem, ocupa 2 células consecutivas
+ *   - `_`           → célula vazia, ocupa 1 célula
  *
- * - Cabeçalho `=== PAGE N ===` define a página (N inteiro >= 1).
- * - Cada linha de conteúdo é uma linha visual da página.
- * - Códigos separados por whitespace; posição no array vira a coluna (1-based).
- * - Linhas em branco e linhas começando com `#` são ignoradas.
+ * Layout assumido: grade 4 colunas × 3 linhas em TODAS as páginas.
+ * A coluna de cada token é derivada acumulando os spans dos tokens anteriores.
  *
  * Validações:
- * - Cada code aparece no máximo uma vez no arquivo todo.
- * - Cada (page, row, col) aparece no máximo uma vez.
- * - Falha com mensagem clara apontando linha/página do problema.
+ *   - Cada linha consome exatamente 4 colunas (nem mais nem menos).
+ *   - Cada page tem no máximo 3 linhas de conteúdo.
+ *   - Cada code aparece no máximo uma vez no arquivo todo.
+ *   - Cada (page, row, col) aparece no máximo uma vez (decorrente do span).
  *
  * Uso: npx tsx scripts/parse-album-pages.ts
  */
@@ -31,18 +33,21 @@ import { join } from "node:path";
 const IN_PATH = join(process.cwd(), "data", "album-pages.txt");
 const OUT_PATH = join(process.cwd(), "data", "album-positions.csv");
 
+const GRID_COLS = 4;
+const GRID_ROWS = 3;
+
 interface Entry {
   code: string;
   page: number;
   row: number;
   col: number;
-  sourceLine: number; // 1-based line number in album-pages.txt for error messages
+  orientation: "portrait" | "landscape";
+  sourceLine: number;
 }
 
 const PAGE_HEADER = /^===\s*PAGE\s+(\d+)\s*===\s*$/;
 
 function parse(text: string): Entry[] {
-  // Strip UTF-8 BOM if present.
   const clean = text.replace(/^﻿/, "");
   const lines = clean.split(/\r?\n/);
   const entries: Entry[] = [];
@@ -61,9 +66,7 @@ function parse(text: string): Entry[] {
     if (headerMatch) {
       currentPage = Number(headerMatch[1]);
       if (!Number.isInteger(currentPage) || currentPage < 1) {
-        throw new Error(
-          `Linha ${lineNo}: número de página inválido: "${trimmed}"`,
-        );
+        throw new Error(`Linha ${lineNo}: número de página inválido: "${trimmed}"`);
       }
       rowInPage = 0;
       continue;
@@ -76,16 +79,62 @@ function parse(text: string): Entry[] {
     }
 
     rowInPage += 1;
-    const codes = trimmed.split(/\s+/).filter((s) => s.length > 0);
-    codes.forEach((code, idx) => {
+    if (rowInPage > GRID_ROWS) {
+      throw new Error(
+        `Linha ${lineNo}: página ${currentPage} excede ${GRID_ROWS} linhas.`,
+      );
+    }
+
+    const tokens = trimmed.split(/\s+/).filter(Boolean);
+    let col = 1;
+    for (const token of tokens) {
+      if (col > GRID_COLS) {
+        throw new Error(
+          `Linha ${lineNo}: página ${currentPage} linha ${rowInPage} excede ${GRID_COLS} colunas.`,
+        );
+      }
+
+      if (token === "_") {
+        col += 1;
+        continue;
+      }
+
+      let code = token;
+      let orientation: "portrait" | "landscape" = "portrait";
+      if (code.endsWith(":L")) {
+        orientation = "landscape";
+        code = code.slice(0, -2);
+      } else if (code.endsWith(":P")) {
+        code = code.slice(0, -2);
+      }
+
+      if (code.length === 0) {
+        throw new Error(`Linha ${lineNo}: token "${token}" sem código.`);
+      }
+
+      const span = orientation === "landscape" ? 2 : 1;
+      if (col + span - 1 > GRID_COLS) {
+        throw new Error(
+          `Linha ${lineNo}: "${code}" landscape começando na coluna ${col} excede ${GRID_COLS} colunas.`,
+        );
+      }
+
       entries.push({
         code,
         page: currentPage as number,
         row: rowInPage,
-        col: idx + 1,
+        col,
+        orientation,
         sourceLine: lineNo,
       });
-    });
+      col += span;
+    }
+
+    if (col !== GRID_COLS + 1) {
+      throw new Error(
+        `Linha ${lineNo}: página ${currentPage} linha ${rowInPage} consome ${col - 1} colunas, esperado ${GRID_COLS} (use _ pra células vazias).`,
+      );
+    }
   }
 
   return entries;
@@ -93,35 +142,22 @@ function parse(text: string): Entry[] {
 
 function validate(entries: Entry[]): void {
   const seenCodes = new Map<string, Entry>();
-  const seenSlots = new Map<string, Entry>();
-
   for (const e of entries) {
-    const slot = `${e.page}:${e.row}:${e.col}`;
-
-    const existingCode = seenCodes.get(e.code);
-    if (existingCode) {
+    const existing = seenCodes.get(e.code);
+    if (existing) {
       throw new Error(
-        `Code duplicado "${e.code}" — linhas ${existingCode.sourceLine} ` +
-          `(página ${existingCode.page}) e ${e.sourceLine} (página ${e.page}).`,
+        `Code duplicado "${e.code}" — linhas ${existing.sourceLine} (página ${existing.page}) e ${e.sourceLine} (página ${e.page}).`,
       );
     }
     seenCodes.set(e.code, e);
-
-    const existingSlot = seenSlots.get(slot);
-    if (existingSlot) {
-      throw new Error(
-        `Slot duplicado (página ${e.page}, linha ${e.row}, coluna ${e.col}) — ` +
-          `"${existingSlot.code}" (linha ${existingSlot.sourceLine}) ` +
-          `e "${e.code}" (linha ${e.sourceLine}).`,
-      );
-    }
-    seenSlots.set(slot, e);
   }
 }
 
 function toCsv(entries: Entry[]): string {
-  const header = "sticker_code,page,row,col";
-  const rows = entries.map((e) => `${e.code},${e.page},${e.row},${e.col}`);
+  const header = "sticker_code,page,row,col,orientation";
+  const rows = entries.map(
+    (e) => `${e.code},${e.page},${e.row},${e.col},${e.orientation}`,
+  );
   return [header, ...rows].join("\n") + "\n";
 }
 
@@ -134,7 +170,10 @@ function main() {
   }
   validate(entries);
   writeFileSync(OUT_PATH, toCsv(entries), "utf-8");
-  console.log(`Gerado ${OUT_PATH} com ${entries.length} posições.`);
+  const landscape = entries.filter((e) => e.orientation === "landscape").length;
+  console.log(
+    `Gerado ${OUT_PATH} com ${entries.length} posições (${landscape} landscape).`,
+  );
 }
 
 main();

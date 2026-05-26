@@ -21,6 +21,7 @@ interface Row {
   page: number;
   row: number;
   col: number;
+  orientation: "portrait" | "landscape";
 }
 
 function parseCsv(text: string): Row[] {
@@ -29,7 +30,7 @@ function parseCsv(text: string): Row[] {
     throw new Error("CSV vazio");
   }
   const header = lines[0].split(",").map((s) => s.trim());
-  const expected = ["sticker_code", "page", "row", "col"];
+  const expected = ["sticker_code", "page", "row", "col", "orientation"];
   if (header.join(",") !== expected.join(",")) {
     throw new Error(
       `Cabeçalho inválido. Esperado: ${expected.join(",")}. Obtido: ${header.join(",")}`,
@@ -38,10 +39,10 @@ function parseCsv(text: string): Row[] {
   const rows: Row[] = [];
   for (let i = 1; i < lines.length; i++) {
     const parts = lines[i].split(",").map((s) => s.trim());
-    if (parts.length !== 4) {
-      throw new Error(`Linha ${i + 1}: esperado 4 colunas, encontrado ${parts.length}`);
+    if (parts.length !== 5) {
+      throw new Error(`Linha ${i + 1}: esperado 5 colunas, encontrado ${parts.length}`);
     }
-    const [code, page, row, col] = parts;
+    const [code, page, row, col, orientation] = parts;
     if (!code) throw new Error(`Linha ${i + 1}: sticker_code vazio`);
     const pageN = Number(page);
     const rowN = Number(row);
@@ -52,7 +53,12 @@ function parseCsv(text: string): Row[] {
       throw new Error(`Linha ${i + 1}: row inválida (${row})`);
     if (!Number.isInteger(colN) || colN < 1)
       throw new Error(`Linha ${i + 1}: col inválida (${col})`);
-    rows.push({ code, page: pageN, row: rowN, col: colN });
+    if (orientation !== "portrait" && orientation !== "landscape") {
+      throw new Error(
+        `Linha ${i + 1}: orientation inválida (${orientation}), esperado portrait ou landscape`,
+      );
+    }
+    rows.push({ code, page: pageN, row: rowN, col: colN, orientation });
   }
   return rows;
 }
@@ -73,7 +79,7 @@ BEGIN;
   const updates = rows
     .map(
       (r) =>
-        `UPDATE stickers SET page = ${r.page}, row = ${r.row}, col = ${r.col} WHERE code = '${escapeSqlString(r.code)}';`,
+        `UPDATE stickers SET page = ${r.page}, row = ${r.row}, col = ${r.col}, orientation = '${r.orientation}' WHERE code = '${escapeSqlString(r.code)}';`,
     )
     .join("\n");
   return `${header}${updates}\n\nCOMMIT;\n`;

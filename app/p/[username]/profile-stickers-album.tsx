@@ -5,6 +5,10 @@ import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { StickerCard } from "./sticker-card";
 
+// Grade fixa pra todas as páginas do álbum.
+const GRID_COLS = 4;
+const GRID_ROWS = 3;
+
 interface AlbumSticker {
   id: number;
   code: string;
@@ -13,6 +17,7 @@ interface AlbumSticker {
   page: number;
   row: number;
   col: number;
+  orientation: "portrait" | "landscape";
   group_id: number;
   group_name: string;
   duplicate_count: number;
@@ -23,8 +28,6 @@ interface AlbumPage {
   page: number;
   groupName: string;
   stickers: AlbumSticker[];
-  maxRow: number;
-  maxCol: number;
 }
 
 function groupByPage(rows: AlbumSticker[]): AlbumPage[] {
@@ -49,9 +52,7 @@ function groupByPage(rows: AlbumSticker[]): AlbumPage[] {
         topCount = count;
       }
     }
-    const maxRow = stickers.reduce((m, s) => Math.max(m, s.row), 0);
-    const maxCol = stickers.reduce((m, s) => Math.max(m, s.col), 0);
-    pages.push({ page, groupName: topGroup, stickers, maxRow, maxCol });
+    pages.push({ page, groupName: topGroup, stickers });
   }
   pages.sort((a, b) => a.page - b.page);
   return pages;
@@ -262,22 +263,29 @@ function AlbumPageView({
       <div
         className="grid gap-2 mx-auto"
         style={{
-          gridTemplateColumns: `repeat(${page.maxCol}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${page.maxRow}, auto)`,
-          maxWidth: `${page.maxCol * 100}px`,
+          gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${GRID_ROWS}, auto)`,
+          maxWidth: `${GRID_COLS * 110}px`,
         }}
       >
-        {page.stickers.map((s) => (
-          <div
-            key={s.id}
-            style={{ gridRow: s.row, gridColumn: s.col }}
-          >
-            <StickerCard
-              sticker={s}
-              ownedCount={isLoggedIn ? s.viewer_owned_count : null}
-            />
-          </div>
-        ))}
+        {page.stickers.map((s) => {
+          const span = s.orientation === "landscape" ? 2 : 1;
+          return (
+            <div
+              key={s.id}
+              style={{
+                gridRow: s.row,
+                gridColumn: `${s.col} / span ${span}`,
+              }}
+            >
+              <StickerCard
+                sticker={s}
+                orientation={s.orientation}
+                ownedCount={isLoggedIn ? s.viewer_owned_count : null}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

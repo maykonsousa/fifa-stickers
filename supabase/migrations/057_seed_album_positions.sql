@@ -979,5 +979,11 @@ UPDATE stickers SET page = 106, row = 3, col = 3, orientation = 'landscape' WHER
 UPDATE stickers SET page = 107, row = 1, col = 1, orientation = 'landscape' WHERE code = 'FWC11';
 UPDATE stickers SET page = 107, row = 2, col = 1, orientation = 'landscape' WHERE code = 'FWC12';
 UPDATE stickers SET page = 107, row = 3, col = 3, orientation = 'landscape' WHERE code = 'FWC13';
+UPDATE stickers SET page = 108, row = 2, col = 1, orientation = 'landscape' WHERE code = 'FWC14';
+UPDATE stickers SET page = 108, row = 3, col = 1, orientation = 'landscape' WHERE code = 'FWC15';
+UPDATE stickers SET page = 109, row = 1, col = 1, orientation = 'landscape' WHERE code = 'FWC16';
+UPDATE stickers SET page = 109, row = 1, col = 3, orientation = 'landscape' WHERE code = 'FWC17';
+UPDATE stickers SET page = 109, row = 2, col = 3, orientation = 'landscape' WHERE code = 'FWC18';
+UPDATE stickers SET page = 109, row = 3, col = 3, orientation = 'landscape' WHERE code = 'FWC19';
 
 COMMIT;

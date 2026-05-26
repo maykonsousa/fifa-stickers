@@ -348,13 +348,13 @@ export function StickersAdmin({
                   src={imagePreview}
                   alt={editingSticker.code}
                   className={`rounded-lg object-cover border border-gray-600 ${
-                    editOrientation === "landscape" ? "h-28 w-40" : "h-40 w-28"
+                    editOrientation === "landscape" ? "h-24 aspect-[5/3]" : "h-40 aspect-[3/4]"
                   }`}
                 />
               ) : (
                 <div
                   className={`flex items-center justify-center rounded-lg border border-dashed border-gray-600 bg-gray-700/50 ${
-                    editOrientation === "landscape" ? "h-28 w-40" : "h-40 w-28"
+                    editOrientation === "landscape" ? "h-24 aspect-[5/3]" : "h-40 aspect-[3/4]"
                   }`}
                 >
                   <span className="text-xs text-gray-500">Sem imagem</span>

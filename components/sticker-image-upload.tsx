@@ -252,14 +252,14 @@ export function StickerImageUpload({
           <div className="flex flex-col gap-3">
             <div
               className={`relative w-full rounded-lg overflow-hidden bg-black ${
-                orientation === "landscape" ? "aspect-[63/49]" : "aspect-[49/63]"
+                orientation === "landscape" ? "aspect-[5/3]" : "aspect-[3/4]"
               }`}
             >
               <Cropper
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={orientation === "landscape" ? 63 / 49 : 49 / 63}
+                aspect={orientation === "landscape" ? 5 / 3 : 3 / 4}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}

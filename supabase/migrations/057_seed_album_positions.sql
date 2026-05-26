@@ -14,7 +14,6 @@ UPDATE stickers SET page = 1, row = 2, col = 3, orientation = 'portrait' WHERE c
 UPDATE stickers SET page = 1, row = 2, col = 4, orientation = 'portrait' WHERE code = 'FWC6';
 UPDATE stickers SET page = 1, row = 3, col = 1, orientation = 'portrait' WHERE code = 'FWC7';
 UPDATE stickers SET page = 1, row = 3, col = 2, orientation = 'portrait' WHERE code = 'FWC8';
-UPDATE stickers SET page = 1, row = 3, col = 3, orientation = 'portrait' WHERE code = 'FWC9';
 UPDATE stickers SET page = 8, row = 1, col = 3, orientation = 'portrait' WHERE code = 'MEX1';
 UPDATE stickers SET page = 8, row = 1, col = 4, orientation = 'portrait' WHERE code = 'MEX2';
 UPDATE stickers SET page = 8, row = 2, col = 1, orientation = 'portrait' WHERE code = 'MEX3';
@@ -975,5 +974,10 @@ UPDATE stickers SET page = 105, row = 2, col = 4, orientation = 'portrait' WHERE
 UPDATE stickers SET page = 105, row = 3, col = 1, orientation = 'portrait' WHERE code = 'PAN18';
 UPDATE stickers SET page = 105, row = 3, col = 2, orientation = 'portrait' WHERE code = 'PAN19';
 UPDATE stickers SET page = 105, row = 3, col = 3, orientation = 'portrait' WHERE code = 'PAN20';
+UPDATE stickers SET page = 106, row = 2, col = 3, orientation = 'landscape' WHERE code = 'FWC9';
+UPDATE stickers SET page = 106, row = 3, col = 3, orientation = 'landscape' WHERE code = 'FWC10';
+UPDATE stickers SET page = 107, row = 1, col = 1, orientation = 'landscape' WHERE code = 'FWC11';
+UPDATE stickers SET page = 107, row = 2, col = 1, orientation = 'landscape' WHERE code = 'FWC12';
+UPDATE stickers SET page = 107, row = 3, col = 3, orientation = 'landscape' WHERE code = 'FWC13';
 
 COMMIT;

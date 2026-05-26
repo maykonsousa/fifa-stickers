@@ -75,5 +75,25 @@ UPDATE stickers SET page = 13, row = 2, col = 4, orientation = 'portrait' WHERE 
 UPDATE stickers SET page = 13, row = 3, col = 1, orientation = 'portrait' WHERE code = 'KOR18';
 UPDATE stickers SET page = 13, row = 3, col = 2, orientation = 'portrait' WHERE code = 'KOR19';
 UPDATE stickers SET page = 13, row = 3, col = 3, orientation = 'portrait' WHERE code = 'KOR20';
+UPDATE stickers SET page = 14, row = 1, col = 3, orientation = 'portrait' WHERE code = 'CZE1';
+UPDATE stickers SET page = 14, row = 1, col = 4, orientation = 'portrait' WHERE code = 'CZE2';
+UPDATE stickers SET page = 14, row = 2, col = 1, orientation = 'portrait' WHERE code = 'CZE3';
+UPDATE stickers SET page = 14, row = 2, col = 2, orientation = 'portrait' WHERE code = 'CZE4';
+UPDATE stickers SET page = 14, row = 2, col = 3, orientation = 'portrait' WHERE code = 'CZE5';
+UPDATE stickers SET page = 14, row = 2, col = 4, orientation = 'portrait' WHERE code = 'CZE6';
+UPDATE stickers SET page = 14, row = 3, col = 1, orientation = 'portrait' WHERE code = 'CZE7';
+UPDATE stickers SET page = 14, row = 3, col = 2, orientation = 'portrait' WHERE code = 'CZE8';
+UPDATE stickers SET page = 14, row = 3, col = 3, orientation = 'portrait' WHERE code = 'CZE9';
+UPDATE stickers SET page = 14, row = 3, col = 4, orientation = 'portrait' WHERE code = 'CZE10';
+UPDATE stickers SET page = 15, row = 1, col = 1, orientation = 'portrait' WHERE code = 'CZE11';
+UPDATE stickers SET page = 15, row = 1, col = 2, orientation = 'portrait' WHERE code = 'CZE12';
+UPDATE stickers SET page = 15, row = 1, col = 3, orientation = 'landscape' WHERE code = 'CZE13';
+UPDATE stickers SET page = 15, row = 2, col = 1, orientation = 'portrait' WHERE code = 'CZE14';
+UPDATE stickers SET page = 15, row = 2, col = 2, orientation = 'portrait' WHERE code = 'CZE15';
+UPDATE stickers SET page = 15, row = 2, col = 3, orientation = 'portrait' WHERE code = 'CZE16';
+UPDATE stickers SET page = 15, row = 2, col = 4, orientation = 'portrait' WHERE code = 'CZE17';
+UPDATE stickers SET page = 15, row = 3, col = 1, orientation = 'portrait' WHERE code = 'CZE18';
+UPDATE stickers SET page = 15, row = 3, col = 2, orientation = 'portrait' WHERE code = 'CZE19';
+UPDATE stickers SET page = 15, row = 3, col = 3, orientation = 'portrait' WHERE code = 'CZE20';
 
 COMMIT;

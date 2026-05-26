@@ -13,7 +13,7 @@ export default async function AdminStickersPage() {
 
   const { data: stickers } = await supabase
     .from("stickers")
-    .select("id, group_id, code, number, title, description, image_url")
+    .select("id, group_id, code, number, title, description, image_url, orientation")
     .order("group_id")
     .order("number");
 

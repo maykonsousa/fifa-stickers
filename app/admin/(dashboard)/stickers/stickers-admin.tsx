@@ -31,6 +31,8 @@ interface Group {
   sticker_count: number;
 }
 
+type Orientation = "portrait" | "landscape";
+
 interface Sticker {
   id: number;
   group_id: number;
@@ -39,6 +41,7 @@ interface Sticker {
   title: string | null;
   description: string | null;
   image_url: string | null;
+  orientation: Orientation;
 }
 
 export function StickersAdmin({
@@ -59,6 +62,7 @@ export function StickersAdmin({
   const [editDescription, setEditDescription] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [editOrientation, setEditOrientation] = useState<Orientation>("portrait");
   const [saving, setSaving] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [postCreateUpload, setPostCreateUpload] = useState<{ id: number; code: string } | null>(null);
@@ -76,6 +80,7 @@ export function StickersAdmin({
     setEditingSticker(sticker);
     setEditTitle(sticker.title ?? "");
     setEditDescription(sticker.description ?? "");
+    setEditOrientation(sticker.orientation);
     setImageFile(null);
     setImagePreview(sticker.image_url);
     dialogRef.current?.showModal();
@@ -92,7 +97,16 @@ export function StickersAdmin({
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+      // Auto-detect orientation pelas dimensões naturais da imagem.
+      const img = new Image();
+      img.onload = () => {
+        setEditOrientation(
+          img.naturalWidth > img.naturalHeight ? "landscape" : "portrait",
+        );
+      };
+      img.src = url;
     }
   };
 
@@ -124,6 +138,7 @@ export function StickersAdmin({
         title: editTitle || null,
         description: editDescription || null,
         image_url: imageUrl,
+        orientation: editOrientation,
       })
       .eq("id", editingSticker.id);
 
@@ -332,10 +347,16 @@ export function StickersAdmin({
                 <img
                   src={imagePreview}
                   alt={editingSticker.code}
-                  className="h-40 w-28 rounded-lg object-cover border border-gray-600"
+                  className={`rounded-lg object-cover border border-gray-600 ${
+                    editOrientation === "landscape" ? "h-28 w-40" : "h-40 w-28"
+                  }`}
                 />
               ) : (
-                <div className="flex h-40 w-28 items-center justify-center rounded-lg border border-dashed border-gray-600 bg-gray-700/50">
+                <div
+                  className={`flex items-center justify-center rounded-lg border border-dashed border-gray-600 bg-gray-700/50 ${
+                    editOrientation === "landscape" ? "h-28 w-40" : "h-40 w-28"
+                  }`}
+                >
                   <span className="text-xs text-gray-500">Sem imagem</span>
                 </div>
               )}
@@ -348,6 +369,38 @@ export function StickersAdmin({
                   className="hidden"
                 />
               </label>
+              <div
+                role="radiogroup"
+                aria-label="Orientação da figurinha"
+                className="inline-flex items-center rounded-lg border border-gray-600 bg-gray-700 p-0.5 text-xs"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={editOrientation === "portrait"}
+                  onClick={() => setEditOrientation("portrait")}
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                    editOrientation === "portrait"
+                      ? "bg-green-600 text-white font-medium"
+                      : "text-gray-300 hover:text-white"
+                  }`}
+                >
+                  Retrato
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={editOrientation === "landscape"}
+                  onClick={() => setEditOrientation("landscape")}
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                    editOrientation === "landscape"
+                      ? "bg-green-600 text-white font-medium"
+                      : "text-gray-300 hover:text-white"
+                  }`}
+                >
+                  Paisagem
+                </button>
+              </div>
             </div>
 
             {/* Fields */}

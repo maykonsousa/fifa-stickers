@@ -1,0 +1,32 @@
+# Mapeamento do álbum físico — página por página.
+#
+# Formato:
+#   === PAGE N ===            (N = número da página no álbum)
+#   COD1 COD2                 (linha 1, colunas 1 e 2)
+#   COD3 COD4 COD5 COD6       (linha 2, colunas 1-4)
+#   ...
+#
+# Regras:
+# - Cabeçalho === PAGE N === marca o início de uma página.
+# - Cada linha de conteúdo é uma LINHA VISUAL da página do álbum.
+# - Códigos separados por espaço(s); posição no texto = coluna (1-based).
+# - Linhas em branco e linhas começando com # são ignoradas.
+# - Cada sticker_code pode aparecer no máximo uma vez no arquivo inteiro.
+#
+# Pipeline:
+#   1. Edite este arquivo: cole/digite as páginas como aparecem no álbum.
+#   2. Rode `npx tsx scripts/parse-album-pages.ts` → gera data/album-positions.csv
+#   3. Rode `npx tsx scripts/generate-album-seed.ts` → gera supabase/migrations/057_seed_album_positions.sql
+#   4. Aplique a migração.
+#
+# Exemplo (apague antes de preencher de verdade):
+#
+# === PAGE 4 ===
+# FWC1 FWC2
+# FWC3 FWC4 FWC5 FWC6
+# FWC7 FWC8 FWC9 FWC10
+#
+# === PAGE 5 ===
+# FWC11 FWC12 FWC13
+# FWC14 FWC15 FWC16 FWC17
+# FWC18 FWC19 CC1

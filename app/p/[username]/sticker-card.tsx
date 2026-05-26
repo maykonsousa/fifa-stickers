@@ -24,9 +24,10 @@ export function StickerCard({
   ownedCount?: number | null;
   orientation?: "portrait" | "landscape";
 }) {
-  // 49:63 retrato é o aspect base; landscape inverte (63:49 = 2x as wide
-  // visualmente quando o card ocupa 2 colunas do grid de mesmo tamanho).
-  const aspectClass = orientation === "landscape" ? "aspect-[63/49]" : "aspect-[49/63]";
+  // Retrato 3:4. Paisagem 5:3 — landscape um pouco mais baixo que portrait
+  // numa linha mista: portrait_h = (4/3) * W ≈ 1.33W; landscape_h =
+  // (3/5) * 2W = 1.2W. ~10% mais baixo.
+  const aspectClass = orientation === "landscape" ? "aspect-[5/3]" : "aspect-[3/4]";
   const showOwnership = ownedCount !== null;
   const hasIt = showOwnership && ownedCount > 0;
   const isDuplicate = showOwnership && ownedCount > 1;
@@ -40,14 +41,38 @@ export function StickerCard({
     : "";
 
   const innerContent = (
-    <div className={`${aspectClass} relative ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
+    <div className={`${aspectClass} relative overflow-hidden rounded-[inherit] ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
       {sticker.image_url ? (
-        <img
-          src={sticker.image_url}
-          alt={sticker.code}
-          className={`h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
-          loading="lazy"
-        />
+        orientation === "landscape" ? (
+          // Imagem retrato natural (49:63) com transform rotate(90deg). Como
+          // o container landscape tem aspect 63:49, a imagem rotacionada
+          // (que vira 63:49 visualmente) bate exatamente com o container.
+          // Width = container height post-rotation; height = container width.
+          <img
+            src={sticker.image_url}
+            alt={sticker.code}
+            className={`absolute left-1/2 top-1/2 max-w-none ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
+            style={{
+              // Pré-rotação: width = altura do container, height = largura do container.
+              // Container landscape é 5:3, então altura = 3/5 da largura.
+              // 100% width = largura do container; * 3/5 = altura.
+              // 100% height = altura do container; * 5/3 = largura.
+              width: "calc(100% * 3 / 5)",
+              height: "calc(100% * 5 / 3)",
+              objectFit: "cover",
+              transform: "translate(-50%, -50%) rotate(90deg)",
+              transformOrigin: "center",
+            }}
+            loading="lazy"
+          />
+        ) : (
+          <img
+            src={sticker.image_url}
+            alt={sticker.code}
+            className={`h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
+            loading="lazy"
+          />
+        )
       ) : (
         <div className="flex h-full flex-col items-start p-3 pt-2">
           <span className="text-sm font-bold text-white/50">{sticker.code}</span>

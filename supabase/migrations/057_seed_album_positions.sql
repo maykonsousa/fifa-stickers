@@ -1,0 +1,39 @@
+-- 057_seed_album_positions.sql
+-- GERADO AUTOMATICAMENTE a partir de data/album-positions.csv
+-- pelo script scripts/generate-album-seed.ts
+-- NÃO EDITAR À MÃO: rode `npx tsx scripts/generate-album-seed.ts` após mudar o CSV.
+
+BEGIN;
+
+UPDATE stickers SET page = 1, row = 1, col = 1, orientation = 'portrait' WHERE code = 'FWC00';
+UPDATE stickers SET page = 1, row = 1, col = 2, orientation = 'portrait' WHERE code = 'FWC1';
+UPDATE stickers SET page = 1, row = 1, col = 3, orientation = 'landscape' WHERE code = 'FWC3';
+UPDATE stickers SET page = 1, row = 2, col = 1, orientation = 'portrait' WHERE code = 'FWC2';
+UPDATE stickers SET page = 1, row = 2, col = 2, orientation = 'portrait' WHERE code = 'FWC4';
+UPDATE stickers SET page = 1, row = 2, col = 3, orientation = 'portrait' WHERE code = 'FWC5';
+UPDATE stickers SET page = 1, row = 2, col = 4, orientation = 'portrait' WHERE code = 'FWC6';
+UPDATE stickers SET page = 1, row = 3, col = 1, orientation = 'portrait' WHERE code = 'FWC7';
+UPDATE stickers SET page = 1, row = 3, col = 2, orientation = 'portrait' WHERE code = 'FWC8';
+UPDATE stickers SET page = 1, row = 3, col = 3, orientation = 'portrait' WHERE code = 'FWC9';
+UPDATE stickers SET page = 8, row = 1, col = 3, orientation = 'portrait' WHERE code = 'MEX1';
+UPDATE stickers SET page = 8, row = 1, col = 4, orientation = 'portrait' WHERE code = 'MEX2';
+UPDATE stickers SET page = 8, row = 2, col = 1, orientation = 'portrait' WHERE code = 'MEX3';
+UPDATE stickers SET page = 8, row = 2, col = 2, orientation = 'portrait' WHERE code = 'MEX4';
+UPDATE stickers SET page = 8, row = 2, col = 3, orientation = 'portrait' WHERE code = 'MEX5';
+UPDATE stickers SET page = 8, row = 2, col = 4, orientation = 'portrait' WHERE code = 'MEX6';
+UPDATE stickers SET page = 8, row = 3, col = 1, orientation = 'portrait' WHERE code = 'MEX7';
+UPDATE stickers SET page = 8, row = 3, col = 2, orientation = 'portrait' WHERE code = 'MEX8';
+UPDATE stickers SET page = 8, row = 3, col = 3, orientation = 'portrait' WHERE code = 'MEX9';
+UPDATE stickers SET page = 8, row = 3, col = 4, orientation = 'portrait' WHERE code = 'MEX10';
+UPDATE stickers SET page = 9, row = 1, col = 1, orientation = 'portrait' WHERE code = 'MEX11';
+UPDATE stickers SET page = 9, row = 1, col = 2, orientation = 'portrait' WHERE code = 'MEX12';
+UPDATE stickers SET page = 9, row = 1, col = 3, orientation = 'landscape' WHERE code = 'MEX13';
+UPDATE stickers SET page = 9, row = 2, col = 1, orientation = 'portrait' WHERE code = 'MEX14';
+UPDATE stickers SET page = 9, row = 2, col = 2, orientation = 'portrait' WHERE code = 'MEX15';
+UPDATE stickers SET page = 9, row = 2, col = 3, orientation = 'portrait' WHERE code = 'MEX16';
+UPDATE stickers SET page = 9, row = 2, col = 4, orientation = 'portrait' WHERE code = 'MEX17';
+UPDATE stickers SET page = 9, row = 3, col = 1, orientation = 'portrait' WHERE code = 'MEX18';
+UPDATE stickers SET page = 9, row = 3, col = 2, orientation = 'portrait' WHERE code = 'MEX19';
+UPDATE stickers SET page = 9, row = 3, col = 3, orientation = 'portrait' WHERE code = 'MEX20';
+
+COMMIT;

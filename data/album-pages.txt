@@ -1,32 +1,41 @@
 # Mapeamento do álbum físico — página por página.
 #
-# Formato:
-#   === PAGE N ===            (N = número da página no álbum)
-#   COD1 COD2                 (linha 1, colunas 1 e 2)
-#   COD3 COD4 COD5 COD6       (linha 2, colunas 1-4)
-#   ...
+# Grade fixa: 4 colunas × 3 linhas em TODAS as páginas.
 #
-# Regras:
-# - Cabeçalho === PAGE N === marca o início de uma página.
-# - Cada linha de conteúdo é uma LINHA VISUAL da página do álbum.
-# - Códigos separados por espaço(s); posição no texto = coluna (1-based).
-# - Linhas em branco e linhas começando com # são ignoradas.
-# - Cada sticker_code pode aparecer no máximo uma vez no arquivo inteiro.
+# Tokens por linha:
+#   CODIGO      → figurinha retrato (ocupa 1 célula)
+#   CODIGO:L    → figurinha paisagem (ocupa 2 células consecutivas)
+#   _           → célula vazia (ocupa 1 célula)
+#
+# Cada linha precisa consumir exatamente 4 colunas. Cada page no máximo 3 linhas.
+# Cada sticker_code aparece no máximo uma vez no arquivo inteiro.
 #
 # Pipeline:
-#   1. Edite este arquivo: cole/digite as páginas como aparecem no álbum.
-#   2. Rode `npx tsx scripts/parse-album-pages.ts` → gera data/album-positions.csv
-#   3. Rode `npx tsx scripts/generate-album-seed.ts` → gera supabase/migrations/057_seed_album_positions.sql
-#   4. Aplique a migração.
+#   npx tsx scripts/parse-album-pages.ts      → gera data/album-positions.csv
+#   npx tsx scripts/generate-album-seed.ts    → gera migration 057
+#   supabase db push                          → aplica
 #
-# Exemplo (apague antes de preencher de verdade):
-#
-# === PAGE 4 ===
-# FWC1 FWC2
-# FWC3 FWC4 FWC5 FWC6
-# FWC7 FWC8 FWC9 FWC10
-#
-# === PAGE 5 ===
-# FWC11 FWC12 FWC13
-# FWC14 FWC15 FWC16 FWC17
-# FWC18 FWC19 CC1
+# Padrão de página de time (stickers 1-20 do grupo, 2 páginas por time):
+#   Página ímpar (1-10), sticker 3 landscape:
+#     X1 X2 X3:L
+#     X4 X5 X6 X7
+#     X8 X9 X10 _
+#   Página par (11-20), sticker 13 landscape:
+#     X11 X12 X13:L
+#     X14 X15 X16 X17
+#     X18 X19 X20 _
+
+=== PAGE 1 ===
+FWC00 FWC1 FWC3:L
+FWC2 FWC4 FWC5 FWC6
+FWC7 FWC8 FWC9 _
+
+=== PAGE 8 ===
+_ _ MEX1 MEX2
+MEX3 MEX4 MEX5 MEX6
+MEX7 MEX8 MEX9 MEX10
+
+=== PAGE 9 ===
+MEX11 MEX12 MEX13:L
+MEX14 MEX15 MEX16 MEX17
+MEX18 MEX19 MEX20 _

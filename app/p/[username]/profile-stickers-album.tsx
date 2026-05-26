@@ -272,6 +272,7 @@ function AlbumPageView({
           return (
             <div
               key={s.id}
+              className="self-center"
               style={{
                 gridRow: s.row,
                 gridColumn: `${s.col} / span ${span}`,

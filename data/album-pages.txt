@@ -16,11 +16,13 @@
 #   supabase db push                          → aplica
 #
 # Padrão de página de time (stickers 1-20 do grupo, 2 páginas por time):
-#   Página ímpar (1-10), sticker 3 landscape:
-#     X1 X2 X3:L
-#     X4 X5 X6 X7
-#     X8 X9 X10 _
-#   Página par (11-20), sticker 13 landscape:
+#   Primeira página (esquerda do spread, normalmente par), stickers 1-10
+#   todos portrait, primeira linha começa nas colunas 3-4:
+#     _ _ X1 X2
+#     X3 X4 X5 X6
+#     X7 X8 X9 X10
+#   Segunda página (direita do spread, normalmente ímpar), stickers 11-20
+#   com X13 landscape:
 #     X11 X12 X13:L
 #     X14 X15 X16 X17
 #     X18 X19 X20 _

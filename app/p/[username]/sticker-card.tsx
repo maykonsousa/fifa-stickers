@@ -116,7 +116,7 @@ export function StickerCard({
         type="button"
         onClick={onToggle}
         aria-pressed={selected}
-        className={`${wrapperBase} text-left`}
+        className={`${wrapperBase} block w-full text-left`}
       >
         {innerContent}
       </button>
@@ -128,7 +128,7 @@ export function StickerCard({
       <button
         type="button"
         onClick={onClick}
-        className={`${wrapperBase} text-left`}
+        className={`${wrapperBase} block w-full text-left`}
       >
         {innerContent}
       </button>

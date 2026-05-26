@@ -38,6 +38,7 @@ export function StickerImageUpload({
   canReplace = false,
 }: Props) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedArea, setCroppedArea] = useState<CropArea | null>(null);
@@ -58,7 +59,18 @@ export function StickerImageUpload({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setImageSrc(reader.result as string);
+    reader.onload = () => {
+      const src = reader.result as string;
+      setImageSrc(src);
+      // Auto-detect orientação pelas dimensões naturais.
+      const img = new Image();
+      img.onload = () => {
+        setOrientation(
+          img.naturalWidth > img.naturalHeight ? "landscape" : "portrait",
+        );
+      };
+      img.src = src;
+    };
     reader.readAsDataURL(file);
   };
 
@@ -82,7 +94,10 @@ export function StickerImageUpload({
       const { data: urlData } = supabase.storage.from("sticker-images").getPublicUrl(path);
       const imageUrl = `${urlData.publicUrl}?v=${Date.now()}`;
 
-      await supabase.from("stickers").update({ image_url: imageUrl }).eq("id", stickerId);
+      await supabase
+        .from("stickers")
+        .update({ image_url: imageUrl, orientation })
+        .eq("id", stickerId);
       await supabase.from("sticker_image_uploads").insert({
         user_id: userId,
         sticker_id: stickerId,
@@ -103,6 +118,7 @@ export function StickerImageUpload({
 
   const handleClose = () => {
     setImageSrc(null);
+    setOrientation("portrait");
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedArea(null);
@@ -234,16 +250,52 @@ export function StickerImageUpload({
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <div className="relative w-full aspect-[49/63] rounded-lg overflow-hidden bg-black">
+            <div
+              className={`relative w-full rounded-lg overflow-hidden bg-black ${
+                orientation === "landscape" ? "aspect-[5/3]" : "aspect-[3/4]"
+              }`}
+            >
               <Cropper
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={49 / 63}
+                aspect={orientation === "landscape" ? 5 / 3 : 3 / 4}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
                 onCropComplete={onCropComplete}
               />
+            </div>
+            <div
+              role="radiogroup"
+              aria-label="Orientação"
+              className="inline-flex items-center self-center rounded-lg border border-white/10 bg-white/5 p-0.5 text-xs"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={orientation === "portrait"}
+                onClick={() => setOrientation("portrait")}
+                className={`px-3 py-1.5 rounded-md transition-colors ${
+                  orientation === "portrait"
+                    ? "bg-yellow-400 text-zinc-900 font-medium"
+                    : "text-gray-300 hover:text-white"
+                }`}
+              >
+                Retrato
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={orientation === "landscape"}
+                onClick={() => setOrientation("landscape")}
+                className={`px-3 py-1.5 rounded-md transition-colors ${
+                  orientation === "landscape"
+                    ? "bg-yellow-400 text-zinc-900 font-medium"
+                    : "text-gray-300 hover:text-white"
+                }`}
+              >
+                Paisagem
+              </button>
             </div>
             <input
               type="range"

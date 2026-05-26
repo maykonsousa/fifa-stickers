@@ -10,6 +10,23 @@ interface UploadResult {
   message?: string;
 }
 
+// Detecta orientação lendo naturalWidth/naturalHeight da imagem antes do upload.
+async function detectOrientation(file: File): Promise<"portrait" | "landscape"> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img.naturalWidth > img.naturalHeight ? "landscape" : "portrait");
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve("portrait"); // fallback seguro
+    };
+    img.src = url;
+  });
+}
+
 export default function AdminUploadPage() {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
@@ -67,10 +84,12 @@ export default function AdminUploadPage() {
           .from("sticker-images")
           .getPublicUrl(path);
 
+        const orientation = await detectOrientation(file);
+
         // Update sticker record
         const { error: updateError } = await supabase
           .from("stickers")
-          .update({ image_url: urlData.publicUrl })
+          .update({ image_url: urlData.publicUrl, orientation })
           .eq("code", code);
 
         if (updateError) {

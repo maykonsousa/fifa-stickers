@@ -16,8 +16,11 @@ RETURNS TABLE(
   title TEXT,
   image_url TEXT,
   page INT,
-  row INT,
-  col INT,
+  -- "row" e "col" precisam ser aspeados em RETURNS TABLE porque o parser
+  -- do Postgres trata `row` como construtor de tipo. Como identificador
+  -- normal (s.row dentro da query) e como ADD COLUMN, funciona sem aspas.
+  "row" INT,
+  "col" INT,
   group_id INT,
   group_name TEXT,
   duplicate_count INT,

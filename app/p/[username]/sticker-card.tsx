@@ -99,6 +99,14 @@ export function StickerCard({
           {selected && <Check className="h-3 w-3" strokeWidth={3} />}
         </span>
       )}
+      {isDuplicate && ownedCount !== null && ownedCount > 1 && (
+        <span
+          className="absolute top-1 right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white shadow tabular-nums"
+          aria-label={`${ownedCount - 1} repetidas`}
+        >
+          +{ownedCount - 1}
+        </span>
+      )}
     </div>
   );
 

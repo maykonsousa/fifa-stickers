@@ -63,11 +63,15 @@ export function ProfileStickersAlbum({
   viewerId,
   groupId,
   keyword,
+  onStickerClick,
+  refreshKey,
 }: {
   userId: string;
   viewerId: string | null;
   groupId: number | null;
   keyword: string;
+  onStickerClick?: (sticker: AlbumSticker) => void;
+  refreshKey?: number;
 }) {
   const [pages, setPages] = useState<AlbumPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +100,7 @@ export function ProfileStickersAlbum({
         setCurrentIdx(0);
         setLoading(false);
       });
-  }, [userId, viewerId, groupId, keyword]);
+  }, [userId, viewerId, groupId, keyword, refreshKey]);
 
   // Sincronizar currentIdx com scroll do carrossel.
   useEffect(() => {
@@ -239,7 +243,12 @@ export function ProfileStickersAlbum({
         aria-label="Páginas do álbum"
       >
         {pages.map((p) => (
-          <AlbumPageView key={p.page} page={p} isLoggedIn={isLoggedIn} />
+          <AlbumPageView
+            key={p.page}
+            page={p}
+            isLoggedIn={isLoggedIn}
+            onStickerClick={onStickerClick}
+          />
         ))}
       </div>
 
@@ -254,9 +263,11 @@ export function ProfileStickersAlbum({
 function AlbumPageView({
   page,
   isLoggedIn,
+  onStickerClick,
 }: {
   page: AlbumPage;
   isLoggedIn: boolean;
+  onStickerClick?: (sticker: AlbumSticker) => void;
 }) {
   return (
     <div className="snap-center snap-always shrink-0 w-full p-4">
@@ -282,6 +293,7 @@ function AlbumPageView({
                 sticker={s}
                 orientation={s.orientation}
                 ownedCount={isLoggedIn ? s.viewer_owned_count : null}
+                onClick={onStickerClick ? () => onStickerClick(s) : undefined}
               />
             </div>
           );

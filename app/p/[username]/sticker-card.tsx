@@ -14,6 +14,7 @@ export function StickerCard({
   selectable = false,
   selected = false,
   onToggle,
+  onClick,
   ownedCount = null,
   orientation = "portrait",
 }: {
@@ -21,6 +22,7 @@ export function StickerCard({
   selectable?: boolean;
   selected?: boolean;
   onToggle?: () => void;
+  onClick?: () => void;
   ownedCount?: number | null;
   orientation?: "portrait" | "landscape";
 }) {
@@ -114,6 +116,18 @@ export function StickerCard({
         type="button"
         onClick={onToggle}
         aria-pressed={selected}
+        className={`${wrapperBase} text-left`}
+      >
+        {innerContent}
+      </button>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
         className={`${wrapperBase} text-left`}
       >
         {innerContent}

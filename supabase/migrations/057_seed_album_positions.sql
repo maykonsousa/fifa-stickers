@@ -35,5 +35,25 @@ UPDATE stickers SET page = 9, row = 2, col = 4, orientation = 'portrait' WHERE c
 UPDATE stickers SET page = 9, row = 3, col = 1, orientation = 'portrait' WHERE code = 'MEX18';
 UPDATE stickers SET page = 9, row = 3, col = 2, orientation = 'portrait' WHERE code = 'MEX19';
 UPDATE stickers SET page = 9, row = 3, col = 3, orientation = 'portrait' WHERE code = 'MEX20';
+UPDATE stickers SET page = 10, row = 1, col = 3, orientation = 'portrait' WHERE code = 'RSA1';
+UPDATE stickers SET page = 10, row = 1, col = 4, orientation = 'portrait' WHERE code = 'RSA2';
+UPDATE stickers SET page = 10, row = 2, col = 1, orientation = 'portrait' WHERE code = 'RSA3';
+UPDATE stickers SET page = 10, row = 2, col = 2, orientation = 'portrait' WHERE code = 'RSA4';
+UPDATE stickers SET page = 10, row = 2, col = 3, orientation = 'portrait' WHERE code = 'RSA5';
+UPDATE stickers SET page = 10, row = 2, col = 4, orientation = 'portrait' WHERE code = 'RSA6';
+UPDATE stickers SET page = 10, row = 3, col = 1, orientation = 'portrait' WHERE code = 'RSA7';
+UPDATE stickers SET page = 10, row = 3, col = 2, orientation = 'portrait' WHERE code = 'RSA8';
+UPDATE stickers SET page = 10, row = 3, col = 3, orientation = 'portrait' WHERE code = 'RSA9';
+UPDATE stickers SET page = 10, row = 3, col = 4, orientation = 'portrait' WHERE code = 'RSA10';
+UPDATE stickers SET page = 11, row = 1, col = 1, orientation = 'portrait' WHERE code = 'RSA11';
+UPDATE stickers SET page = 11, row = 1, col = 2, orientation = 'portrait' WHERE code = 'RSA12';
+UPDATE stickers SET page = 11, row = 1, col = 3, orientation = 'landscape' WHERE code = 'RSA13';
+UPDATE stickers SET page = 11, row = 2, col = 1, orientation = 'portrait' WHERE code = 'RSA14';
+UPDATE stickers SET page = 11, row = 2, col = 2, orientation = 'portrait' WHERE code = 'RSA15';
+UPDATE stickers SET page = 11, row = 2, col = 3, orientation = 'portrait' WHERE code = 'RSA16';
+UPDATE stickers SET page = 11, row = 2, col = 4, orientation = 'portrait' WHERE code = 'RSA17';
+UPDATE stickers SET page = 11, row = 3, col = 1, orientation = 'portrait' WHERE code = 'RSA18';
+UPDATE stickers SET page = 11, row = 3, col = 2, orientation = 'portrait' WHERE code = 'RSA19';
+UPDATE stickers SET page = 11, row = 3, col = 3, orientation = 'portrait' WHERE code = 'RSA20';
 
 COMMIT;

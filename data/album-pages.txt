@@ -531,3 +531,13 @@ FWC15:L _ _
 FWC16:L FWC17:L
 _ _ FWC18:L
 _ _ FWC19:L
+
+=== PAGE 112 ===
+_ CC1 CC2 CC3
+_ CC4 CC5 CC6
+_ _ _ _
+
+=== PAGE 113 ===
+_ CC7 CC8 CC9
+_ CC10 CC11 CC12
+_ CC13 CC14 _

@@ -979,3 +979,17 @@ FWC16,109,1,1,landscape
 FWC17,109,1,3,landscape
 FWC18,109,2,3,landscape
 FWC19,109,3,3,landscape
+CC1,112,1,2,portrait
+CC2,112,1,3,portrait
+CC3,112,1,4,portrait
+CC4,112,2,2,portrait
+CC5,112,2,3,portrait
+CC6,112,2,4,portrait
+CC7,113,1,2,portrait
+CC8,113,1,3,portrait
+CC9,113,1,4,portrait
+CC10,113,2,2,portrait
+CC11,113,2,3,portrait
+CC12,113,2,4,portrait
+CC13,113,3,2,portrait
+CC14,113,3,3,portrait

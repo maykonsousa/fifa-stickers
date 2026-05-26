@@ -21,6 +21,7 @@ import { ChevronsUpDown, Check, Loader2, BookOpen, List } from "lucide-react";
 import { StickerImageUpload } from "@/components/sticker-image-upload";
 import { StickerCard } from "@/app/p/[username]/sticker-card";
 import { ProfileStickersAlbum } from "@/app/p/[username]/profile-stickers-album";
+import { StickerLegend } from "@/app/p/[username]/sticker-legend";
 import { StickerActionsModal } from "./sticker-actions-modal";
 
 interface Group {
@@ -413,6 +414,8 @@ export function CollectionView({
           </button>
         </div>
       </div>
+
+      <StickerLegend />
 
       {viewMode === "list" ? (
         <>

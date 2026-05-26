@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/command";
 import { ProfileStickersList } from "./profile-stickers-list";
 import { ProfileStickersAlbum } from "./profile-stickers-album";
+import { StickerLegend } from "./sticker-legend";
 
 interface Group {
   id: number;
@@ -169,6 +170,8 @@ export function ProfileStickers({
           </div>
         )}
       </div>
+
+      {isLoggedIn && <StickerLegend />}
 
       {effectiveViewMode === "list" ? (
         <ProfileStickersList

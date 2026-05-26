@@ -48,14 +48,14 @@ export function StickerCard({
         <img
           src={sticker.image_url}
           alt={sticker.code}
-          className={`h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
+          className={`absolute inset-0 h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full flex-col items-start p-3 pt-2">
+        <div className="absolute inset-0 flex flex-col items-start p-3 pt-2 min-h-0">
           <span className="text-sm font-bold text-white/50">{sticker.code}</span>
-          <div className="flex flex-1 w-full items-center justify-center -mt-2">
-            <svg className="h-20 w-20 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-1 min-h-0 w-full items-center justify-center -mt-2">
+            <svg className="h-1/2 w-1/2 text-white/15" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
             </svg>
           </div>

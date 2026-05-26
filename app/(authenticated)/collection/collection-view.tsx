@@ -17,8 +17,12 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { ChevronsUpDown, Check, Loader2 } from "lucide-react";
+import { ChevronsUpDown, Check, Loader2, BookOpen, List } from "lucide-react";
 import { StickerImageUpload } from "@/components/sticker-image-upload";
+import { StickerCard } from "@/app/p/[username]/sticker-card";
+import { ProfileStickersAlbum } from "@/app/p/[username]/profile-stickers-album";
+import { StickerLegend } from "@/app/p/[username]/sticker-legend";
+import { StickerActionsModal } from "./sticker-actions-modal";
 
 interface Group {
   id: number;
@@ -39,7 +43,10 @@ interface StickerResult {
   total_count: number;
 }
 
+type ViewMode = "list" | "album";
+
 const PAGE_SIZE = 20;
+const VIEW_MODE_STORAGE_KEY = "collectionViewMode";
 
 export function CollectionView({
   groups,
@@ -54,6 +61,7 @@ export function CollectionView({
     ? groups.find((g) => g.code === initialGroup)?.id ?? null
     : null;
 
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [keyword, setKeyword] = useState("");
   const [groupId, setGroupId] = useState<number | null>(initialGroupId);
   const [groupOpen, setGroupOpen] = useState(false);
@@ -66,7 +74,29 @@ export function CollectionView({
   const [loadingMore, setLoadingMore] = useState(false);
   const [adding, setAdding] = useState(false);
   const [uploadSticker, setUploadSticker] = useState<StickerResult | null>(null);
+  const [actionsSticker, setActionsSticker] = useState<{
+    id: number;
+    code: string;
+    title: string | null;
+    owned_count: number;
+  } | null>(null);
+  const [albumRefreshKey, setAlbumRefreshKey] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Carregar viewMode do localStorage no mount.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+    if (stored === "list" || stored === "album") {
+      setViewMode(stored);
+    }
+  }, []);
+
+  // Persistir viewMode.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
+  }, [viewMode]);
 
   const hasMore = results.length < totalCount;
 
@@ -97,6 +127,8 @@ export function CollectionView({
     setLoadingMore(false);
   }, [userId, keyword, groupId, status]);
 
+  // Fetch list data quando filtros mudam (mesmo em modo álbum mantemos a lista
+  // sincronizada pra otimista update funcionar quando voltar).
   useEffect(() => {
     setPage(1);
     fetchStickers(1, false);
@@ -108,7 +140,9 @@ export function CollectionView({
     }
   }, [page]);
 
+  // Infinite scroll só no modo lista.
   useEffect(() => {
+    if (viewMode !== "list") return;
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
@@ -122,57 +156,39 @@ export function CollectionView({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loading, loadingMore]);
+  }, [hasMore, loading, loadingMore, viewMode]);
 
-  const handleFilterChange = (setter: () => void) => {
-    setter();
-  };
-
-  const handleAdd = async (stickerId: number) => {
-    const sticker = results.find((s) => s.id === stickerId);
-    if (sticker && !sticker.image_url) {
-      setUploadSticker(sticker);
-      return;
-    }
-    setAdding(true);
-    const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: stickerId });
-    toast.success("Figurinha adicionada!");
+  const incrementLocal = (stickerId: number) => {
     setResults((prev) =>
       prev.map((s) => s.id === stickerId ? { ...s, owned_count: s.owned_count + 1 } : s)
     );
-    setAdding(false);
+    setAlbumRefreshKey((k) => k + 1);
   };
 
-  const handleSkipUpload = async () => {
-    if (!uploadSticker) return;
+  const decrementLocal = (stickerId: number) => {
+    setResults((prev) =>
+      prev.map((s) => s.id === stickerId ? { ...s, owned_count: Math.max(0, s.owned_count - 1) } : s)
+    );
+    setAlbumRefreshKey((k) => k + 1);
+  };
+
+  const setImageLocal = (stickerId: number, imageUrl: string) => {
+    setResults((prev) =>
+      prev.map((s) => s.id === stickerId ? { ...s, image_url: imageUrl } : s)
+    );
+    setAlbumRefreshKey((k) => k + 1);
+  };
+
+  const doIncrement = async (stickerId: number) => {
     setAdding(true);
     const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
-    const id = uploadSticker.id;
-    setUploadSticker(null);
-    toast.success("Figurinha adicionada!");
-    setResults((prev) =>
-      prev.map((s) => s.id === id ? { ...s, owned_count: s.owned_count + 1 } : s)
-    );
+    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: stickerId });
+    incrementLocal(stickerId);
     setAdding(false);
+    toast.success("Figurinha adicionada!");
   };
 
-  const handleUploadSuccess = async (imageUrl: string) => {
-    if (!uploadSticker) return;
-    setAdding(true);
-    const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
-    const id = uploadSticker.id;
-    setUploadSticker(null);
-    toast.success("Figurinha adicionada!");
-    setResults((prev) =>
-      prev.map((s) => s.id === id ? { ...s, owned_count: s.owned_count + 1, image_url: imageUrl } : s)
-    );
-    setAdding(false);
-  };
-
-  const handleRemove = async (stickerId: number) => {
+  const doDecrement = async (stickerId: number) => {
     setAdding(true);
     const supabase = createClient();
     const { data: rows } = await supabase
@@ -184,11 +200,91 @@ export function CollectionView({
     if (rows && rows.length > 0) {
       await supabase.from("user_stickers").delete().eq("id", rows[0].id);
     }
-    toast.success("Figurinha removida!");
-    setResults((prev) =>
-      prev.map((s) => s.id === stickerId ? { ...s, owned_count: Math.max(0, s.owned_count - 1) } : s)
-    );
+    decrementLocal(stickerId);
     setAdding(false);
+    toast.success("Figurinha removida!");
+  };
+
+  // Lógica central de clique no card:
+  // 1. Já possui (owned >= 1) → abre modal de ações (+1/-1).
+  // 2. Não possui + sem imagem → abre modal de upload.
+  // 3. Não possui + com imagem → +1 direto.
+  const handleCardClick = (sticker: { id: number; code: string; title: string | null; image_url: string | null; owned_count: number }) => {
+    if (adding) return;
+    if (sticker.owned_count >= 1) {
+      setActionsSticker({
+        id: sticker.id,
+        code: sticker.code,
+        title: sticker.title,
+        owned_count: sticker.owned_count,
+      });
+      return;
+    }
+    if (!sticker.image_url) {
+      // Reaproveita o tipo StickerResult — caller passa o objeto completo da lista.
+      // No modo álbum, montamos um stub equivalente.
+      const full = results.find((s) => s.id === sticker.id);
+      if (full) {
+        setUploadSticker(full);
+      } else {
+        // Fallback: cria stub minimamente válido.
+        setUploadSticker({
+          id: sticker.id,
+          group_id: 0,
+          code: sticker.code,
+          number: 0,
+          title: sticker.title,
+          image_url: sticker.image_url,
+          owned_count: 0,
+          total_count: 0,
+        });
+      }
+      return;
+    }
+    void doIncrement(sticker.id);
+  };
+
+  // Quando a modal de ações dispara +1 ou -1.
+  const handleActionsIncrement = async () => {
+    if (!actionsSticker) return;
+    await doIncrement(actionsSticker.id);
+    setActionsSticker((prev) => prev ? { ...prev, owned_count: prev.owned_count + 1 } : null);
+  };
+
+  const handleActionsDecrement = async () => {
+    if (!actionsSticker) return;
+    await doDecrement(actionsSticker.id);
+    setActionsSticker((prev) => {
+      if (!prev) return null;
+      const next = prev.owned_count - 1;
+      return next <= 0 ? null : { ...prev, owned_count: next };
+    });
+  };
+
+  // Quando o upload modal finaliza (com ou sem foto).
+  const handleSkipUpload = async () => {
+    if (!uploadSticker) return;
+    setAdding(true);
+    const supabase = createClient();
+    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    incrementLocal(uploadSticker.id);
+    const code = uploadSticker.code;
+    setUploadSticker(null);
+    setAdding(false);
+    toast.success(`Figurinha ${code} adicionada!`);
+  };
+
+  const handleUploadSuccess = async (imageUrl: string) => {
+    if (!uploadSticker) return;
+    setAdding(true);
+    const supabase = createClient();
+    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    incrementLocal(uploadSticker.id);
+    setImageLocal(uploadSticker.id, imageUrl);
+    const code = uploadSticker.code;
+    setUploadSticker(null);
+    setAdding(false);
+    toast.success(`Figurinha ${code} adicionada com foto!`);
   };
 
   return (
@@ -196,12 +292,12 @@ export function CollectionView({
       <div>
         <h1 className="text-2xl font-bold text-white">Coleção</h1>
         <p className="mt-1 text-sm text-gray-400">
-          Busque a figurinha pelo nome ou código e clique no card para adicionar ao seu álbum.
+          Clique numa figurinha pra adicionar — se já tiver, abre opções de + / − e remover.
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row">
+      {/* Filters + view toggle */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           type="text"
           value={keyword}
@@ -210,9 +306,7 @@ export function CollectionView({
           className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-green-500 focus:ring-1 focus:ring-green-500"
         />
         <Popover open={groupOpen} onOpenChange={setGroupOpen}>
-          <PopoverTrigger
-            className="flex w-full sm:w-52 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-          >
+          <PopoverTrigger className="flex w-full sm:w-52 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors">
             <span className={groupId ? "text-white" : "text-gray-400"}>
               {groupId
                 ? groups.find((g) => g.id === groupId)?.name ?? "Grupo"
@@ -232,7 +326,7 @@ export function CollectionView({
                   <CommandItem
                     value="all"
                     onSelect={() => {
-                      handleFilterChange(() => setGroupId(null));
+                      setGroupId(null);
                       setGroupOpen(false);
                     }}
                   >
@@ -244,7 +338,7 @@ export function CollectionView({
                       key={g.id}
                       value={`${g.code} ${g.name}`}
                       onSelect={() => {
-                        handleFilterChange(() => setGroupId(g.id));
+                        setGroupId(g.id);
                         setGroupOpen(false);
                       }}
                     >
@@ -257,164 +351,117 @@ export function CollectionView({
             </Command>
           </PopoverContent>
         </Popover>
-        <Popover open={statusOpen} onOpenChange={setStatusOpen}>
-          <PopoverTrigger
-            className="flex w-full sm:w-36 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors"
-          >
-            <span className={status ? "text-white" : "text-gray-400"}>
-              {status === "owned" ? "Tenho" : status === "missing" ? "Faltam" : status === "duplicate" ? "Repetidas" : "Todas"}
-            </span>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
-          </PopoverTrigger>
-          <PopoverContent className="w-36 p-1" align="start">
-            {[
-              { value: null, label: "Todas" },
-              { value: "owned", label: "Tenho" },
-              { value: "missing", label: "Faltam" },
-              { value: "duplicate", label: "Repetidas" },
-            ].map((opt) => (
-              <button
-                key={opt.label}
-                onClick={() => {
-                  handleFilterChange(() => setStatus(opt.value));
-                  setStatusOpen(false);
-                }}
-                className="flex w-full items-center rounded-md px-2 py-1.5 text-sm text-popover-foreground hover:bg-accent"
-              >
-                <Check className={`mr-2 h-4 w-4 ${status === opt.value ? "opacity-100" : "opacity-0"}`} />
-                {opt.label}
-              </button>
-            ))}
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Sticker grid */}
-      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 transition-opacity ${loading ? "opacity-50" : ""}`}>
-        {results.map((sticker) => {
-          const hasIt = sticker.owned_count > 0;
-          const isDuplicate = sticker.owned_count > 1;
-
-          const borderClass = hasIt
-            ? isDuplicate
-              ? "border-2 border-transparent bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-500"
-              : "border-2 border-transparent bg-gradient-to-br from-gray-300 via-white to-gray-400"
-            : "border border-white/10";
-
-          return (
-            <div
-              key={sticker.id}
-              className="group relative"
-            >
-              {/* Outer border (gradient for metallic effect) */}
-              <div
-                className={`rounded-lg p-[2px] cursor-pointer ${hasIt ? borderClass : ""}`}
-                onClick={() => !adding && handleAdd(sticker.id)}
-              >
-                <div
-                  className={`relative aspect-[49/63] overflow-hidden rounded-lg ${
-                    hasIt ? "bg-gray-800" : "bg-gray-800/50 border border-white/10 opacity-50"
-                  }`}
-                >
-                  {/* Content */}
-                  {sticker.image_url ? (
-                    <img
-                      src={sticker.image_url}
-                      alt={sticker.code}
-                      className={`h-full w-full object-cover ${!hasIt ? "grayscale" : ""}`}
-                    />
-                  ) : (
-                    <div className="flex h-full flex-col items-start p-3 pt-2">
-                      {/* Top: code */}
-                      <span className="text-sm font-bold text-white/50">{sticker.code}</span>
-
-                      {/* Center: person icon */}
-                      <div className="flex flex-1 w-full items-center justify-center -mt-2">
-                        <svg className="h-20 w-20 text-white/15" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-                        </svg>
-                      </div>
-
-                      {/* Bottom: name and description */}
-                      <div className="w-full space-y-1 text-center">
-                        {sticker.title ? (
-                          <p className="text-sm font-bold text-white/80 truncate">{sticker.title}</p>
-                        ) : (
-                          <div className="mx-auto h-3 w-3/4 rounded bg-white/10" />
-                        )}
-                        <div className="mx-auto h-2 w-1/2 rounded bg-white/5" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Code badge (when has image) */}
-                  {sticker.image_url && (
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-4">
-                      <span className="text-[10px] font-bold text-white">{sticker.code}</span>
-                    </div>
-                  )}
-
-                  {/* Player name overlay on hover */}
-                  {sticker.image_url && sticker.title && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <span className="text-sm font-bold text-white text-center px-2 leading-tight">
-                        {sticker.title}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Duplicate badge */}
-                  {isDuplicate && (
-                    <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white shadow">
-                      {sticker.owned_count - 1}
-                    </span>
-                  )}
-
-                  {/* Hover shine effect */}
-                  <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="mt-2 flex justify-center gap-2">
+        {viewMode === "list" && (
+          <Popover open={statusOpen} onOpenChange={setStatusOpen}>
+            <PopoverTrigger className="flex w-full sm:w-36 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors">
+              <span className={status ? "text-white" : "text-gray-400"}>
+                {status === "owned" ? "Tenho" : status === "missing" ? "Faltam" : status === "duplicate" ? "Repetidas" : "Todas"}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
+            </PopoverTrigger>
+            <PopoverContent className="w-36 p-1" align="start">
+              {[
+                { value: null, label: "Todas" },
+                { value: "owned", label: "Tenho" },
+                { value: "missing", label: "Faltam" },
+                { value: "duplicate", label: "Repetidas" },
+              ].map((opt) => (
                 <button
-                  onClick={() => handleAdd(sticker.id)}
-                  disabled={adding}
-                  className="rounded-lg bg-green-500/20 px-4 py-2 text-sm font-medium text-green-400 hover:bg-green-500/30 disabled:opacity-50 transition-colors"
+                  key={opt.label}
+                  onClick={() => {
+                    setStatus(opt.value);
+                    setStatusOpen(false);
+                  }}
+                  className="flex w-full items-center rounded-md px-2 py-1.5 text-sm text-popover-foreground hover:bg-accent"
                 >
-                  +
+                  <Check className={`mr-2 h-4 w-4 ${status === opt.value ? "opacity-100" : "opacity-0"}`} />
+                  {opt.label}
                 </button>
-                {hasIt && (
-                  <button
-                    onClick={() => handleRemove(sticker.id)}
-                    disabled={adding}
-                    className="rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-50 transition-colors"
-                  >
-                    −
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+              ))}
+            </PopoverContent>
+          </Popover>
+        )}
+        <div
+          role="radiogroup"
+          aria-label="Modo de visualização"
+          className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 p-0.5 text-sm self-start sm:self-auto"
+        >
+          <button
+            type="button"
+            role="radio"
+            aria-checked={viewMode === "list"}
+            onClick={() => setViewMode("list")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
+              viewMode === "list"
+                ? "bg-green-500 text-zinc-900 font-medium"
+                : "text-gray-300 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <List className="h-4 w-4" /> Lista
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={viewMode === "album"}
+            onClick={() => setViewMode("album")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
+              viewMode === "album"
+                ? "bg-green-500 text-zinc-900 font-medium"
+                : "text-gray-300 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <BookOpen className="h-4 w-4" /> Álbum
+          </button>
+        </div>
       </div>
 
-      {/* Empty state */}
-      {!loading && results.length === 0 && (
-        <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
-          <p className="text-gray-400">Nenhuma figurinha encontrada para os filtros selecionados.</p>
-        </div>
+      <StickerLegend />
+
+      {viewMode === "list" ? (
+        <>
+          <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 transition-opacity ${loading ? "opacity-50" : ""}`}>
+            {results.map((sticker) => (
+              <StickerCard
+                key={sticker.id}
+                sticker={sticker}
+                ownedCount={sticker.owned_count}
+                onClick={() => handleCardClick(sticker)}
+              />
+            ))}
+          </div>
+
+          {!loading && results.length === 0 && (
+            <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
+              <p className="text-gray-400">Nenhuma figurinha encontrada para os filtros selecionados.</p>
+            </div>
+          )}
+
+          <div ref={sentinelRef} className="h-1" />
+          {loadingMore && (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-green-400" />
+            </div>
+          )}
+        </>
+      ) : (
+        <ProfileStickersAlbum
+          userId={userId}
+          viewerId={userId}
+          groupId={groupId}
+          keyword={keyword}
+          refreshKey={albumRefreshKey}
+          onStickerClick={(s) =>
+            handleCardClick({
+              id: s.id,
+              code: s.code,
+              title: s.title,
+              image_url: s.image_url,
+              owned_count: s.viewer_owned_count,
+            })
+          }
+        />
       )}
 
-      {/* Infinite scroll sentinel */}
-      <div ref={sentinelRef} className="h-1" />
-      {loadingMore && (
-        <div className="flex justify-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin text-green-400" />
-        </div>
-      )}
-
-      {/* Upload modal */}
       <StickerImageUpload
         open={!!uploadSticker}
         onClose={() => setUploadSticker(null)}
@@ -425,6 +472,17 @@ export function CollectionView({
         onSkip={uploadSticker?.image_url ? undefined : handleSkipUpload}
         currentImageUrl={uploadSticker?.image_url}
         onRemove={() => fetchStickers(1, false).then(() => setPage(1))}
+      />
+
+      <StickerActionsModal
+        open={!!actionsSticker}
+        onClose={() => setActionsSticker(null)}
+        stickerCode={actionsSticker?.code ?? ""}
+        stickerTitle={actionsSticker?.title ?? null}
+        ownedCount={actionsSticker?.owned_count ?? 0}
+        busy={adding}
+        onIncrement={handleActionsIncrement}
+        onDecrement={handleActionsDecrement}
       />
     </div>
   );

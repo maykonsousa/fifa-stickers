@@ -14,6 +14,7 @@ export function StickerCard({
   selectable = false,
   selected = false,
   onToggle,
+  onClick,
   ownedCount = null,
   orientation = "portrait",
 }: {
@@ -21,6 +22,7 @@ export function StickerCard({
   selectable?: boolean;
   selected?: boolean;
   onToggle?: () => void;
+  onClick?: () => void;
   ownedCount?: number | null;
   orientation?: "portrait" | "landscape";
 }) {
@@ -50,14 +52,14 @@ export function StickerCard({
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full flex-col items-start p-3 pt-2">
-          <span className="text-sm font-bold text-white/50">{sticker.code}</span>
-          <div className="flex flex-1 w-full items-center justify-center -mt-2">
-            <svg className="h-20 w-20 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+        <div className="flex h-full min-h-0 flex-col items-start p-3 pt-2">
+          <span className="text-sm font-bold text-white/50 shrink-0">{sticker.code}</span>
+          <div className="flex flex-1 min-h-0 w-full items-center justify-center -mt-2">
+            <svg className="h-10 w-10 sm:h-12 sm:w-12 text-white/15" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
             </svg>
           </div>
-          <div className="w-full space-y-1 text-center">
+          <div className="w-full space-y-1 text-center shrink-0">
             {sticker.title ? (
               <p className="text-sm font-bold text-white/80 truncate">{sticker.title}</p>
             ) : (
@@ -114,7 +116,19 @@ export function StickerCard({
         type="button"
         onClick={onToggle}
         aria-pressed={selected}
-        className={`${wrapperBase} text-left`}
+        className={`${wrapperBase} block w-full text-left`}
+      >
+        {innerContent}
+      </button>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${wrapperBase} block w-full text-left`}
       >
         {innerContent}
       </button>

@@ -55,7 +55,7 @@ export function StickerCard({
         <div className="flex h-full min-h-0 flex-col items-start p-3 pt-2">
           <span className="text-sm font-bold text-white/50 shrink-0">{sticker.code}</span>
           <div className="flex flex-1 min-h-0 w-full items-center justify-center -mt-2">
-            <svg className="h-1/2 w-1/2 text-white/15" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-10 w-10 sm:h-12 sm:w-12 text-white/15" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
             </svg>
           </div>

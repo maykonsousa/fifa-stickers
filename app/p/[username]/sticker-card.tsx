@@ -43,36 +43,12 @@ export function StickerCard({
   const innerContent = (
     <div className={`${aspectClass} relative overflow-hidden rounded-[inherit] ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
       {sticker.image_url ? (
-        orientation === "landscape" ? (
-          // Imagem retrato natural (49:63) com transform rotate(90deg). Como
-          // o container landscape tem aspect 63:49, a imagem rotacionada
-          // (que vira 63:49 visualmente) bate exatamente com o container.
-          // Width = container height post-rotation; height = container width.
-          <img
-            src={sticker.image_url}
-            alt={sticker.code}
-            className={`absolute left-1/2 top-1/2 max-w-none ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
-            style={{
-              // Pré-rotação: width = altura do container, height = largura do container.
-              // Container landscape é 5:3, então altura = 3/5 da largura.
-              // 100% width = largura do container; * 3/5 = altura.
-              // 100% height = altura do container; * 5/3 = largura.
-              width: "calc(100% * 3 / 5)",
-              height: "calc(100% * 5 / 3)",
-              objectFit: "cover",
-              transform: "translate(-50%, -50%) rotate(90deg)",
-              transformOrigin: "center",
-            }}
-            loading="lazy"
-          />
-        ) : (
-          <img
-            src={sticker.image_url}
-            alt={sticker.code}
-            className={`h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
-            loading="lazy"
-          />
-        )
+        <img
+          src={sticker.image_url}
+          alt={sticker.code}
+          className={`h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
+          loading="lazy"
+        />
       ) : (
         <div className="flex h-full flex-col items-start p-3 pt-2">
           <span className="text-sm font-bold text-white/50">{sticker.code}</span>

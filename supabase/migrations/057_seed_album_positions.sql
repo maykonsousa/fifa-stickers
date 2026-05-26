@@ -95,5 +95,25 @@ UPDATE stickers SET page = 15, row = 2, col = 4, orientation = 'portrait' WHERE 
 UPDATE stickers SET page = 15, row = 3, col = 1, orientation = 'portrait' WHERE code = 'CZE18';
 UPDATE stickers SET page = 15, row = 3, col = 2, orientation = 'portrait' WHERE code = 'CZE19';
 UPDATE stickers SET page = 15, row = 3, col = 3, orientation = 'portrait' WHERE code = 'CZE20';
+UPDATE stickers SET page = 16, row = 1, col = 3, orientation = 'portrait' WHERE code = 'CAN1';
+UPDATE stickers SET page = 16, row = 1, col = 4, orientation = 'portrait' WHERE code = 'CAN2';
+UPDATE stickers SET page = 16, row = 2, col = 1, orientation = 'portrait' WHERE code = 'CAN3';
+UPDATE stickers SET page = 16, row = 2, col = 2, orientation = 'portrait' WHERE code = 'CAN4';
+UPDATE stickers SET page = 16, row = 2, col = 3, orientation = 'portrait' WHERE code = 'CAN5';
+UPDATE stickers SET page = 16, row = 2, col = 4, orientation = 'portrait' WHERE code = 'CAN6';
+UPDATE stickers SET page = 16, row = 3, col = 1, orientation = 'portrait' WHERE code = 'CAN7';
+UPDATE stickers SET page = 16, row = 3, col = 2, orientation = 'portrait' WHERE code = 'CAN8';
+UPDATE stickers SET page = 16, row = 3, col = 3, orientation = 'portrait' WHERE code = 'CAN9';
+UPDATE stickers SET page = 16, row = 3, col = 4, orientation = 'portrait' WHERE code = 'CAN10';
+UPDATE stickers SET page = 17, row = 1, col = 1, orientation = 'portrait' WHERE code = 'CAN11';
+UPDATE stickers SET page = 17, row = 1, col = 2, orientation = 'portrait' WHERE code = 'CAN12';
+UPDATE stickers SET page = 17, row = 1, col = 3, orientation = 'landscape' WHERE code = 'CAN13';
+UPDATE stickers SET page = 17, row = 2, col = 1, orientation = 'portrait' WHERE code = 'CAN14';
+UPDATE stickers SET page = 17, row = 2, col = 2, orientation = 'portrait' WHERE code = 'CAN15';
+UPDATE stickers SET page = 17, row = 2, col = 3, orientation = 'portrait' WHERE code = 'CAN16';
+UPDATE stickers SET page = 17, row = 2, col = 4, orientation = 'portrait' WHERE code = 'CAN17';
+UPDATE stickers SET page = 17, row = 3, col = 1, orientation = 'portrait' WHERE code = 'CAN18';
+UPDATE stickers SET page = 17, row = 3, col = 2, orientation = 'portrait' WHERE code = 'CAN19';
+UPDATE stickers SET page = 17, row = 3, col = 3, orientation = 'portrait' WHERE code = 'CAN20';
 
 COMMIT;

@@ -83,14 +83,5 @@ export async function createSticker(input: CreateStickerInput): Promise<CreateSt
     return { data: null, error: "unknown" };
   }
 
-  const { error: counterError } = await supabase.rpc("increment_sticker_group_count", {
-    p_group_id: input.groupId,
-  });
-
-  if (counterError) {
-    console.error("createSticker counter increment failed:", counterError);
-    // Sticker was created; counter drift is recoverable, do not fail the request.
-  }
-
   return { data: { id: inserted.id, code: inserted.code }, error: null };
 }

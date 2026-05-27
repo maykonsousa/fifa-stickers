@@ -25,24 +25,15 @@ export default async function DashboardPage() {
     .select("id, name, code, type, sticker_count")
     .order("id");
 
-  const { data: userStickers } = await supabase
-    .from("user_stickers")
-    .select("sticker_id, stickers(group_id)")
-    .eq("user_id", user!.id);
+  const { data: groupCounts } = await supabase
+    .rpc("get_user_group_counts", { p_user_id: user!.id });
 
   const ownedByGroup = new Map<number, number>();
-  const totalEntries = userStickers?.length ?? 0;
+  let totalEntries = 0;
 
-  if (userStickers) {
-    const seen = new Set<string>();
-    for (const us of userStickers) {
-      const key = `${us.sticker_id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        const groupId = (us.stickers as unknown as { group_id: number }).group_id;
-        ownedByGroup.set(groupId, (ownedByGroup.get(groupId) ?? 0) + 1);
-      }
-    }
+  for (const row of (groupCounts ?? []) as Array<{ group_id: number; owned: number; total_entries: number }>) {
+    ownedByGroup.set(row.group_id, row.owned);
+    totalEntries += row.total_entries;
   }
 
   const totalStickers = groups?.reduce((sum, g) => sum + g.sticker_count, 0) ?? 0;

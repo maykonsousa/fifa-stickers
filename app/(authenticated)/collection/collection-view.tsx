@@ -20,7 +20,7 @@ import {
 import { ChevronsUpDown, Check, Loader2, BookOpen, List } from "lucide-react";
 import { StickerImageUpload } from "@/components/sticker-image-upload";
 import { StickerCard } from "@/app/p/[username]/sticker-card";
-import { ProfileStickersAlbum } from "@/app/p/[username]/profile-stickers-album";
+import { ProfileStickersAlbum, type AlbumOverride } from "@/app/p/[username]/profile-stickers-album";
 import { StickerLegend } from "@/app/p/[username]/sticker-legend";
 import { StickerActionsModal } from "./sticker-actions-modal";
 
@@ -80,7 +80,9 @@ export function CollectionView({
     title: string | null;
     owned_count: number;
   } | null>(null);
-  const [albumRefreshKey, setAlbumRefreshKey] = useState(0);
+  // Updates otimistas que o álbum aplica sem refetchar (pra não voltar pra
+  // primeira página depois de adicionar/remover figurinha).
+  const [albumOverrides, setAlbumOverrides] = useState<Record<number, AlbumOverride>>({});
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Carregar viewMode do localStorage no mount.
@@ -131,6 +133,7 @@ export function CollectionView({
   // sincronizada pra otimista update funcionar quando voltar).
   useEffect(() => {
     setPage(1);
+    setAlbumOverrides({});
     fetchStickers(1, false);
   }, [fetchStickers]);
 
@@ -158,25 +161,38 @@ export function CollectionView({
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, viewMode]);
 
+  const bumpOverride = (stickerId: number, delta: number) => {
+    setAlbumOverrides((prev) => ({
+      ...prev,
+      [stickerId]: {
+        ...prev[stickerId],
+        ownedDelta: (prev[stickerId]?.ownedDelta ?? 0) + delta,
+      },
+    }));
+  };
+
   const incrementLocal = (stickerId: number) => {
     setResults((prev) =>
       prev.map((s) => s.id === stickerId ? { ...s, owned_count: s.owned_count + 1 } : s)
     );
-    setAlbumRefreshKey((k) => k + 1);
+    bumpOverride(stickerId, 1);
   };
 
   const decrementLocal = (stickerId: number) => {
     setResults((prev) =>
       prev.map((s) => s.id === stickerId ? { ...s, owned_count: Math.max(0, s.owned_count - 1) } : s)
     );
-    setAlbumRefreshKey((k) => k + 1);
+    bumpOverride(stickerId, -1);
   };
 
-  const setImageLocal = (stickerId: number, imageUrl: string) => {
+  const setImageLocal = (stickerId: number, imageUrl: string | null) => {
     setResults((prev) =>
       prev.map((s) => s.id === stickerId ? { ...s, image_url: imageUrl } : s)
     );
-    setAlbumRefreshKey((k) => k + 1);
+    setAlbumOverrides((prev) => ({
+      ...prev,
+      [stickerId]: { ...prev[stickerId], imageUrl },
+    }));
   };
 
   const doIncrement = async (stickerId: number) => {
@@ -449,7 +465,7 @@ export function CollectionView({
           viewerId={userId}
           groupId={groupId}
           keyword={keyword}
-          refreshKey={albumRefreshKey}
+          overrides={albumOverrides}
           onStickerClick={(s) =>
             handleCardClick({
               id: s.id,
@@ -471,7 +487,11 @@ export function CollectionView({
         onSuccess={handleUploadSuccess}
         onSkip={uploadSticker?.image_url ? undefined : handleSkipUpload}
         currentImageUrl={uploadSticker?.image_url}
-        onRemove={() => fetchStickers(1, false).then(() => setPage(1))}
+        onRemove={() => {
+          if (uploadSticker) {
+            setImageLocal(uploadSticker.id, null);
+          }
+        }}
       />
 
       <StickerActionsModal

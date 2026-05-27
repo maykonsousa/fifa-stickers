@@ -23,56 +23,32 @@ export async function getShareableStickerList(params: {
     return { ok: false, error: "Perfil não encontrado" };
   }
 
-  const [
-    { data: userStickers, error: userStickersErr },
-    { data: allStickers, error: allStickersErr },
-  ] = await Promise.all([
-    supabase.from("user_stickers").select("sticker_id").eq("user_id", profile.id),
-    supabase
-      .from("stickers")
-      .select("id, code, number, title, group_id, sticker_groups(id, name, code)")
-      .order("group_id", { ascending: true })
-      .order("number", { ascending: true }),
-  ]);
+  const { data: shareRows, error: shareErr } = await supabase
+    .rpc("get_user_share_list", { p_user_id: profile.id, p_kind: params.kind })
+    .range(0, 9999);
 
-  if (userStickersErr || allStickersErr) {
+  if (shareErr) {
     return { ok: false, error: "Erro ao carregar figurinhas" };
   }
 
-  // Owner sticker_id → count
-  const ownedCounts = new Map<number, number>();
-  for (const us of userStickers ?? []) {
-    ownedCounts.set(us.sticker_id, (ownedCounts.get(us.sticker_id) ?? 0) + 1);
-  }
-
-  // Filter by kind
-  type StickerRow = {
-    id: number;
-    code: string;
-    number: number;
-    title: string | null;
+  type ShareRow = {
     group_id: number;
-    sticker_groups: { id: number; name: string; code: string } | null;
+    group_name: string;
+    group_code: string;
+    sticker_id: number;
+    sticker_code: string;
+    sticker_number: number;
+    sticker_title: string | null;
   };
 
-  const rows = (allStickers ?? []) as unknown as StickerRow[];
-
-  const filtered = rows.filter((s) => {
-    const owned = ownedCounts.get(s.id) ?? 0;
-    return params.kind === "missing" ? owned === 0 : owned >= 2;
-  });
-
-  // Group by sticker_groups.id, preserving order (already sorted)
   const groupsMap = new Map<number, ShareStickerGroup>();
-  for (const row of filtered) {
-    const g = row.sticker_groups;
-    if (!g) continue;
-    let bucket = groupsMap.get(g.id);
+  for (const row of (shareRows ?? []) as ShareRow[]) {
+    let bucket = groupsMap.get(row.group_id);
     if (!bucket) {
-      bucket = { name: g.name, code: g.code, stickers: [] };
-      groupsMap.set(g.id, bucket);
+      bucket = { name: row.group_name, code: row.group_code, stickers: [] };
+      groupsMap.set(row.group_id, bucket);
     }
-    bucket.stickers.push({ code: row.code, title: row.title });
+    bucket.stickers.push({ code: row.sticker_code, title: row.sticker_title });
   }
 
   const groups = Array.from(groupsMap.values());

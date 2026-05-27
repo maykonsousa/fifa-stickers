@@ -12,7 +12,7 @@ export default async function OGImage({ params }: { params: Promise<{ username: 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, username, avatar_url")
+    .select("id, display_name, username, avatar_url, sticker_count")
     .eq("username", username)
     .single();
 
@@ -25,16 +25,11 @@ export default async function OGImage({ params }: { params: Promise<{ username: 
     );
   }
 
-  const { data: userStickers } = await supabase
-    .from("user_stickers")
-    .select("sticker_id")
-    .eq("user_id", profile.id);
-
   const { count: totalStickers } = await supabase
     .from("stickers")
     .select("id", { count: "exact", head: true });
 
-  const uniqueOwned = new Set(userStickers?.map((s) => s.sticker_id) ?? []).size;
+  const uniqueOwned = profile.sticker_count ?? 0;
   const total = totalStickers ?? 0;
   const missing = total - uniqueOwned;
   const percent = total > 0 ? Math.round((uniqueOwned / total) * 100) : 0;

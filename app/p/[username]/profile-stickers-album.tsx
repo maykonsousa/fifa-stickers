@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { StickerCard } from "./sticker-card";
@@ -58,20 +58,25 @@ function groupByPage(rows: AlbumSticker[]): AlbumPage[] {
   return pages;
 }
 
+export interface AlbumOverride {
+  ownedDelta?: number;
+  imageUrl?: string | null;
+}
+
 export function ProfileStickersAlbum({
   userId,
   viewerId,
   groupId,
   keyword,
   onStickerClick,
-  refreshKey,
+  overrides,
 }: {
   userId: string;
   viewerId: string | null;
   groupId: number | null;
   keyword: string;
   onStickerClick?: (sticker: AlbumSticker) => void;
-  refreshKey?: number;
+  overrides?: Record<number, AlbumOverride>;
 }) {
   const [pages, setPages] = useState<AlbumPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +85,8 @@ export function ProfileStickersAlbum({
   const fetchVersionRef = useRef(0);
   const isLoggedIn = viewerId !== null;
 
-  // Buscar dados sempre que filtros mudarem.
+  // Buscar dados sempre que filtros mudarem. Updates de contagem/imagem vêm
+  // via `overrides` pra não refetchar e perder a página atual.
   useEffect(() => {
     const myVersion = ++fetchVersionRef.current;
     setLoading(true);
@@ -100,7 +106,23 @@ export function ProfileStickersAlbum({
         setCurrentIdx(0);
         setLoading(false);
       });
-  }, [userId, viewerId, groupId, keyword, refreshKey]);
+  }, [userId, viewerId, groupId, keyword]);
+
+  const displayPages = useMemo(() => {
+    if (!overrides || Object.keys(overrides).length === 0) return pages;
+    return pages.map((p) => ({
+      ...p,
+      stickers: p.stickers.map((s) => {
+        const ov = overrides[s.id];
+        if (!ov) return s;
+        return {
+          ...s,
+          viewer_owned_count: Math.max(0, s.viewer_owned_count + (ov.ownedDelta ?? 0)),
+          image_url: ov.imageUrl !== undefined ? ov.imageUrl : s.image_url,
+        };
+      }),
+    }));
+  }, [pages, overrides]);
 
   // Sincronizar currentIdx com scroll do carrossel.
   useEffect(() => {
@@ -190,7 +212,7 @@ export function ProfileStickersAlbum({
     );
   }
 
-  if (pages.length === 0) {
+  if (displayPages.length === 0) {
     return (
       <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center text-sm text-gray-400">
         Nenhuma página encontrada com esses filtros. Algumas figurinhas ainda
@@ -200,7 +222,7 @@ export function ProfileStickersAlbum({
     );
   }
 
-  const current = pages[currentIdx];
+  const current = displayPages[currentIdx];
 
   return (
     <div className="space-y-3">
@@ -221,13 +243,13 @@ export function ProfileStickersAlbum({
             <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="text-xs text-gray-400 tabular-nums">
-            {currentIdx + 1} / {pages.length}
+            {currentIdx + 1} / {displayPages.length}
           </span>
           <button
             type="button"
             aria-label="Próxima página"
             onClick={() => goTo(currentIdx + 1)}
-            disabled={currentIdx === pages.length - 1}
+            disabled={currentIdx === displayPages.length - 1}
             className="rounded-full border border-white/10 bg-white/5 p-2 text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronRight className="h-4 w-4" />
@@ -242,7 +264,7 @@ export function ProfileStickersAlbum({
         role="region"
         aria-label="Páginas do álbum"
       >
-        {pages.map((p) => (
+        {displayPages.map((p) => (
           <AlbumPageView
             key={p.page}
             page={p}
@@ -254,7 +276,7 @@ export function ProfileStickersAlbum({
 
       {/* Indicador mobile (texto simples) */}
       <p className="sm:hidden text-center text-xs text-gray-400 tabular-nums">
-        Página {currentIdx + 1} de {pages.length}
+        Página {currentIdx + 1} de {displayPages.length}
       </p>
     </div>
   );

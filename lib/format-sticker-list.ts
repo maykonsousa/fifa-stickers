@@ -42,10 +42,8 @@ export function formatShareList(input: FormatShareListInput): string {
   for (const group of input.groups) {
     if (group.stickers.length === 0) continue;
     const emoji = getGroupEmoji(group.code);
-    lines.push(`${emoji} *${group.name}* (${group.code})`);
-    for (const sticker of group.stickers) {
-      lines.push(sticker.title ? `- ${sticker.code} - ${sticker.title}` : `- ${sticker.code}`);
-    }
+    lines.push(`*${emoji} ${group.name}* (${group.code})`);
+    lines.push(group.stickers.map((sticker) => sticker.code).join(", "));
     lines.push("");
   }
 

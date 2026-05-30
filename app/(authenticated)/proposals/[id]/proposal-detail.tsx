@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { formatRelativeDateTime } from "@/lib/format-datetime";
 import type { ProposalItemDetail, ProposalStatus } from "../lib/types";
 
@@ -34,7 +35,7 @@ function StickerItem({ item }: { item: ProposalItemDetail }) {
   return (
     <li className="flex items-center gap-3 py-2">
       {item.image_url ? (
-        <img src={item.image_url} alt={item.code} className="h-12 w-9 rounded object-cover" />
+        <Image src={item.image_url} alt={item.code} width={36} height={48} sizes="36px" className="h-12 w-9 rounded object-cover" />
       ) : (
         <div className="h-12 w-9 rounded bg-white/10" />
       )}

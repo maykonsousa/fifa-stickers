@@ -74,7 +74,9 @@ export default function AdminUploadPage() {
       const path = `stickers/${code}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("sticker-images")
-        .upload(path, file, { upsert: true });
+        // Cache de 1 ano + cache-bust ?v= na URL salva = economia de egress
+        // sem perder a atualização em re-uploads (upsert).
+        .upload(path, file, { upsert: true, cacheControl: "31536000" });
 
       if (uploadError) {
         uploadResults.push({ file: file.name, status: "error", message: uploadError.message });
@@ -84,12 +86,13 @@ export default function AdminUploadPage() {
           .from("sticker-images")
           .getPublicUrl(path);
 
+        const imageUrl = `${urlData.publicUrl}?v=${Date.now()}`;
         const orientation = await detectOrientation(file);
 
         // Update sticker record
         const { error: updateError } = await supabase
           .from("stickers")
-          .update({ image_url: urlData.publicUrl, orientation })
+          .update({ image_url: imageUrl, orientation })
           .eq("code", code);
 
         if (updateError) {

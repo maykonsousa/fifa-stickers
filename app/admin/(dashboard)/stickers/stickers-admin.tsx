@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ChevronsUpDown, Check } from "lucide-react";
@@ -100,7 +101,8 @@ export function StickersAdmin({
       const url = URL.createObjectURL(file);
       setImagePreview(url);
       // Auto-detect orientation pelas dimensões naturais da imagem.
-      const img = new Image();
+      // window.Image: o import `Image` de next/image sombreia o construtor global.
+      const img = new window.Image();
       img.onload = () => {
         setEditOrientation(
           img.naturalWidth > img.naturalHeight ? "landscape" : "portrait",
@@ -122,7 +124,8 @@ export function StickersAdmin({
       const path = `stickers/${editingSticker.code}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("sticker-images")
-        .upload(path, imageFile, { upsert: true });
+        // Cache de 1 ano; a URL salva já leva cache-bust ?v= abaixo.
+        .upload(path, imageFile, { upsert: true, cacheControl: "31536000" });
 
       if (!uploadError) {
         const { data: urlData } = supabase.storage
@@ -228,10 +231,12 @@ export function StickersAdmin({
           >
             <div className="aspect-[49/63] relative">
               {sticker.image_url ? (
-                <img
+                <Image
                   src={sticker.image_url}
                   alt={sticker.code}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
+                  className="object-cover"
                 />
               ) : (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-gray-800/50">

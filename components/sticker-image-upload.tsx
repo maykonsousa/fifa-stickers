@@ -87,6 +87,9 @@ export function StickerImageUpload({
         .upload(path, blob, {
           upsert: canReplace,
           contentType: "image/webp",
+          // Imagens são imutáveis por upload (troca usa cache-bust ?v=).
+          // Cache de 1 ano evita re-downloads e economiza egress do Storage.
+          cacheControl: "31536000",
         });
 
       if (uploadError) throw uploadError;

@@ -5,9 +5,12 @@ export interface CropArea {
   height: number;
 }
 
-const MAX_WIDTH = 800;
-const MAX_HEIGHT = 1200;
-const QUALITY = 0.8;
+// Figurinhas são exibidas em ~150-200px (≤400px em telas retina), então
+// 600px de largura é suficiente. Dimensões/qualidade menores reduzem o
+// tamanho do arquivo e, consequentemente, o egress do Storage.
+const MAX_WIDTH = 600;
+const MAX_HEIGHT = 900;
+const QUALITY = 0.72;
 
 export async function cropAndCompress(
   imageSrc: string,

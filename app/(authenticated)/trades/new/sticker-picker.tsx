@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import {
   Drawer,
@@ -400,10 +401,12 @@ function StickerCard({
           }`}
         >
           {sticker.image_url ? (
-            <img
+            <Image
               src={sticker.image_url}
               alt={sticker.code}
-              className={`h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale" : ""}`}
+              fill
+              sizes="(max-width: 640px) 30vw, 160px"
+              className={`object-cover ${showOwnership && !hasIt ? "grayscale" : ""}`}
             />
           ) : (
             <div className="flex h-full flex-col items-start p-2">

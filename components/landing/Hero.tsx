@@ -3,6 +3,7 @@
 import { motion } from 'motion/react';
 import { Sparkles, Trophy, Users, Zap } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const STICKER_BASE = "https://ryahywolbykyqrpiibmp.supabase.co/storage/v1/object/public/sticker-images/stickers";
 
@@ -46,11 +47,12 @@ export default function Hero() {
               }}
             >
               <div className="bg-white p-[3px] rounded-lg shadow-[0_18px_40px_rgba(0,0,0,0.4)]">
-                <img
+                <Image
                   src={s.src}
                   alt=""
                   width={220}
                   height={295}
+                  sizes="(max-width: 768px) 120px, 220px"
                   className="block w-[120px] md:w-[220px] h-auto aspect-[220/295] object-contain rounded-md"
                   loading="lazy"
                 />

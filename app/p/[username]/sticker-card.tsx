@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import Image from "next/image";
 
 export interface StickerCardSticker {
   id: number;
@@ -45,10 +46,12 @@ export function StickerCard({
   const innerContent = (
     <div className={`${aspectClass} relative overflow-hidden rounded-[inherit] ${showOwnership && !hasIt ? "bg-gray-800/50" : "bg-gray-800"}`}>
       {sticker.image_url ? (
-        <img
+        <Image
           src={sticker.image_url}
           alt={sticker.code}
-          className={`h-full w-full object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
+          fill
+          sizes="(max-width: 640px) 30vw, 160px"
+          className={`object-cover ${showOwnership && !hasIt ? "grayscale opacity-70" : ""}`}
           loading="lazy"
         />
       ) : (

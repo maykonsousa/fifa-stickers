@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export interface CollectorCardProps {
   username: string;
@@ -44,11 +45,10 @@ export function CollectorCard({
           {previewStickers.map((s) => (
             <div
               key={s.id}
-              className="h-12 w-12 rounded-md overflow-hidden bg-white/5 border border-white/10 flex-shrink-0"
+              className="relative h-12 w-12 rounded-md overflow-hidden bg-white/5 border border-white/10 flex-shrink-0"
             >
               {s.imageUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={s.imageUrl} alt="" className="h-full w-full object-cover" />
+                <Image src={s.imageUrl} alt="" fill sizes="48px" className="object-cover" />
               ) : (
                 <div className="h-full w-full" />
               )}

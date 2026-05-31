@@ -87,6 +87,7 @@ export function ProfileStickersAlbum({
   const [pages, setPages] = useState<AlbumPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [pageInput, setPageInput] = useState("");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const fetchVersionRef = useRef(0);
   const isLoggedIn = viewerId !== null;
@@ -156,6 +157,23 @@ export function ProfileStickersAlbum({
     if (!el) return;
     const clamped = Math.max(0, Math.min(pages.length - 1, idx));
     el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
+  };
+
+  const handleGoToPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const n = Number.parseInt(pageInput, 10);
+    if (Number.isNaN(n)) {
+      setPageInput("");
+      return;
+    }
+    const idx = resolvePageIndex(displayPages, n);
+    if (idx === -1) {
+      // Página inexistente: no-op silencioso, campo volta ao estado vazio.
+      setPageInput("");
+      return;
+    }
+    goTo(idx);
+    setPageInput("");
   };
 
   // Setas de teclado — ignora quando foco está num input/textarea

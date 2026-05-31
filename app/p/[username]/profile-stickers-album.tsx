@@ -58,6 +58,12 @@ function groupByPage(rows: AlbumSticker[]): AlbumPage[] {
   return pages;
 }
 
+// Traduz o número de página do álbum (campo `page`, ex.: 23) para o índice
+// correspondente no carrossel. Retorna -1 quando não existe página com esse número.
+function resolvePageIndex(pages: { page: number }[], pageNumber: number): number {
+  return pages.findIndex((p) => p.page === pageNumber);
+}
+
 export interface AlbumOverride {
   ownedDelta?: number;
   imageUrl?: string | null;
@@ -81,6 +87,7 @@ export function ProfileStickersAlbum({
   const [pages, setPages] = useState<AlbumPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [pageInput, setPageInput] = useState("");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const fetchVersionRef = useRef(0);
   const isLoggedIn = viewerId !== null;
@@ -150,6 +157,23 @@ export function ProfileStickersAlbum({
     if (!el) return;
     const clamped = Math.max(0, Math.min(pages.length - 1, idx));
     el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
+  };
+
+  const handleGoToPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const n = Number.parseInt(pageInput, 10);
+    if (Number.isNaN(n)) {
+      setPageInput("");
+      return;
+    }
+    const idx = resolvePageIndex(displayPages, n);
+    if (idx === -1) {
+      // Página inexistente: no-op silencioso, campo volta ao estado vazio.
+      setPageInput("");
+      return;
+    }
+    goTo(idx);
+    setPageInput("");
   };
 
   // Setas de teclado — ignora quando foco está num input/textarea
@@ -233,6 +257,26 @@ export function ProfileStickersAlbum({
           <p className="truncate text-base font-semibold text-white">{current.groupName}</p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
+          <form onSubmit={handleGoToPage} className="flex items-center gap-1">
+            <label htmlFor="album-goto-desktop" className="text-xs text-gray-400">
+              Ir para
+            </label>
+            <input
+              id="album-goto-desktop"
+              type="number"
+              inputMode="numeric"
+              value={pageInput}
+              onChange={(e) => setPageInput(e.target.value)}
+              placeholder={String(current.page)}
+              className="w-14 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white tabular-nums [appearance:textfield] focus:outline-none focus:ring-1 focus:ring-white/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <button
+              type="submit"
+              className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white hover:bg-white/10"
+            >
+              Ir
+            </button>
+          </form>
           <button
             type="button"
             aria-label="Página anterior"
@@ -274,10 +318,29 @@ export function ProfileStickersAlbum({
         ))}
       </div>
 
-      {/* Indicador mobile (texto simples) */}
-      <p className="sm:hidden text-center text-xs text-gray-400 tabular-nums">
-        Página {currentIdx + 1} de {displayPages.length}
-      </p>
+      {/* Indicador + ir para página (mobile) */}
+      <div className="sm:hidden flex items-center justify-center gap-3">
+        <p className="text-xs text-gray-400 tabular-nums">
+          Página {currentIdx + 1} de {displayPages.length}
+        </p>
+        <form onSubmit={handleGoToPage} className="flex items-center gap-1">
+          <input
+            type="number"
+            inputMode="numeric"
+            value={pageInput}
+            onChange={(e) => setPageInput(e.target.value)}
+            placeholder={String(current.page)}
+            aria-label="Ir para a página"
+            className="w-14 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white tabular-nums [appearance:textfield] focus:outline-none focus:ring-1 focus:ring-white/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <button
+            type="submit"
+            className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white hover:bg-white/10"
+          >
+            Ir
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

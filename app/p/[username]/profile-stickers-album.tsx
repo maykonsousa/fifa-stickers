@@ -257,6 +257,27 @@ export function ProfileStickersAlbum({
           <p className="truncate text-base font-semibold text-white">{current.groupName}</p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
+          <form onSubmit={handleGoToPage} className="flex items-center gap-1">
+            <label htmlFor="album-goto-desktop" className="text-xs text-gray-400">
+              Ir para
+            </label>
+            <input
+              id="album-goto-desktop"
+              type="number"
+              inputMode="numeric"
+              value={pageInput}
+              onChange={(e) => setPageInput(e.target.value)}
+              placeholder={String(current.page)}
+              aria-label="Ir para a página"
+              className="w-14 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white tabular-nums [appearance:textfield] focus:outline-none focus:ring-1 focus:ring-white/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <button
+              type="submit"
+              className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white hover:bg-white/10"
+            >
+              Ir
+            </button>
+          </form>
           <button
             type="button"
             aria-label="Página anterior"

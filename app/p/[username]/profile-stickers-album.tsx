@@ -268,7 +268,6 @@ export function ProfileStickersAlbum({
               value={pageInput}
               onChange={(e) => setPageInput(e.target.value)}
               placeholder={String(current.page)}
-              aria-label="Ir para a página"
               className="w-14 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white tabular-nums [appearance:textfield] focus:outline-none focus:ring-1 focus:ring-white/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <button

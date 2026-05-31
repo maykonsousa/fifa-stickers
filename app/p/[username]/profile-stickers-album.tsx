@@ -319,10 +319,29 @@ export function ProfileStickersAlbum({
         ))}
       </div>
 
-      {/* Indicador mobile (texto simples) */}
-      <p className="sm:hidden text-center text-xs text-gray-400 tabular-nums">
-        Página {currentIdx + 1} de {displayPages.length}
-      </p>
+      {/* Indicador + ir para página (mobile) */}
+      <div className="sm:hidden flex items-center justify-center gap-3">
+        <p className="text-xs text-gray-400 tabular-nums">
+          Página {currentIdx + 1} de {displayPages.length}
+        </p>
+        <form onSubmit={handleGoToPage} className="flex items-center gap-1">
+          <input
+            type="number"
+            inputMode="numeric"
+            value={pageInput}
+            onChange={(e) => setPageInput(e.target.value)}
+            placeholder={String(current.page)}
+            aria-label="Ir para a página"
+            className="w-14 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white tabular-nums [appearance:textfield] focus:outline-none focus:ring-1 focus:ring-white/30 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <button
+            type="submit"
+            className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-white hover:bg-white/10"
+          >
+            Ir
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

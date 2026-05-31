@@ -58,6 +58,12 @@ function groupByPage(rows: AlbumSticker[]): AlbumPage[] {
   return pages;
 }
 
+// Traduz o número de página do álbum (campo `page`, ex.: 23) para o índice
+// correspondente no carrossel. Retorna -1 quando não existe página com esse número.
+function resolvePageIndex(pages: { page: number }[], pageNumber: number): number {
+  return pages.findIndex((p) => p.page === pageNumber);
+}
+
 export interface AlbumOverride {
   ownedDelta?: number;
   imageUrl?: string | null;

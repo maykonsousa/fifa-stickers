@@ -24,6 +24,8 @@ export function ScannerView({ userId }: { userId: string }) {
   const [busy, setBusy] = useState(false);
   const [sessionCount, setSessionCount] = useState(0);
 
+  const codesReady = validCodes.length > 0;
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -186,11 +188,11 @@ export function ScannerView({ userId }: { userId: string }) {
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[30%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-green-400/80" />
           <button
             onClick={captureFromVideo}
-            disabled={state === "reading"}
+            disabled={state === "reading" || !codesReady}
             className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
           >
             {state === "reading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            Ler código
+            {!codesReady ? "Carregando…" : "Ler código"}
           </button>
         </div>
       )}
@@ -204,11 +206,11 @@ export function ScannerView({ userId }: { userId: string }) {
                 photoInputRef.current.click();
               }
             }}
-            disabled={state === "reading"}
+            disabled={state === "reading" || !codesReady}
             className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
           >
             {state === "reading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            Tirar foto do código
+            {!codesReady ? "Carregando…" : "Tirar foto do código"}
           </button>
           <input
             ref={photoInputRef}

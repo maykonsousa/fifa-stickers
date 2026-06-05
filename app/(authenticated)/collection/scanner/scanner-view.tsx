@@ -9,10 +9,16 @@ import { isInAppBrowser } from "@/lib/detect-in-app-browser";
 import { chooseCaptureMode, detectCaptureEnv, type CaptureMode } from "@/lib/scanner/choose-capture-mode";
 import { snapToValidCode } from "@/lib/scanner/snap-to-valid-code";
 import { recognizeFrame, terminateOcr } from "@/lib/scanner/recognize-frame";
+import { preprocessForOcr, invertCanvas, loadImage } from "@/lib/scanner/preprocess-ocr";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
 import { ScannerConfirmCard } from "./scanner-confirm-card";
 
 type ScanState = "idle" | "reading" | "confirm" | "notfound";
+
+// Janela de mira: faixa central do tamanho de um badge de código. O recorte
+// enviado ao OCR usa exatamente estas frações, então o que o usuário enquadra
+// na caixa é o que é lido.
+const MIRA = { w: 0.55, h: 0.16 };
 
 export function ScannerView({ userId }: { userId: string }) {
   const router = useRouter();
@@ -89,43 +95,48 @@ export function ScannerView({ userId }: { userId: string }) {
     [validCodes, userId],
   );
 
-  // Captura um frame do vídeo e manda pro OCR.
+  // OCR com dupla passada: lê o recorte; se não casar com um código válido,
+  // tenta a versão invertida (texto claro em fundo escuro, como o badge UZB 7).
+  // Devolve o texto que casou, ou o da primeira passada pro feedback "li ...".
+  const runOcr = useCallback(
+    async (gray: HTMLCanvasElement): Promise<string> => {
+      const first = await recognizeFrame(gray);
+      if (snapToValidCode(first.rawText, validCodes)) return first.rawText;
+      const second = await recognizeFrame(invertCanvas(gray));
+      return snapToValidCode(second.rawText, validCodes) ? second.rawText : first.rawText;
+    },
+    [validCodes],
+  );
+
+  // Captura um frame do vídeo e manda pro OCR (só a região de mira).
   const captureFromVideo = useCallback(async () => {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
     setState("reading");
-    const canvas = document.createElement("canvas");
-    // Recorta a janela central de mira (60% largura x 30% altura).
-    const cropW = video.videoWidth * 0.6;
-    const cropH = video.videoHeight * 0.3;
-    canvas.width = cropW;
-    canvas.height = cropH;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(
-      video,
-      (video.videoWidth - cropW) / 2,
-      (video.videoHeight - cropH) / 2,
-      cropW,
-      cropH,
-      0,
-      0,
-      cropW,
-      cropH,
-    );
-    const { rawText } = await recognizeFrame(canvas);
+    const sw = video.videoWidth * MIRA.w;
+    const sh = video.videoHeight * MIRA.h;
+    const gray = preprocessForOcr(video, video.videoWidth, video.videoHeight, {
+      sx: (video.videoWidth - sw) / 2,
+      sy: (video.videoHeight - sh) / 2,
+      sw,
+      sh,
+    });
+    const rawText = await runOcr(gray);
     await resolveRawText(rawText);
-  }, [resolveRawText]);
+  }, [resolveRawText, runOcr]);
 
-  // Modo foto: lê o arquivo escolhido.
+  // Modo foto: lê o arquivo escolhido (imagem inteira — o usuário enquadra só o código).
   const handlePhoto = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
       setState("reading");
-      const { rawText } = await recognizeFrame(file);
+      const img = await loadImage(file);
+      const gray = preprocessForOcr(img, img.naturalWidth, img.naturalHeight);
+      const rawText = await runOcr(gray);
       await resolveRawText(rawText);
     },
-    [resolveRawText],
+    [resolveRawText, runOcr],
   );
 
   const backToReading = () => {
@@ -179,13 +190,18 @@ export function ScannerView({ userId }: { userId: string }) {
       </div>
 
       <h1 className="text-2xl font-bold text-white">Escanear figurinha</h1>
-      <p className="text-sm text-gray-400">Aponte para o código no verso da figurinha.</p>
+      <p className="text-sm text-gray-400">
+        Encaixe só o código (canto da figurinha) dentro da caixa verde, bem próximo.
+      </p>
 
       {mode === "live" && (
         <div className="relative overflow-hidden rounded-xl bg-black">
           <video ref={videoRef} autoPlay playsInline muted className="w-full" />
-          {/* Janela de mira (60% x 30% central). */}
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[30%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-green-400/80" />
+          {/* Janela de mira — mesmas frações usadas no recorte do OCR (MIRA). */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-green-400/80"
+            style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
+          />
           <button
             onClick={captureFromVideo}
             disabled={state === "reading" || !codesReady}
@@ -199,6 +215,9 @@ export function ScannerView({ userId }: { userId: string }) {
 
       {mode === "photo" && (
         <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
+          <p className="mb-3 text-xs text-gray-400">
+            Tire a foto bem próximo, enquadrando só o código.
+          </p>
           <button
             onClick={() => {
               if (photoInputRef.current) {

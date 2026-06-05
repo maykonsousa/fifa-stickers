@@ -1,4 +1,4 @@
-import Tesseract from "tesseract.js";
+import Tesseract, { PSM } from "tesseract.js";
 
 export interface OcrResult {
   rawText: string;
@@ -13,8 +13,10 @@ async function getWorker(): Promise<Tesseract.Worker> {
     workerPromise = (async () => {
       const worker = await Tesseract.createWorker("eng");
       // Códigos são alfanuméricos maiúsculos — restringe o alfabeto pra reduzir erro.
+      // PSM SINGLE_LINE: a região de mira contém só o código (uma linha), não uma página.
       await worker.setParameters({
         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+        tessedit_pageseg_mode: PSM.SINGLE_LINE,
       });
       return worker;
     })();

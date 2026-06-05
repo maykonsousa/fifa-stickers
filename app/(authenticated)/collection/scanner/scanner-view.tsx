@@ -8,8 +8,9 @@ import { createClient } from "@/lib/supabase/client";
 import { isInAppBrowser } from "@/lib/detect-in-app-browser";
 import { chooseCaptureMode, detectCaptureEnv, type CaptureMode } from "@/lib/scanner/choose-capture-mode";
 import { findCodeInText } from "@/lib/scanner/find-code-in-text";
-import { recognizeFrame, terminateOcr } from "@/lib/scanner/recognize-frame";
-import { preprocessForOcr, adaptiveThreshold, invertCanvas, loadImage } from "@/lib/scanner/preprocess-ocr";
+import { recognizeFrame } from "@/lib/scanner/recognize-frame";
+import { cropToJpegBase64 } from "@/lib/scanner/crop-frame";
+import { loadImage } from "@/lib/scanner/load-image";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
 import { ScannerConfirmCard } from "./scanner-confirm-card";
 
@@ -47,7 +48,6 @@ export function ScannerView({ userId }: { userId: string }) {
       .select("code")
       .then(({ data }) => setValidCodes((data ?? []).map((r) => r.code as string)));
     return () => {
-      void terminateOcr();
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
   }, []);
@@ -95,50 +95,33 @@ export function ScannerView({ userId }: { userId: string }) {
     [validCodes, userId],
   );
 
-  // OCR com dupla passada: lê o recorte; se não casar com um código válido,
-  // tenta a versão invertida (texto claro em fundo escuro, como o badge UZB 7).
-  // Devolve o texto que casou, ou o da primeira passada pro feedback "li ...".
-  const runOcr = useCallback(
-    async (gray: HTMLCanvasElement): Promise<string> => {
-      const first = await recognizeFrame(gray);
-      if (findCodeInText(first.rawText, validCodes)) return first.rawText;
-      const second = await recognizeFrame(invertCanvas(gray));
-      return findCodeInText(second.rawText, validCodes) ? second.rawText : first.rawText;
-    },
-    [validCodes],
-  );
-
-  // Captura um frame do vídeo e manda pro OCR (só a região de mira).
   const captureFromVideo = useCallback(async () => {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
     setState("reading");
     const sw = video.videoWidth * MIRA.w;
     const sh = video.videoHeight * MIRA.h;
-    const gray = preprocessForOcr(video, video.videoWidth, video.videoHeight, {
+    const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, {
       sx: (video.videoWidth - sw) / 2,
       sy: (video.videoHeight - sh) / 2,
       sw,
       sh,
     });
-    adaptiveThreshold(gray);
-    const rawText = await runOcr(gray);
+    const rawText = await recognizeFrame(image);
     await resolveRawText(rawText);
-  }, [resolveRawText, runOcr]);
+  }, [resolveRawText]);
 
-  // Modo foto: lê o arquivo escolhido (imagem inteira — o usuário enquadra só o código).
   const handlePhoto = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
       setState("reading");
       const img = await loadImage(file);
-      const gray = preprocessForOcr(img, img.naturalWidth, img.naturalHeight);
-      adaptiveThreshold(gray);
-      const rawText = await runOcr(gray);
+      const image = cropToJpegBase64(img, img.naturalWidth, img.naturalHeight);
+      const rawText = await recognizeFrame(image);
       await resolveRawText(rawText);
     },
-    [resolveRawText, runOcr],
+    [resolveRawText],
   );
 
   const backToReading = () => {

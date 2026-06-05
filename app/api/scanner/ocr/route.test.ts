@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const getUser = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({
@@ -20,6 +20,10 @@ describe("POST /api/scanner/ocr", () => {
     vi.restoreAllMocks();
     process.env.GOOGLE_VISION_API_KEY = "KEY123";
     getUser.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("retorna 401 sem sessão", async () => {
@@ -56,5 +60,12 @@ describe("POST /api/scanner/ocr", () => {
     getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
     const res = await POST(makeRequest({}));
     expect(res.status).toBe(400);
+  });
+
+  it("retorna 500 sem GOOGLE_VISION_API_KEY", async () => {
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
+    delete process.env.GOOGLE_VISION_API_KEY;
+    const res = await POST(makeRequest({ image: "X" }));
+    expect(res.status).toBe(500);
   });
 });

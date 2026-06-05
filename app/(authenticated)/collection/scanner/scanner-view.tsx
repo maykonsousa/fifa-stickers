@@ -16,9 +16,7 @@ type ScanState = "idle" | "reading" | "confirm" | "notfound";
 
 export function ScannerView({ userId }: { userId: string }) {
   const router = useRouter();
-  const [mode, setMode] = useState<CaptureMode | null>(() =>
-    chooseCaptureMode({ inApp: isInAppBrowser(), hasGetUserMedia: detectCaptureEnv().hasGetUserMedia }),
-  );
+  const [mode, setMode] = useState<CaptureMode | null>(null);
   const [validCodes, setValidCodes] = useState<string[]>([]);
   const [state, setState] = useState<ScanState>("idle");
   const [candidate, setCandidate] = useState<ScannedSticker | null>(null);
@@ -30,8 +28,11 @@ export function ScannerView({ userId }: { userId: string }) {
   const streamRef = useRef<MediaStream | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Carrega os códigos válidos uma vez e registra o cleanup do OCR/stream.
+  // Detecção de câmera é client-only (lê navigator) — feita no efeito pra
+  // não divergir do render do servidor e causar hydration mismatch.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMode(chooseCaptureMode({ inApp: isInAppBrowser(), hasGetUserMedia: detectCaptureEnv().hasGetUserMedia }));
     const supabase = createClient();
     supabase
       .from("stickers")

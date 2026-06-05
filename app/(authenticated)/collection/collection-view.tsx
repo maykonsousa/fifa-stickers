@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import {
@@ -17,7 +17,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { ChevronsUpDown, Check, Loader2, BookOpen, List } from "lucide-react";
+import { ChevronsUpDown, Check, Loader2, BookOpen, List, ScanLine } from "lucide-react";
 import { StickerImageUpload } from "@/components/sticker-image-upload";
 import { StickerCard } from "@/app/p/[username]/sticker-card";
 import { ProfileStickersAlbum, type AlbumOverride } from "@/app/p/[username]/profile-stickers-album";
@@ -57,12 +57,14 @@ export function CollectionView({
 }) {
   const searchParams = useSearchParams();
   const initialGroup = searchParams.get("group");
+  const router = useRouter();
+  const initialKeyword = searchParams.get("q") ?? "";
   const initialGroupId = initialGroup
     ? groups.find((g) => g.code === initialGroup)?.id ?? null
     : null;
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState(initialKeyword);
   const [groupId, setGroupId] = useState<number | null>(initialGroupId);
   const [groupOpen, setGroupOpen] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -305,11 +307,19 @@ export function CollectionView({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Coleção</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Clique numa figurinha pra adicionar — se já tiver, abre opções de + / − e remover.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Coleção</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Clique numa figurinha pra adicionar — se já tiver, abre opções de + / − e remover.
+          </p>
+        </div>
+        <button
+          onClick={() => router.push("/collection/scanner")}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-green-500 px-3 py-2 text-sm font-bold text-zinc-900 hover:bg-green-400 transition-colors"
+        >
+          <ScanLine className="h-4 w-4" /> Escanear
+        </button>
       </div>
 
       {/* Filters + view toggle */}

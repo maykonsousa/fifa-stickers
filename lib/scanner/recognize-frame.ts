@@ -13,10 +13,11 @@ async function getWorker(): Promise<Tesseract.Worker> {
     workerPromise = (async () => {
       const worker = await Tesseract.createWorker("eng");
       // Códigos são alfanuméricos maiúsculos — restringe o alfabeto pra reduzir erro.
-      // PSM SINGLE_LINE: a região de mira contém só o código (uma linha), não uma página.
+      // PSM SPARSE_TEXT: lemos a figurinha inteira, com texto espalhado em vários
+      // pontos (não uma única linha) — o código é garimpado depois (findCodeInText).
       await worker.setParameters({
         tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-        tessedit_pageseg_mode: PSM.SINGLE_LINE,
+        tessedit_pageseg_mode: PSM.SPARSE_TEXT,
       });
       return worker;
     })();

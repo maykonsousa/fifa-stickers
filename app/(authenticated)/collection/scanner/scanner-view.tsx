@@ -9,7 +9,7 @@ import { isInAppBrowser } from "@/lib/detect-in-app-browser";
 import { chooseCaptureMode, detectCaptureEnv, type CaptureMode } from "@/lib/scanner/choose-capture-mode";
 import { findCodeInText } from "@/lib/scanner/find-code-in-text";
 import { recognizeFrame, terminateOcr } from "@/lib/scanner/recognize-frame";
-import { preprocessForOcr, invertCanvas, loadImage } from "@/lib/scanner/preprocess-ocr";
+import { preprocessForOcr, adaptiveThreshold, invertCanvas, loadImage } from "@/lib/scanner/preprocess-ocr";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
 import { ScannerConfirmCard } from "./scanner-confirm-card";
 
@@ -121,6 +121,7 @@ export function ScannerView({ userId }: { userId: string }) {
       sw,
       sh,
     });
+    adaptiveThreshold(gray);
     const rawText = await runOcr(gray);
     await resolveRawText(rawText);
   }, [resolveRawText, runOcr]);
@@ -133,6 +134,7 @@ export function ScannerView({ userId }: { userId: string }) {
       setState("reading");
       const img = await loadImage(file);
       const gray = preprocessForOcr(img, img.naturalWidth, img.naturalHeight);
+      adaptiveThreshold(gray);
       const rawText = await runOcr(gray);
       await resolveRawText(rawText);
     },

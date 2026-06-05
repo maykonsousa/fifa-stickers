@@ -99,16 +99,20 @@ export function ScannerView({ userId }: { userId: string }) {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
     setState("reading");
-    const sw = video.videoWidth * MIRA.w;
-    const sh = video.videoHeight * MIRA.h;
-    const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, {
-      sx: (video.videoWidth - sw) / 2,
-      sy: (video.videoHeight - sh) / 2,
-      sw,
-      sh,
-    });
-    const rawText = await recognizeFrame(image);
-    await resolveRawText(rawText);
+    try {
+      const sw = video.videoWidth * MIRA.w;
+      const sh = video.videoHeight * MIRA.h;
+      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, {
+        sx: (video.videoWidth - sw) / 2,
+        sy: (video.videoHeight - sh) / 2,
+        sw,
+        sh,
+      });
+      const rawText = await recognizeFrame(image);
+      await resolveRawText(rawText);
+    } catch {
+      setState("notfound");
+    }
   }, [resolveRawText]);
 
   const handlePhoto = useCallback(
@@ -116,10 +120,14 @@ export function ScannerView({ userId }: { userId: string }) {
       const file = e.target.files?.[0];
       if (!file) return;
       setState("reading");
-      const img = await loadImage(file);
-      const image = cropToJpegBase64(img, img.naturalWidth, img.naturalHeight);
-      const rawText = await recognizeFrame(image);
-      await resolveRawText(rawText);
+      try {
+        const img = await loadImage(file);
+        const image = cropToJpegBase64(img, img.naturalWidth, img.naturalHeight);
+        const rawText = await recognizeFrame(image);
+        await resolveRawText(rawText);
+      } catch {
+        setState("notfound");
+      }
     },
     [resolveRawText],
   );

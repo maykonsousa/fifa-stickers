@@ -10,8 +10,9 @@ export interface CropRegion {
   sh: number;
 }
 
-// Upscale ajuda o Tesseract com texto pequeno.
-const UPSCALE = 3;
+// Upscale ajuda o Tesseract com texto pequeno. Como agora a região é grande
+// (a figurinha inteira), 2x equilibra legibilidade e custo do OCR.
+const UPSCALE = 2;
 
 // Recorta (opcional), dá upscale e converte pra tons de cinza.
 export function preprocessForOcr(

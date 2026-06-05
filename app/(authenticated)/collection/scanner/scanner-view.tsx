@@ -7,7 +7,7 @@ import { Loader2, Camera, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isInAppBrowser } from "@/lib/detect-in-app-browser";
 import { chooseCaptureMode, detectCaptureEnv, type CaptureMode } from "@/lib/scanner/choose-capture-mode";
-import { snapToValidCode } from "@/lib/scanner/snap-to-valid-code";
+import { findCodeInText } from "@/lib/scanner/find-code-in-text";
 import { recognizeFrame, terminateOcr } from "@/lib/scanner/recognize-frame";
 import { preprocessForOcr, invertCanvas, loadImage } from "@/lib/scanner/preprocess-ocr";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
@@ -15,10 +15,10 @@ import { ScannerConfirmCard } from "./scanner-confirm-card";
 
 type ScanState = "idle" | "reading" | "confirm" | "notfound";
 
-// Janela de mira: faixa central do tamanho de um badge de código. O recorte
-// enviado ao OCR usa exatamente estas frações, então o que o usuário enquadra
-// na caixa é o que é lido.
-const MIRA = { w: 0.55, h: 0.16 };
+// Janela de mira: caixa grande que enquadra a figurinha inteira. Lemos a região
+// toda e garimpamos o código entre as palavras (findCodeInText) — não é preciso
+// mirar exatamente no código. O recorte do OCR usa exatamente estas frações.
+const MIRA = { w: 0.82, h: 0.62 };
 
 export function ScannerView({ userId }: { userId: string }) {
   const router = useRouter();
@@ -78,7 +78,7 @@ export function ScannerView({ userId }: { userId: string }) {
   const resolveRawText = useCallback(
     async (rawText: string) => {
       setLastRawText(rawText);
-      const snap = snapToValidCode(rawText, validCodes);
+      const snap = findCodeInText(rawText, validCodes);
       if (!snap) {
         setState("notfound");
         return;
@@ -101,9 +101,9 @@ export function ScannerView({ userId }: { userId: string }) {
   const runOcr = useCallback(
     async (gray: HTMLCanvasElement): Promise<string> => {
       const first = await recognizeFrame(gray);
-      if (snapToValidCode(first.rawText, validCodes)) return first.rawText;
+      if (findCodeInText(first.rawText, validCodes)) return first.rawText;
       const second = await recognizeFrame(invertCanvas(gray));
-      return snapToValidCode(second.rawText, validCodes) ? second.rawText : first.rawText;
+      return findCodeInText(second.rawText, validCodes) ? second.rawText : first.rawText;
     },
     [validCodes],
   );
@@ -191,7 +191,7 @@ export function ScannerView({ userId }: { userId: string }) {
 
       <h1 className="text-2xl font-bold text-white">Escanear figurinha</h1>
       <p className="text-sm text-gray-400">
-        Encaixe só o código (canto da figurinha) dentro da caixa verde, bem próximo.
+        Enquadre a figurinha inteira na caixa — o código é detectado automaticamente.
       </p>
 
       {mode === "live" && (
@@ -216,7 +216,7 @@ export function ScannerView({ userId }: { userId: string }) {
       {mode === "photo" && (
         <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-center">
           <p className="mb-3 text-xs text-gray-400">
-            Tire a foto bem próximo, enquadrando só o código.
+            Tire a foto do verso da figurinha — o código é detectado automaticamente.
           </p>
           <button
             onClick={() => {

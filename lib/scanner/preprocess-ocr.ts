@@ -39,6 +39,61 @@ export function preprocessForOcr(
   return canvas;
 }
 
+// Binarização adaptativa (algoritmo de Bradley com imagem integral — o mesmo do
+// adaptiveThreshold do OpenCV, mas em JS puro, sem o WASM de 8MB). Compara cada
+// pixel com a média de uma vizinhança local, então lida bem com reflexo e luz
+// irregular do verso plastificado. Opera in-place no canvas (espera tons de cinza).
+const THRESHOLD_WINDOW_DIVISOR = 8; // janela ≈ largura / 8
+const THRESHOLD_T = 0.15; // quão mais escuro que a média local pra virar preto
+
+export function adaptiveThreshold(canvas: HTMLCanvasElement): HTMLCanvasElement {
+  const ctx = canvas.getContext("2d")!;
+  const w = canvas.width;
+  const h = canvas.height;
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+
+  const gray = new Float64Array(w * h);
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    gray[p] = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+  }
+
+  // Imagem integral: integral[idx] = soma de todos os pixels acima-e-à-esquerda.
+  const integral = new Float64Array(w * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      let v = gray[idx];
+      if (x > 0) v += integral[idx - 1];
+      if (y > 0) v += integral[idx - w];
+      if (x > 0 && y > 0) v -= integral[idx - w - 1];
+      integral[idx] = v;
+    }
+  }
+
+  const half = Math.max(1, Math.floor(w / THRESHOLD_WINDOW_DIVISOR) >> 1);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const x1 = Math.max(0, x - half);
+      const y1 = Math.max(0, y - half);
+      const x2 = Math.min(w - 1, x + half);
+      const y2 = Math.min(h - 1, y + half);
+      const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+      const A = x1 > 0 && y1 > 0 ? integral[(y1 - 1) * w + (x1 - 1)] : 0;
+      const B = y1 > 0 ? integral[(y1 - 1) * w + x2] : 0;
+      const C = x1 > 0 ? integral[y2 * w + (x1 - 1)] : 0;
+      const sum = integral[y2 * w + x2] - B - C + A;
+      const idx = y * w + x;
+      const val = gray[idx] * count <= sum * (1 - THRESHOLD_T) ? 0 : 255;
+      const di = idx * 4;
+      d[di] = d[di + 1] = d[di + 2] = val;
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+  return canvas;
+}
+
 // Devolve uma cópia invertida (negativo) — pra ler texto claro em fundo escuro.
 export function invertCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
   const c = document.createElement("canvas");

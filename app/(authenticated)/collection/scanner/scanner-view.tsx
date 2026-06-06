@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useReducer } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Camera, ArrowLeft } from "lucide-react";
+import { Loader2, Camera, ArrowLeft, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isInAppBrowser } from "@/lib/detect-in-app-browser";
 import { chooseCaptureMode, detectCaptureEnv, type CaptureMode } from "@/lib/scanner/choose-capture-mode";
@@ -49,6 +49,9 @@ export function ScannerView({ userId }: { userId: string }) {
   const [scanMode, setScanMode] = useState<ScanMode>("lancamento");
   const [phase, dispatch] = useReducer(scanFlowReducer, initialScanPhase);
   const [confirmBusy, setConfirmBusy] = useState(false);
+  const [manualCode, setManualCode] = useState("");
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
   const phaseRef = useRef(phase);
   // Modo foto: trava o botão enquanto o OCR (chamada paga) está em voo.
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -170,6 +173,27 @@ export function ScannerView({ userId }: { userId: string }) {
       dispatch({ type: "confirm" });
     }
   }, [executeScanAction, showFlash]);
+
+  const closeManual = useCallback(() => {
+    setManualCode("");
+    setManualError(null);
+    dispatch({ type: "closeManual" });
+  }, []);
+
+  const handleManualSubmit = useCallback(async () => {
+    const code = manualCode.trim().toUpperCase();
+    if (!code) return;
+    setManualBusy(true);
+    const sticker = await lookupStickerByCode(createClient(), code, userId);
+    setManualBusy(false);
+    if (!sticker) {
+      setManualError("Código não encontrado");
+      return;
+    }
+    setManualCode("");
+    setManualError(null);
+    dispatch({ type: "manualResolved", sticker, mode: scanModeRef.current });
+  }, [manualCode, userId]);
 
   // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
   // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo
@@ -316,6 +340,16 @@ export function ScannerView({ userId }: { userId: string }) {
         Enquadre a figurinha inteira na caixa — o código é detectado automaticamente.
       </p>
 
+      {phase.kind === "searching" && codesReady && (
+        <button
+          type="button"
+          onClick={() => dispatch({ type: "openManual" })}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-300"
+        >
+          <Search className="h-3.5 w-3.5" /> Não leu? Digitar código
+        </button>
+      )}
+
       {mode === "live" && (
         <div className="relative overflow-hidden rounded-xl bg-black">
           <video ref={videoRef} autoPlay playsInline muted className="w-full" />
@@ -399,7 +433,47 @@ export function ScannerView({ userId }: { userId: string }) {
           busy={confirmBusy}
           onConfirm={handleConfirm}
           onReject={() => dispatch({ type: "reject" })}
+          onManual={() => dispatch({ type: "openManual" })}
         />
+      )}
+
+      {phase.kind === "manual" && (
+        <div className="rounded-xl border border-white/15 bg-zinc-900/95 p-4">
+          <p className="mb-2 text-sm font-medium text-white">Digitar código</p>
+          <input
+            value={manualCode}
+            onChange={(e) => {
+              setManualCode(e.target.value);
+              setManualError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void handleManualSubmit();
+            }}
+            autoFocus
+            placeholder="ex.: MEX1"
+            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white uppercase placeholder:text-gray-500 placeholder:normal-case"
+          />
+          {manualError && <p className="mt-1 text-xs text-red-400">{manualError}</p>}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => void handleManualSubmit()}
+              disabled={manualBusy || !manualCode.trim()}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-green-500 px-3 py-2.5 text-sm font-bold text-zinc-900 hover:bg-green-400 disabled:opacity-50 transition-colors"
+            >
+              {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Buscar
+            </button>
+            <button
+              type="button"
+              onClick={closeManual}
+              disabled={manualBusy}
+              className="rounded-lg border border-white/10 px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 disabled:opacity-50 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
       )}
 
       {mode === null && (

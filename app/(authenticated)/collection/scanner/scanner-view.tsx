@@ -397,7 +397,7 @@ export function ScannerView({ userId }: { userId: string }) {
                 photoInputRef.current.click();
               }
             }}
-            disabled={!codesReady || photoBusy}
+            disabled={!codesReady || photoBusy || phase.kind !== "searching"}
             className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
           >
             {!codesReady || photoBusy ? (

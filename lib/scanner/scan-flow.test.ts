@@ -73,4 +73,10 @@ describe("scanFlowReducer", () => {
   it("ignora reject quando não está confirmando", () => {
     expect(scanFlowReducer(initialScanPhase, { type: "reject" })).toBe(initialScanPhase);
   });
+
+  it("ignora manualResolved fora do manual (ex.: usuário cancelou durante o lookup)", () => {
+    expect(
+      scanFlowReducer(initialScanPhase, { type: "manualResolved", sticker: STICKER, mode: "troca" }),
+    ).toBe(initialScanPhase);
+  });
 });

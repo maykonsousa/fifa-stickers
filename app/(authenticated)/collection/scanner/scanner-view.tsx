@@ -159,10 +159,17 @@ export function ScannerView({ userId }: { userId: string }) {
     if (phaseRef.current.kind !== "confirming") return;
     const { sticker, mode: activeMode } = phaseRef.current;
     setConfirmBusy(true);
-    await executeScanAction(sticker, activeMode);
-    setConfirmBusy(false);
-    dispatch({ type: "confirm" });
-  }, [executeScanAction]);
+    try {
+      await executeScanAction(sticker, activeMode);
+    } catch {
+      // Falha na escrita não pode travar o card (sem undo agora) — avisa e
+      // volta a procurar pra o usuário tentar de novo.
+      showFlash("red", "Erro ao salvar — tente de novo");
+    } finally {
+      setConfirmBusy(false);
+      dispatch({ type: "confirm" });
+    }
+  }, [executeScanAction, showFlash]);
 
   // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
   // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo

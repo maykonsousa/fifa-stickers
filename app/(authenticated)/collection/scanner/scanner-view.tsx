@@ -12,7 +12,9 @@ import { recognizeFrame } from "@/lib/scanner/recognize-frame";
 import { cropToJpegBase64 } from "@/lib/scanner/crop-frame";
 import { loadImage } from "@/lib/scanner/load-image";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
-import { type ScanMode } from "@/lib/scanner/resolve-scan-action";
+import { resolveScanAction, type ScanMode } from "@/lib/scanner/resolve-scan-action";
+import { toGray, meanAbsDiff, contentScore } from "@/lib/scanner/frame-metrics";
+import { nextFrameSignal, initialFrameState, type FrameThresholds, type FrameState } from "@/lib/scanner/frame-signal";
 import { ScannerConfirmCard } from "./scanner-confirm-card";
 
 type ScanState = "idle" | "reading" | "confirm" | "notfound";
@@ -29,6 +31,18 @@ const SCAN_MODES: ReadonlyArray<readonly [ScanMode, string]> = [
   ["baixa", "Baixa"],
 ];
 
+// Amostragem on-device do gatilho. Tamanho pequeno = barato. Limiares calibrados
+// contra a escala de contentScore (variância de luminância 0–~16k). Ajustar em
+// dispositivo se disparar cedo/tarde demais.
+const SAMPLE = { w: 64, h: 48 };
+const SAMPLE_MS = 170; // ~6 amostras/s
+const THRESHOLDS: FrameThresholds = {
+  diff: 6,
+  content: 400,
+  rearmDiff: 14,
+  stableSamples: 3,
+};
+
 export function ScannerView({ userId }: { userId: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<CaptureMode | null>(null);
@@ -42,9 +56,18 @@ export function ScannerView({ userId }: { userId: string }) {
 
   const codesReady = validCodes.length > 0;
 
+  const [flash, setFlash] = useState<{ color: "green" | "yellow" | "red"; text: string } | null>(null);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const prevSampleRef = useRef<Uint8Array | null>(null);
+  const lastReadSampleRef = useRef<Uint8Array | null>(null);
+  const signalStateRef = useRef<FrameState>(initialFrameState());
+  const readingRef = useRef(false);
+  const scanModeRef = useRef(scanMode);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Detecção de câmera é client-only (lê navigator) — feita no efeito pra
   // não divergir do render do servidor e causar hydration mismatch.
@@ -84,6 +107,105 @@ export function ScannerView({ userId }: { userId: string }) {
     };
   }, [mode]);
 
+  useEffect(() => {
+    scanModeRef.current = scanMode;
+    signalStateRef.current = initialFrameState();
+    prevSampleRef.current = null;
+    lastReadSampleRef.current = null;
+  }, [scanMode]);
+
+  const showFlash = useCallback((color: "green" | "yellow" | "red", text: string) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlash({ color, text });
+    flashTimerRef.current = setTimeout(() => setFlash(null), 1200);
+  }, []);
+
+  const runScan = useCallback(
+    async (sticker: ScannedSticker) => {
+      const { color, action, message } = resolveScanAction(scanModeRef.current, sticker.owned_count);
+      showFlash(color, `${sticker.code} — ${message}`);
+      const supabase = createClient();
+
+      if (action === "add") {
+        const { data } = await supabase
+          .from("user_stickers")
+          .insert({ user_id: userId, sticker_id: sticker.id })
+          .select("id")
+          .single();
+        const insertedId = data?.id as string | undefined;
+        setSessionCount((n) => n + 1);
+        toast.success(message, {
+          action: insertedId
+            ? {
+                label: "Desfazer",
+                onClick: async () => {
+                  await createClient().from("user_stickers").delete().eq("id", insertedId);
+                  setSessionCount((n) => Math.max(0, n - 1));
+                  toast.success("Desfeito");
+                },
+              }
+            : undefined,
+        });
+      } else if (action === "remove") {
+        const { data: rows } = await supabase
+          .from("user_stickers")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("sticker_id", sticker.id)
+          .limit(1);
+        const rowId = rows?.[0]?.id as string | undefined;
+        if (rowId) {
+          await supabase.from("user_stickers").delete().eq("id", rowId);
+          setSessionCount((n) => n + 1);
+          toast.success(message, {
+            action: {
+              label: "Desfazer",
+              onClick: async () => {
+                await createClient()
+                  .from("user_stickers")
+                  .insert({ user_id: userId, sticker_id: sticker.id });
+                setSessionCount((n) => Math.max(0, n - 1));
+                toast.success("Desfeito");
+              },
+            },
+          });
+        }
+      }
+      // action === "none": só o flash de cor + mensagem, sem mutação.
+    },
+    [userId, showFlash],
+  );
+
+  const autoCapture = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2) return;
+    try {
+      const sw = video.videoWidth * MIRA.w;
+      const sh = video.videoHeight * MIRA.h;
+      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, {
+        sx: (video.videoWidth - sw) / 2,
+        sy: (video.videoHeight - sh) / 2,
+        sw,
+        sh,
+      });
+      const rawText = await recognizeFrame(image);
+      setLastRawText(rawText);
+      const snap = findCodeInText(rawText, validCodes);
+      if (!snap) {
+        showFlash("red", "Não consegui ler");
+        return;
+      }
+      const sticker = await lookupStickerByCode(createClient(), snap.code, userId);
+      if (!sticker) {
+        showFlash("red", "Código não encontrado");
+        return;
+      }
+      await runScan(sticker);
+    } catch {
+      showFlash("red", "Não consegui ler");
+    }
+  }, [validCodes, userId, runScan, showFlash]);
+
   const resolveRawText = useCallback(
     async (rawText: string) => {
       setLastRawText(rawText);
@@ -104,6 +226,7 @@ export function ScannerView({ userId }: { userId: string }) {
     [validCodes, userId],
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- removido na Task 6 (substituído por autoCapture/loop)
   const captureFromVideo = useCallback(async () => {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
@@ -179,6 +302,58 @@ export function ScannerView({ userId }: { userId: string }) {
     router.push(`/collection?q=${encodeURIComponent(q)}`);
   };
 
+  useEffect(() => {
+    if (mode !== "live" || !codesReady) return;
+    const timer = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2 || readingRef.current) return;
+
+      const canvas = sampleCanvasRef.current ?? document.createElement("canvas");
+      sampleCanvasRef.current = canvas;
+      canvas.width = SAMPLE.w;
+      canvas.height = SAMPLE.h;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+
+      const sw = video.videoWidth * MIRA.w;
+      const sh = video.videoHeight * MIRA.h;
+      ctx.drawImage(
+        video,
+        (video.videoWidth - sw) / 2,
+        (video.videoHeight - sh) / 2,
+        sw,
+        sh,
+        0,
+        0,
+        SAMPLE.w,
+        SAMPLE.h,
+      );
+      const gray = toGray(ctx.getImageData(0, 0, SAMPLE.w, SAMPLE.h).data);
+      const prev = prevSampleRef.current;
+      const lastRead = lastReadSampleRef.current;
+      const decision = nextFrameSignal(
+        signalStateRef.current,
+        {
+          diffFromPrev: prev ? meanAbsDiff(gray, prev) : Infinity,
+          content: contentScore(gray),
+          diffFromLastRead: lastRead ? meanAbsDiff(gray, lastRead) : null,
+        },
+        THRESHOLDS,
+      );
+      prevSampleRef.current = gray;
+      signalStateRef.current = decision.state;
+
+      if (decision.kind === "fire") {
+        lastReadSampleRef.current = gray;
+        readingRef.current = true;
+        void autoCapture().finally(() => {
+          readingRef.current = false;
+        });
+      }
+    }, SAMPLE_MS);
+    return () => clearInterval(timer);
+  }, [mode, codesReady, autoCapture]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -214,19 +389,23 @@ export function ScannerView({ userId }: { userId: string }) {
       {mode === "live" && (
         <div className="relative overflow-hidden rounded-xl bg-black">
           <video ref={videoRef} autoPlay playsInline muted className="w-full" />
-          {/* Janela de mira — mesmas frações usadas no recorte do OCR (MIRA). */}
+          {/* Janela de mira — mesmas frações usadas no recorte do OCR (MIRA).
+              A borda pisca com a cor do resultado (verde/amarelo/vermelho). */}
           <div
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-green-400/80"
+            className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 transition-colors ${
+              flash?.color === "green"
+                ? "border-green-400"
+                : flash?.color === "yellow"
+                  ? "border-yellow-400"
+                  : flash?.color === "red"
+                    ? "border-red-500"
+                    : "border-green-400/60"
+            }`}
             style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
           />
-          <button
-            onClick={captureFromVideo}
-            disabled={state === "reading" || !codesReady}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
-          >
-            {state === "reading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            {!codesReady ? "Carregando…" : "Ler código"}
-          </button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-sm font-medium text-white">
+            {!codesReady ? "Carregando…" : flash ? flash.text : "Procurando figurinha…"}
+          </div>
         </div>
       )}
 

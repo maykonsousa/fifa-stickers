@@ -31,8 +31,13 @@ export function ScannerConfirmCard({ sticker, result, busy, onConfirm, onReject,
       <div className="flex gap-3">
         <div className="relative h-28 w-[87px] shrink-0 overflow-hidden rounded-lg bg-black">
           {sticker.image_url ? (
+            // next/image exige domínios conhecidos; as URLs vêm do Supabase storage.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={sticker.image_url} alt={sticker.code} className="h-full w-full object-cover" />
+            <img
+              src={sticker.image_url}
+              alt={sticker.title ?? sticker.code}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full items-center justify-center text-xs text-gray-500">
               sem foto

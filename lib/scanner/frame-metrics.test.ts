@@ -10,6 +10,14 @@ describe("toGray", () => {
     expect(gray[0]).toBe(0);
     expect(gray[1]).toBe(255);
   });
+
+  it("aplica os pesos Rec.601 no canal certo (R/G/B não são intercambiáveis)", () => {
+    // Vermelho puro → 0.299*255 ≈ 76; verde puro → 0.587*255 ≈ 149.
+    const rgba = new Uint8ClampedArray([255, 0, 0, 255, 0, 255, 0, 255]);
+    const gray = toGray(rgba);
+    expect(gray[0]).toBe(76);
+    expect(gray[1]).toBe(149);
+  });
 });
 
 describe("meanAbsDiff", () => {

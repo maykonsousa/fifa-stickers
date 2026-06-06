@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useReducer } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Loader2, Camera, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isInAppBrowser } from "@/lib/detect-in-app-browser";
@@ -15,6 +14,8 @@ import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-s
 import { resolveScanAction, type ScanMode } from "@/lib/scanner/resolve-scan-action";
 import { toGray, meanAbsDiff, contentScore } from "@/lib/scanner/frame-metrics";
 import { nextFrameSignal, initialFrameState, type FrameThresholds, type FrameState } from "@/lib/scanner/frame-signal";
+import { scanFlowReducer, initialScanPhase } from "@/lib/scanner/scan-flow";
+import { ScannerConfirmCard } from "./scanner-confirm-card";
 
 // Janela de mira: caixa grande que enquadra a figurinha inteira. Lemos a região
 // toda e garimpamos o código entre as palavras (findCodeInText) — não é preciso
@@ -46,6 +47,9 @@ export function ScannerView({ userId }: { userId: string }) {
   const [validCodes, setValidCodes] = useState<string[]>([]);
   const [sessionCount, setSessionCount] = useState(0);
   const [scanMode, setScanMode] = useState<ScanMode>("lancamento");
+  const [phase, dispatch] = useReducer(scanFlowReducer, initialScanPhase);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const phaseRef = useRef(phase);
   // Modo foto: trava o botão enquanto o OCR (chamada paga) está em voo.
   const [photoBusy, setPhotoBusy] = useState(false);
 
@@ -104,6 +108,10 @@ export function ScannerView({ userId }: { userId: string }) {
   }, [mode]);
 
   useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
     scanModeRef.current = scanMode;
     signalStateRef.current = initialFrameState();
     prevSampleRef.current = null;
@@ -116,10 +124,9 @@ export function ScannerView({ userId }: { userId: string }) {
     flashTimerRef.current = setTimeout(() => setFlash(null), 1200);
   }, []);
 
-  const runScan = useCallback(
+  const executeScanAction = useCallback(
     async (sticker: ScannedSticker, activeMode: ScanMode) => {
       const { color, action, message } = resolveScanAction(activeMode, sticker.owned_count);
-      showFlash(color, `${sticker.code} — ${message}`);
       const supabase = createClient();
 
       if (action === "add") {
@@ -128,24 +135,7 @@ export function ScannerView({ userId }: { userId: string }) {
           .insert({ user_id: userId, sticker_id: sticker.id })
           .select("id")
           .single();
-        const insertedId = data?.id as number | undefined;
-        // Só conta/oferece desfazer se o insert realmente devolveu a linha — um
-        // insert falho não deve inflar o contador da sessão.
-        if (insertedId !== undefined) {
-          setSessionCount((n) => n + 1);
-          toast.success(message, {
-            action: {
-              label: "Desfazer",
-              onClick: async () => {
-                await createClient().from("user_stickers").delete().eq("id", insertedId);
-                setSessionCount((n) => Math.max(0, n - 1));
-                toast.success("Desfeito");
-              },
-            },
-          });
-        } else {
-          toast.success(message);
-        }
+        if (data?.id !== undefined) setSessionCount((n) => n + 1);
       } else if (action === "remove") {
         const { data: rows } = await supabase
           .from("user_stickers")
@@ -157,24 +147,22 @@ export function ScannerView({ userId }: { userId: string }) {
         if (rowId !== undefined) {
           await supabase.from("user_stickers").delete().eq("id", rowId);
           setSessionCount((n) => n + 1);
-          toast.success(message, {
-            action: {
-              label: "Desfazer",
-              onClick: async () => {
-                await createClient()
-                  .from("user_stickers")
-                  .insert({ user_id: userId, sticker_id: sticker.id });
-                setSessionCount((n) => Math.max(0, n - 1));
-                toast.success("Desfeito");
-              },
-            },
-          });
         }
       }
-      // action === "none": só o flash de cor + mensagem, sem mutação.
+      // action === "none": nada a mutar.
+      showFlash(color, `${sticker.code} — ${message}`);
     },
     [userId, showFlash],
   );
+
+  const handleConfirm = useCallback(async () => {
+    if (phaseRef.current.kind !== "confirming") return;
+    const { sticker, mode: activeMode } = phaseRef.current;
+    setConfirmBusy(true);
+    await executeScanAction(sticker, activeMode);
+    setConfirmBusy(false);
+    dispatch({ type: "confirm" });
+  }, [executeScanAction]);
 
   // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
   // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo
@@ -192,9 +180,9 @@ export function ScannerView({ userId }: { userId: string }) {
         showFlash("red", "Código não encontrado");
         return;
       }
-      await runScan(sticker, activeMode);
+      dispatch({ type: "resolved", sticker, mode: activeMode });
     },
-    [validCodes, userId, runScan, showFlash],
+    [validCodes, userId, showFlash],
   );
 
   const autoCapture = useCallback(async () => {
@@ -241,6 +229,7 @@ export function ScannerView({ userId }: { userId: string }) {
     const timer = setInterval(() => {
       const video = videoRef.current;
       if (!video || video.readyState < 2 || readingRef.current) return;
+      if (phaseRef.current.kind !== "searching") return;
 
       const canvas = sampleCanvasRef.current ?? document.createElement("canvas");
       sampleCanvasRef.current = canvas;
@@ -338,7 +327,13 @@ export function ScannerView({ userId }: { userId: string }) {
             style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-sm font-medium text-white">
-            {!codesReady ? "Carregando…" : flash ? flash.text : "Procurando figurinha…"}
+            {!codesReady
+              ? "Carregando…"
+              : phase.kind !== "searching"
+                ? "Confirme a figurinha"
+                : flash
+                  ? flash.text
+                  : "Procurando figurinha…"}
           </div>
         </div>
       )}
@@ -388,6 +383,16 @@ export function ScannerView({ userId }: { userId: string }) {
             </p>
           )}
         </div>
+      )}
+
+      {phase.kind === "confirming" && (
+        <ScannerConfirmCard
+          sticker={phase.sticker}
+          result={resolveScanAction(phase.mode, phase.sticker.owned_count)}
+          busy={confirmBusy}
+          onConfirm={handleConfirm}
+          onReject={() => dispatch({ type: "reject" })}
+        />
       )}
 
       {mode === null && (

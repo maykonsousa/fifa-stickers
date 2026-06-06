@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useReducer } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Loader2, Camera, ArrowLeft } from "lucide-react";
+import { Loader2, Camera, ArrowLeft, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { isInAppBrowser } from "@/lib/detect-in-app-browser";
 import { chooseCaptureMode, detectCaptureEnv, type CaptureMode } from "@/lib/scanner/choose-capture-mode";
@@ -15,6 +14,8 @@ import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-s
 import { resolveScanAction, type ScanMode } from "@/lib/scanner/resolve-scan-action";
 import { toGray, meanAbsDiff, contentScore } from "@/lib/scanner/frame-metrics";
 import { nextFrameSignal, initialFrameState, type FrameThresholds, type FrameState } from "@/lib/scanner/frame-signal";
+import { scanFlowReducer, initialScanPhase } from "@/lib/scanner/scan-flow";
+import { ScannerConfirmCard } from "./scanner-confirm-card";
 
 // Janela de mira: caixa grande que enquadra a figurinha inteira. Lemos a região
 // toda e garimpamos o código entre as palavras (findCodeInText) — não é preciso
@@ -46,6 +47,12 @@ export function ScannerView({ userId }: { userId: string }) {
   const [validCodes, setValidCodes] = useState<string[]>([]);
   const [sessionCount, setSessionCount] = useState(0);
   const [scanMode, setScanMode] = useState<ScanMode>("lancamento");
+  const [phase, dispatch] = useReducer(scanFlowReducer, initialScanPhase);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [manualCode, setManualCode] = useState("");
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
+  const phaseRef = useRef(phase);
   // Modo foto: trava o botão enquanto o OCR (chamada paga) está em voo.
   const [photoBusy, setPhotoBusy] = useState(false);
 
@@ -104,6 +111,10 @@ export function ScannerView({ userId }: { userId: string }) {
   }, [mode]);
 
   useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
     scanModeRef.current = scanMode;
     signalStateRef.current = initialFrameState();
     prevSampleRef.current = null;
@@ -116,10 +127,9 @@ export function ScannerView({ userId }: { userId: string }) {
     flashTimerRef.current = setTimeout(() => setFlash(null), 1200);
   }, []);
 
-  const runScan = useCallback(
+  const executeScanAction = useCallback(
     async (sticker: ScannedSticker, activeMode: ScanMode) => {
       const { color, action, message } = resolveScanAction(activeMode, sticker.owned_count);
-      showFlash(color, `${sticker.code} — ${message}`);
       const supabase = createClient();
 
       if (action === "add") {
@@ -128,24 +138,7 @@ export function ScannerView({ userId }: { userId: string }) {
           .insert({ user_id: userId, sticker_id: sticker.id })
           .select("id")
           .single();
-        const insertedId = data?.id as number | undefined;
-        // Só conta/oferece desfazer se o insert realmente devolveu a linha — um
-        // insert falho não deve inflar o contador da sessão.
-        if (insertedId !== undefined) {
-          setSessionCount((n) => n + 1);
-          toast.success(message, {
-            action: {
-              label: "Desfazer",
-              onClick: async () => {
-                await createClient().from("user_stickers").delete().eq("id", insertedId);
-                setSessionCount((n) => Math.max(0, n - 1));
-                toast.success("Desfeito");
-              },
-            },
-          });
-        } else {
-          toast.success(message);
-        }
+        if (data?.id !== undefined) setSessionCount((n) => n + 1);
       } else if (action === "remove") {
         const { data: rows } = await supabase
           .from("user_stickers")
@@ -157,24 +150,56 @@ export function ScannerView({ userId }: { userId: string }) {
         if (rowId !== undefined) {
           await supabase.from("user_stickers").delete().eq("id", rowId);
           setSessionCount((n) => n + 1);
-          toast.success(message, {
-            action: {
-              label: "Desfazer",
-              onClick: async () => {
-                await createClient()
-                  .from("user_stickers")
-                  .insert({ user_id: userId, sticker_id: sticker.id });
-                setSessionCount((n) => Math.max(0, n - 1));
-                toast.success("Desfeito");
-              },
-            },
-          });
         }
       }
-      // action === "none": só o flash de cor + mensagem, sem mutação.
+      // action === "none": nada a mutar.
+      showFlash(color, `${sticker.code} — ${message}`);
     },
     [userId, showFlash],
   );
+
+  const handleConfirm = useCallback(async () => {
+    if (phaseRef.current.kind !== "confirming") return;
+    const { sticker, mode: activeMode } = phaseRef.current;
+    setConfirmBusy(true);
+    try {
+      await executeScanAction(sticker, activeMode);
+    } catch {
+      // Falha na escrita não pode travar o card (sem undo agora) — avisa e
+      // volta a procurar pra o usuário tentar de novo.
+      showFlash("red", "Erro ao salvar — tente de novo");
+    } finally {
+      setConfirmBusy(false);
+      dispatch({ type: "confirm" });
+    }
+  }, [executeScanAction, showFlash]);
+
+  const closeManual = useCallback(() => {
+    setManualCode("");
+    setManualError(null);
+    dispatch({ type: "closeManual" });
+  }, []);
+
+  const handleManualSubmit = useCallback(async () => {
+    if (manualBusy) return; // guarda contra Enter repetido / duplo submit em voo
+    const code = manualCode.trim().toUpperCase();
+    if (!code) return;
+    setManualBusy(true);
+    try {
+      const sticker = await lookupStickerByCode(createClient(), code, userId);
+      if (!sticker) {
+        setManualError("Código não encontrado");
+        return;
+      }
+      setManualCode("");
+      setManualError(null);
+      dispatch({ type: "manualResolved", sticker, mode: scanModeRef.current });
+    } catch {
+      setManualError("Erro ao buscar — tente de novo");
+    } finally {
+      setManualBusy(false);
+    }
+  }, [manualBusy, manualCode, userId]);
 
   // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
   // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo
@@ -192,9 +217,9 @@ export function ScannerView({ userId }: { userId: string }) {
         showFlash("red", "Código não encontrado");
         return;
       }
-      await runScan(sticker, activeMode);
+      dispatch({ type: "resolved", sticker, mode: activeMode });
     },
-    [validCodes, userId, runScan, showFlash],
+    [validCodes, userId, showFlash],
   );
 
   const autoCapture = useCallback(async () => {
@@ -241,6 +266,7 @@ export function ScannerView({ userId }: { userId: string }) {
     const timer = setInterval(() => {
       const video = videoRef.current;
       if (!video || video.readyState < 2 || readingRef.current) return;
+      if (phaseRef.current.kind !== "searching") return;
 
       const canvas = sampleCanvasRef.current ?? document.createElement("canvas");
       sampleCanvasRef.current = canvas;
@@ -320,6 +346,16 @@ export function ScannerView({ userId }: { userId: string }) {
         Enquadre a figurinha inteira na caixa — o código é detectado automaticamente.
       </p>
 
+      {phase.kind === "searching" && codesReady && (
+        <button
+          type="button"
+          onClick={() => dispatch({ type: "openManual" })}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-300"
+        >
+          <Search className="h-3.5 w-3.5" /> Não leu? Digitar código
+        </button>
+      )}
+
       {mode === "live" && (
         <div className="relative overflow-hidden rounded-xl bg-black">
           <video ref={videoRef} autoPlay playsInline muted className="w-full" />
@@ -338,7 +374,13 @@ export function ScannerView({ userId }: { userId: string }) {
             style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-sm font-medium text-white">
-            {!codesReady ? "Carregando…" : flash ? flash.text : "Procurando figurinha…"}
+            {!codesReady
+              ? "Carregando…"
+              : phase.kind !== "searching"
+                ? "Confirme a figurinha"
+                : flash
+                  ? flash.text
+                  : "Procurando figurinha…"}
           </div>
         </div>
       )}
@@ -355,7 +397,7 @@ export function ScannerView({ userId }: { userId: string }) {
                 photoInputRef.current.click();
               }
             }}
-            disabled={!codesReady || photoBusy}
+            disabled={!codesReady || photoBusy || phase.kind !== "searching"}
             className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
           >
             {!codesReady || photoBusy ? (
@@ -387,6 +429,56 @@ export function ScannerView({ userId }: { userId: string }) {
               {flash.text}
             </p>
           )}
+        </div>
+      )}
+
+      {phase.kind === "confirming" && (
+        <ScannerConfirmCard
+          sticker={phase.sticker}
+          result={resolveScanAction(phase.mode, phase.sticker.owned_count)}
+          busy={confirmBusy}
+          onConfirm={handleConfirm}
+          onReject={() => dispatch({ type: "reject" })}
+          onManual={() => dispatch({ type: "openManual" })}
+        />
+      )}
+
+      {phase.kind === "manual" && (
+        <div className="rounded-xl border border-white/15 bg-zinc-900/95 p-4">
+          <p className="mb-2 text-sm font-medium text-white">Digitar código</p>
+          <input
+            value={manualCode}
+            onChange={(e) => {
+              setManualCode(e.target.value);
+              setManualError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void handleManualSubmit();
+            }}
+            autoFocus
+            placeholder="ex.: MEX1"
+            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white uppercase placeholder:text-gray-500 placeholder:normal-case"
+          />
+          {manualError && <p className="mt-1 text-xs text-red-400">{manualError}</p>}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => void handleManualSubmit()}
+              disabled={manualBusy || !manualCode.trim()}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-green-500 px-3 py-2.5 text-sm font-bold text-zinc-900 hover:bg-green-400 disabled:opacity-50 transition-colors"
+            >
+              {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Buscar
+            </button>
+            <button
+              type="button"
+              onClick={closeManual}
+              disabled={manualBusy}
+              className="rounded-lg border border-white/10 px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 disabled:opacity-50 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 

@@ -22,6 +22,16 @@ describe("coverCropRegion", () => {
     });
   });
 
+  it("caixa mais estreita que o frame (corte horizontal) → sw menor, centrado", () => {
+    // frame 1000x750, caixa 500x750; s = max(0.5, 1.0) = 1.0
+    expect(coverCropRegion(1000, 750, 500, 750, 0.8, 0.6)).toEqual({
+      sx: 300, // (1000 - 400)/2
+      sy: 150, // (750 - 450)/2
+      sw: 400, // 0.8 * 500 / 1.0
+      sh: 450, // 0.6 * 750 / 1.0
+    });
+  });
+
   it("caixa com dimensão 0 (layout ainda não medido) → fallback MIRA × intrínseco, sem NaN", () => {
     expect(coverCropRegion(1000, 750, 0, 0, 0.8, 0.6)).toEqual({
       sx: 100,

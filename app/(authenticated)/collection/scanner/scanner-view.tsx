@@ -22,6 +22,13 @@ type ScanState = "idle" | "reading" | "confirm" | "notfound";
 // mirar exatamente no código. O recorte do OCR usa exatamente estas frações.
 const MIRA = { w: 0.82, h: 0.62 };
 
+// Modos do scanner e seus rótulos no seletor (segmented control).
+const SCAN_MODES: ReadonlyArray<readonly [ScanMode, string]> = [
+  ["lancamento", "Lançamento"],
+  ["troca", "Troca"],
+  ["baixa", "Baixa"],
+];
+
 export function ScannerView({ userId }: { userId: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<CaptureMode | null>(null);
@@ -186,15 +193,13 @@ export function ScannerView({ userId }: { userId: string }) {
 
       <h1 className="text-2xl font-bold text-white">Escanear figurinha</h1>
       <div className="grid grid-cols-3 gap-1 rounded-lg bg-white/5 p-1">
-        {([
-          ["lancamento", "Lançamento"],
-          ["troca", "Troca"],
-          ["baixa", "Baixa"],
-        ] as const).map(([value, label]) => (
+        {SCAN_MODES.map(([value, label]) => (
           <button
             key={value}
+            type="button"
+            aria-pressed={scanMode === value}
             onClick={() => setScanMode(value)}
-            className={`rounded-md px-2 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-md p-2 text-sm font-medium transition-colors ${
               scanMode === value ? "bg-green-500 text-zinc-900" : "text-gray-300 hover:bg-white/5"
             }`}
           >

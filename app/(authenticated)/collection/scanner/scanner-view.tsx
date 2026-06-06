@@ -44,11 +44,10 @@ export function ScannerView({ userId }: { userId: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<CaptureMode | null>(null);
   const [validCodes, setValidCodes] = useState<string[]>([]);
-  // Guardamos o último texto lido cru pro caso de querermos diagnosticar
-  // leituras (autoCapture/handlePhoto). O valor em si não é renderizado.
-  const [, setLastRawText] = useState("");
   const [sessionCount, setSessionCount] = useState(0);
   const [scanMode, setScanMode] = useState<ScanMode>("lancamento");
+  // Modo foto: trava o botão enquanto o OCR (chamada paga) está em voo.
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const codesReady = validCodes.length > 0;
 
@@ -173,24 +172,12 @@ export function ScannerView({ userId }: { userId: string }) {
     [userId, showFlash],
   );
 
-  const autoCapture = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video || video.readyState < 2) return;
-    // Captura o modo no instante do disparo: se o usuário trocar de modo enquanto
-    // o OCR (assíncrono) roda, a ação ainda honra o modo em que a leitura começou
-    // — evita, p.ex., dar baixa numa figurinha que foi escaneada em lançamento.
-    const captureMode = scanModeRef.current;
-    try {
-      const sw = video.videoWidth * MIRA.w;
-      const sh = video.videoHeight * MIRA.h;
-      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, {
-        sx: (video.videoWidth - sw) / 2,
-        sy: (video.videoHeight - sh) / 2,
-        sw,
-        sh,
-      });
+  // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
+  // resolve a figurinha → executa a ação do modo. `mode` é capturado pelo chamador
+  // no instante do disparo, pra honrar o modo em que a leitura começou.
+  const resolveAndRun = useCallback(
+    async (image: string, mode: ScanMode) => {
       const rawText = await recognizeFrame(image);
-      setLastRawText(rawText);
       const snap = findCodeInText(rawText, validCodes);
       if (!snap) {
         showFlash("red", "Não consegui ler");
@@ -201,37 +188,48 @@ export function ScannerView({ userId }: { userId: string }) {
         showFlash("red", "Código não encontrado");
         return;
       }
-      await runScan(sticker, captureMode);
+      await runScan(sticker, mode);
+    },
+    [validCodes, userId, runScan, showFlash],
+  );
+
+  const autoCapture = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2) return;
+    const captureMode = scanModeRef.current;
+    try {
+      const sw = video.videoWidth * MIRA.w;
+      const sh = video.videoHeight * MIRA.h;
+      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, {
+        sx: (video.videoWidth - sw) / 2,
+        sy: (video.videoHeight - sh) / 2,
+        sw,
+        sh,
+      });
+      await resolveAndRun(image, captureMode);
     } catch {
       showFlash("red", "Não consegui ler");
     }
-  }, [validCodes, userId, runScan, showFlash]);
+  }, [resolveAndRun, showFlash]);
 
   const handlePhoto = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      // Modo foto não tem o gatilho on-device; o photoBusy trava o botão durante
+      // o OCR (chamada paga) pra não disparar uma segunda leitura por toque duplo.
+      setPhotoBusy(true);
       try {
         const img = await loadImage(file);
         const image = cropToJpegBase64(img, img.naturalWidth, img.naturalHeight);
-        const rawText = await recognizeFrame(image);
-        setLastRawText(rawText);
-        const snap = findCodeInText(rawText, validCodes);
-        if (!snap) {
-          showFlash("red", "Não consegui ler");
-          return;
-        }
-        const sticker = await lookupStickerByCode(createClient(), snap.code, userId);
-        if (!sticker) {
-          showFlash("red", "Código não encontrado");
-          return;
-        }
-        await runScan(sticker, scanModeRef.current);
+        await resolveAndRun(image, scanModeRef.current);
       } catch {
         showFlash("red", "Não consegui ler");
+      } finally {
+        setPhotoBusy(false);
       }
     },
-    [validCodes, userId, runScan, showFlash],
+    [resolveAndRun, showFlash],
   );
 
   useEffect(() => {
@@ -353,11 +351,15 @@ export function ScannerView({ userId }: { userId: string }) {
                 photoInputRef.current.click();
               }
             }}
-            disabled={!codesReady}
+            disabled={!codesReady || photoBusy}
             className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
           >
-            {!codesReady ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            {!codesReady ? "Carregando…" : "Tirar foto do código"}
+            {!codesReady || photoBusy ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Camera className="h-5 w-5" />
+            )}
+            {!codesReady ? "Carregando…" : photoBusy ? "Lendo…" : "Tirar foto do código"}
           </button>
           <input
             ref={photoInputRef}

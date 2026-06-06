@@ -12,30 +12,57 @@ import { recognizeFrame } from "@/lib/scanner/recognize-frame";
 import { cropToJpegBase64 } from "@/lib/scanner/crop-frame";
 import { loadImage } from "@/lib/scanner/load-image";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
-import { ScannerConfirmCard } from "./scanner-confirm-card";
-
-type ScanState = "idle" | "reading" | "confirm" | "notfound";
+import { resolveScanAction, type ScanMode } from "@/lib/scanner/resolve-scan-action";
+import { toGray, meanAbsDiff, contentScore } from "@/lib/scanner/frame-metrics";
+import { nextFrameSignal, initialFrameState, type FrameThresholds, type FrameState } from "@/lib/scanner/frame-signal";
 
 // Janela de mira: caixa grande que enquadra a figurinha inteira. Lemos a região
 // toda e garimpamos o código entre as palavras (findCodeInText) — não é preciso
 // mirar exatamente no código. O recorte do OCR usa exatamente estas frações.
 const MIRA = { w: 0.82, h: 0.62 };
 
+// Modos do scanner e seus rótulos no seletor (segmented control).
+const SCAN_MODES: ReadonlyArray<readonly [ScanMode, string]> = [
+  ["lancamento", "Lançamento"],
+  ["troca", "Troca"],
+  ["baixa", "Baixa"],
+];
+
+// Amostragem on-device do gatilho. Tamanho pequeno = barato. Limiares calibrados
+// contra a escala de contentScore (variância de luminância 0–~16k). Ajustar em
+// dispositivo se disparar cedo/tarde demais.
+const SAMPLE = { w: 64, h: 48 };
+const SAMPLE_MS = 170; // ~6 amostras/s
+const THRESHOLDS: FrameThresholds = {
+  diff: 6,
+  content: 400,
+  rearmDiff: 14,
+  stableSamples: 3,
+};
+
 export function ScannerView({ userId }: { userId: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<CaptureMode | null>(null);
   const [validCodes, setValidCodes] = useState<string[]>([]);
-  const [state, setState] = useState<ScanState>("idle");
-  const [candidate, setCandidate] = useState<ScannedSticker | null>(null);
-  const [lastRawText, setLastRawText] = useState("");
-  const [busy, setBusy] = useState(false);
   const [sessionCount, setSessionCount] = useState(0);
+  const [scanMode, setScanMode] = useState<ScanMode>("lancamento");
+  // Modo foto: trava o botão enquanto o OCR (chamada paga) está em voo.
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const codesReady = validCodes.length > 0;
+
+  const [flash, setFlash] = useState<{ color: "green" | "yellow" | "red"; text: string } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const prevSampleRef = useRef<Uint8Array | null>(null);
+  const lastReadSampleRef = useRef<Uint8Array | null>(null);
+  const signalStateRef = useRef<FrameState>(initialFrameState());
+  const readingRef = useRef(false);
+  const scanModeRef = useRef(scanMode);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Detecção de câmera é client-only (lê navigator) — feita no efeito pra
   // não divergir do render do servidor e causar hydration mismatch.
@@ -49,6 +76,7 @@ export function ScannerView({ userId }: { userId: string }) {
       .then(({ data }) => setValidCodes((data ?? []).map((r) => r.code as string)));
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
   }, []);
 
@@ -75,30 +103,104 @@ export function ScannerView({ userId }: { userId: string }) {
     };
   }, [mode]);
 
-  const resolveRawText = useCallback(
-    async (rawText: string) => {
-      setLastRawText(rawText);
-      const snap = findCodeInText(rawText, validCodes);
-      if (!snap) {
-        setState("notfound");
-        return;
-      }
+  useEffect(() => {
+    scanModeRef.current = scanMode;
+    signalStateRef.current = initialFrameState();
+    prevSampleRef.current = null;
+    lastReadSampleRef.current = null;
+  }, [scanMode]);
+
+  const showFlash = useCallback((color: "green" | "yellow" | "red", text: string) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlash({ color, text });
+    flashTimerRef.current = setTimeout(() => setFlash(null), 1200);
+  }, []);
+
+  const runScan = useCallback(
+    async (sticker: ScannedSticker, activeMode: ScanMode) => {
+      const { color, action, message } = resolveScanAction(activeMode, sticker.owned_count);
+      showFlash(color, `${sticker.code} — ${message}`);
       const supabase = createClient();
-      const sticker = await lookupStickerByCode(supabase, snap.code, userId);
-      if (!sticker) {
-        setState("notfound");
-        return;
+
+      if (action === "add") {
+        const { data } = await supabase
+          .from("user_stickers")
+          .insert({ user_id: userId, sticker_id: sticker.id })
+          .select("id")
+          .single();
+        const insertedId = data?.id as number | undefined;
+        // Só conta/oferece desfazer se o insert realmente devolveu a linha — um
+        // insert falho não deve inflar o contador da sessão.
+        if (insertedId !== undefined) {
+          setSessionCount((n) => n + 1);
+          toast.success(message, {
+            action: {
+              label: "Desfazer",
+              onClick: async () => {
+                await createClient().from("user_stickers").delete().eq("id", insertedId);
+                setSessionCount((n) => Math.max(0, n - 1));
+                toast.success("Desfeito");
+              },
+            },
+          });
+        } else {
+          toast.success(message);
+        }
+      } else if (action === "remove") {
+        const { data: rows } = await supabase
+          .from("user_stickers")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("sticker_id", sticker.id)
+          .limit(1);
+        const rowId = rows?.[0]?.id as number | undefined;
+        if (rowId !== undefined) {
+          await supabase.from("user_stickers").delete().eq("id", rowId);
+          setSessionCount((n) => n + 1);
+          toast.success(message, {
+            action: {
+              label: "Desfazer",
+              onClick: async () => {
+                await createClient()
+                  .from("user_stickers")
+                  .insert({ user_id: userId, sticker_id: sticker.id });
+                setSessionCount((n) => Math.max(0, n - 1));
+                toast.success("Desfeito");
+              },
+            },
+          });
+        }
       }
-      setCandidate(sticker);
-      setState("confirm");
+      // action === "none": só o flash de cor + mensagem, sem mutação.
     },
-    [validCodes, userId],
+    [userId, showFlash],
   );
 
-  const captureFromVideo = useCallback(async () => {
+  // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
+  // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo
+  // chamador no instante do disparo, pra honrar o modo em que a leitura começou.
+  const resolveAndRun = useCallback(
+    async (image: string, activeMode: ScanMode) => {
+      const rawText = await recognizeFrame(image);
+      const snap = findCodeInText(rawText, validCodes);
+      if (!snap) {
+        showFlash("red", "Não consegui ler");
+        return;
+      }
+      const sticker = await lookupStickerByCode(createClient(), snap.code, userId);
+      if (!sticker) {
+        showFlash("red", "Código não encontrado");
+        return;
+      }
+      await runScan(sticker, activeMode);
+    },
+    [validCodes, userId, runScan, showFlash],
+  );
+
+  const autoCapture = useCallback(async () => {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
-    setState("reading");
+    const captureMode = scanModeRef.current;
     try {
       const sw = video.videoWidth * MIRA.w;
       const sh = video.videoHeight * MIRA.h;
@@ -108,67 +210,83 @@ export function ScannerView({ userId }: { userId: string }) {
         sw,
         sh,
       });
-      const rawText = await recognizeFrame(image);
-      await resolveRawText(rawText);
+      await resolveAndRun(image, captureMode);
     } catch {
-      setState("notfound");
+      showFlash("red", "Não consegui ler");
     }
-  }, [resolveRawText]);
+  }, [resolveAndRun, showFlash]);
 
   const handlePhoto = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      setState("reading");
+      // Modo foto não tem o gatilho on-device; o photoBusy trava o botão durante
+      // o OCR (chamada paga) pra não disparar uma segunda leitura por toque duplo.
+      setPhotoBusy(true);
       try {
         const img = await loadImage(file);
         const image = cropToJpegBase64(img, img.naturalWidth, img.naturalHeight);
-        const rawText = await recognizeFrame(image);
-        await resolveRawText(rawText);
+        await resolveAndRun(image, scanModeRef.current);
       } catch {
-        setState("notfound");
+        showFlash("red", "Não consegui ler");
+      } finally {
+        setPhotoBusy(false);
       }
     },
-    [resolveRawText],
+    [resolveAndRun, showFlash],
   );
 
-  const backToReading = () => {
-    setCandidate(null);
-    setState("idle");
-  };
+  useEffect(() => {
+    if (mode !== "live" || !codesReady) return;
+    const timer = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2 || readingRef.current) return;
 
-  const handleLancar = async () => {
-    if (!candidate) return;
-    setBusy(true);
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("user_stickers")
-      .insert({ user_id: userId, sticker_id: candidate.id })
-      .select("id")
-      .single();
-    const insertedId = data?.id as string | undefined;
-    const wasRepeated = candidate.owned_count > 0;
-    setSessionCount((n) => n + 1);
-    setBusy(false);
-    backToReading();
-    toast.success(wasRepeated ? "Lançada! (repetida)" : "Lançada!", {
-      action: insertedId
-        ? {
-            label: "Desfazer",
-            onClick: async () => {
-              await createClient().from("user_stickers").delete().eq("id", insertedId);
-              setSessionCount((n) => Math.max(0, n - 1));
-              toast.success("Lançamento desfeito");
-            },
-          }
-        : undefined,
-    });
-  };
+      const canvas = sampleCanvasRef.current ?? document.createElement("canvas");
+      sampleCanvasRef.current = canvas;
+      canvas.width = SAMPLE.w;
+      canvas.height = SAMPLE.h;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
 
-  const handleBuscarManual = () => {
-    const q = (candidate?.code ?? lastRawText).trim();
-    router.push(`/collection?q=${encodeURIComponent(q)}`);
-  };
+      const sw = video.videoWidth * MIRA.w;
+      const sh = video.videoHeight * MIRA.h;
+      ctx.drawImage(
+        video,
+        (video.videoWidth - sw) / 2,
+        (video.videoHeight - sh) / 2,
+        sw,
+        sh,
+        0,
+        0,
+        SAMPLE.w,
+        SAMPLE.h,
+      );
+      const gray = toGray(ctx.getImageData(0, 0, SAMPLE.w, SAMPLE.h).data);
+      const prev = prevSampleRef.current;
+      const lastRead = lastReadSampleRef.current;
+      const decision = nextFrameSignal(
+        signalStateRef.current,
+        {
+          diffFromPrev: prev ? meanAbsDiff(gray, prev) : Infinity,
+          content: contentScore(gray),
+          diffFromLastRead: lastRead ? meanAbsDiff(gray, lastRead) : null,
+        },
+        THRESHOLDS,
+      );
+      prevSampleRef.current = gray;
+      signalStateRef.current = decision.state;
+
+      if (decision.kind === "fire") {
+        lastReadSampleRef.current = gray;
+        readingRef.current = true;
+        void autoCapture().finally(() => {
+          readingRef.current = false;
+        });
+      }
+    }, SAMPLE_MS);
+    return () => clearInterval(timer);
+  }, [mode, codesReady, autoCapture]);
 
   return (
     <div className="space-y-4">
@@ -183,6 +301,21 @@ export function ScannerView({ userId }: { userId: string }) {
       </div>
 
       <h1 className="text-2xl font-bold text-white">Escanear figurinha</h1>
+      <div className="grid grid-cols-3 gap-1 rounded-lg bg-white/5 p-1">
+        {SCAN_MODES.map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={scanMode === value}
+            onClick={() => setScanMode(value)}
+            className={`rounded-md p-2 text-sm font-medium transition-colors ${
+              scanMode === value ? "bg-green-500 text-zinc-900" : "text-gray-300 hover:bg-white/5"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <p className="text-sm text-gray-400">
         Enquadre a figurinha inteira na caixa — o código é detectado automaticamente.
       </p>
@@ -190,19 +323,23 @@ export function ScannerView({ userId }: { userId: string }) {
       {mode === "live" && (
         <div className="relative overflow-hidden rounded-xl bg-black">
           <video ref={videoRef} autoPlay playsInline muted className="w-full" />
-          {/* Janela de mira — mesmas frações usadas no recorte do OCR (MIRA). */}
+          {/* Janela de mira — mesmas frações usadas no recorte do OCR (MIRA).
+              A borda pisca com a cor do resultado (verde/amarelo/vermelho). */}
           <div
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-green-400/80"
+            className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 transition-colors ${
+              flash?.color === "green"
+                ? "border-green-400"
+                : flash?.color === "yellow"
+                  ? "border-yellow-400"
+                  : flash?.color === "red"
+                    ? "border-red-500"
+                    : "border-green-400/60"
+            }`}
             style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
           />
-          <button
-            onClick={captureFromVideo}
-            disabled={state === "reading" || !codesReady}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
-          >
-            {state === "reading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            {!codesReady ? "Carregando…" : "Ler código"}
-          </button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-sm font-medium text-white">
+            {!codesReady ? "Carregando…" : flash ? flash.text : "Procurando figurinha…"}
+          </div>
         </div>
       )}
 
@@ -218,11 +355,15 @@ export function ScannerView({ userId }: { userId: string }) {
                 photoInputRef.current.click();
               }
             }}
-            disabled={state === "reading" || !codesReady}
+            disabled={!codesReady || photoBusy}
             className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-5 py-3 text-sm font-bold text-zinc-900 disabled:opacity-50"
           >
-            {state === "reading" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-            {!codesReady ? "Carregando…" : "Tirar foto do código"}
+            {!codesReady || photoBusy ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Camera className="h-5 w-5" />
+            )}
+            {!codesReady ? "Carregando…" : photoBusy ? "Lendo…" : "Tirar foto do código"}
           </button>
           <input
             ref={photoInputRef}
@@ -233,44 +374,25 @@ export function ScannerView({ userId }: { userId: string }) {
             className="hidden"
             aria-hidden="true"
           />
+          {flash && (
+            <p
+              className={`mt-3 text-sm font-medium ${
+                flash.color === "green"
+                  ? "text-green-400"
+                  : flash.color === "yellow"
+                    ? "text-yellow-400"
+                    : "text-red-400"
+              }`}
+            >
+              {flash.text}
+            </p>
+          )}
         </div>
       )}
 
       {mode === null && (
         <div className="flex justify-center py-10">
           <Loader2 className="h-6 w-6 animate-spin text-green-400" />
-        </div>
-      )}
-
-      {state === "confirm" && candidate && (
-        <ScannerConfirmCard
-          sticker={candidate}
-          busy={busy}
-          onLancar={handleLancar}
-          onDescartar={backToReading}
-          onBuscarManual={handleBuscarManual}
-        />
-      )}
-
-      {state === "notfound" && (
-        <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4">
-          <p className="text-sm text-yellow-300">
-            Não consegui ler o código{lastRawText ? ` (li "${lastRawText.trim()}")` : ""}.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <button
-              onClick={backToReading}
-              className="rounded-lg bg-green-500 px-4 py-2 text-sm font-bold text-zinc-900 hover:bg-green-400"
-            >
-              Tentar de novo
-            </button>
-            <button
-              onClick={handleBuscarManual}
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-300 hover:bg-white/5"
-            >
-              Buscar manualmente
-            </button>
-          </div>
         </div>
       )}
     </div>

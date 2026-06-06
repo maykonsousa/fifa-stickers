@@ -19,10 +19,12 @@ const BORDER: Record<ScanActionResult["color"], string> = {
   red: "border-red-500",
 };
 
-const DOT: Record<ScanActionResult["color"], string> = {
-  green: "bg-green-400",
-  yellow: "bg-yellow-400",
-  red: "bg-red-500",
+// Badge de status: success (verde, ex. "Nova"), warning (amarelo, ex. "Repetida"/
+// "sua única") e danger (vermelho, ex. "não tem"). Cor vem do resultado da ação.
+const BADGE: Record<ScanActionResult["color"], string> = {
+  green: "bg-green-500/15 text-green-300",
+  yellow: "bg-yellow-500/15 text-yellow-300",
+  red: "bg-red-500/15 text-red-300",
 };
 
 export function ScannerConfirmCard({ sticker, result, busy, onConfirm, onReject, onManual }: Props) {
@@ -47,10 +49,11 @@ export function ScannerConfirmCard({ sticker, result, busy, onConfirm, onReject,
         <div className="flex flex-col justify-center">
           <p className="text-lg font-bold text-white">{sticker.code}</p>
           {sticker.title && <p className="text-sm text-gray-300">{sticker.title}</p>}
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-300">
-            <span className={`inline-block h-2 w-2 rounded-full ${DOT[result.color]}`} />
+          <span
+            className={`mt-1.5 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${BADGE[result.color]}`}
+          >
             {result.message}
-          </p>
+          </span>
         </div>
       </div>
 
@@ -64,7 +67,7 @@ export function ScannerConfirmCard({ sticker, result, busy, onConfirm, onReject,
           className="flex items-center justify-center gap-1.5 rounded-lg bg-green-500 px-3 py-2.5 text-sm font-bold text-zinc-900 hover:bg-green-400 disabled:opacity-50 transition-colors"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          É essa
+          {result.actionLabel}
         </button>
         <button
           type="button"
@@ -72,7 +75,7 @@ export function ScannerConfirmCard({ sticker, result, busy, onConfirm, onReject,
           disabled={busy}
           className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 disabled:opacity-50 transition-colors"
         >
-          <X className="h-4 w-4" /> Não é essa
+          <X className="h-4 w-4" /> Cancelar
         </button>
       </div>
       {onManual && (

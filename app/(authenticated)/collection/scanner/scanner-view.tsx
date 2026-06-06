@@ -15,7 +15,9 @@ import { resolveScanAction, type ScanMode } from "@/lib/scanner/resolve-scan-act
 import { toGray, meanAbsDiff, contentScore } from "@/lib/scanner/frame-metrics";
 import { nextFrameSignal, initialFrameState, type FrameThresholds, type FrameState } from "@/lib/scanner/frame-signal";
 import { scanFlowReducer, initialScanPhase } from "@/lib/scanner/scan-flow";
+import { coverCropRegion } from "@/lib/scanner/cover-crop-region";
 import { ScannerConfirmCard } from "./scanner-confirm-card";
+import { BottomSheet } from "./bottom-sheet";
 
 // Janela de mira: caixa grande que enquadra a figurinha inteira. Lemos a região
 // toda e garimpamos o código entre as palavras (findCodeInText) — não é preciso
@@ -28,6 +30,13 @@ const SCAN_MODES: ReadonlyArray<readonly [ScanMode, string]> = [
   ["troca", "Troca"],
   ["baixa", "Baixa"],
 ];
+
+// Texto-helper que explica o que cada modo faz (mostrado abaixo do seletor).
+const SCAN_MODE_HELP: Record<ScanMode, string> = {
+  lancamento: "Use para adicionar novas figurinhas ao seu álbum — incluindo as repetidas.",
+  troca: "Use para analisar as figurinhas de outro colecionador e pegar as que faltam.",
+  baixa: "Use para remover do álbum as repetidas que você está trocando.",
+};
 
 // Amostragem on-device do gatilho. Tamanho pequeno = barato. Limiares calibrados
 // contra a escala de contentScore (variância de luminância 0–~16k). Ajustar em
@@ -227,14 +236,15 @@ export function ScannerView({ userId }: { userId: string }) {
     if (!video || video.readyState < 2) return;
     const captureMode = scanModeRef.current;
     try {
-      const sw = video.videoWidth * MIRA.w;
-      const sh = video.videoHeight * MIRA.h;
-      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, {
-        sx: (video.videoWidth - sw) / 2,
-        sy: (video.videoHeight - sh) / 2,
-        sw,
-        sh,
-      });
+      const region = coverCropRegion(
+        video.videoWidth,
+        video.videoHeight,
+        video.clientWidth,
+        video.clientHeight,
+        MIRA.w,
+        MIRA.h,
+      );
+      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, region);
       await resolveAndRun(image, captureMode);
     } catch {
       showFlash("red", "Não consegui ler");
@@ -275,14 +285,20 @@ export function ScannerView({ userId }: { userId: string }) {
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) return;
 
-      const sw = video.videoWidth * MIRA.w;
-      const sh = video.videoHeight * MIRA.h;
+      const region = coverCropRegion(
+        video.videoWidth,
+        video.videoHeight,
+        video.clientWidth,
+        video.clientHeight,
+        MIRA.w,
+        MIRA.h,
+      );
       ctx.drawImage(
         video,
-        (video.videoWidth - sw) / 2,
-        (video.videoHeight - sh) / 2,
-        sw,
-        sh,
+        region.sx,
+        region.sy,
+        region.sw,
+        region.sh,
         0,
         0,
         SAMPLE.w,
@@ -342,9 +358,7 @@ export function ScannerView({ userId }: { userId: string }) {
           </button>
         ))}
       </div>
-      <p className="text-sm text-gray-400">
-        Enquadre a figurinha inteira na caixa — o código é detectado automaticamente.
-      </p>
+      <p className="text-sm text-gray-400">{SCAN_MODE_HELP[scanMode]}</p>
 
       {phase.kind === "searching" && codesReady && (
         <button
@@ -358,7 +372,13 @@ export function ScannerView({ userId }: { userId: string }) {
 
       {mode === "live" && (
         <div className="relative overflow-hidden rounded-xl bg-black">
-          <video ref={videoRef} autoPlay playsInline muted className="w-full" />
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="max-h-[52vh] w-full object-cover"
+          />
           {/* Janela de mira — mesmas frações usadas no recorte do OCR (MIRA).
               A borda pisca com a cor do resultado (verde/amarelo/vermelho). */}
           <div
@@ -433,53 +453,57 @@ export function ScannerView({ userId }: { userId: string }) {
       )}
 
       {phase.kind === "confirming" && (
-        <ScannerConfirmCard
-          sticker={phase.sticker}
-          result={resolveScanAction(phase.mode, phase.sticker.owned_count)}
-          busy={confirmBusy}
-          onConfirm={handleConfirm}
-          onReject={() => dispatch({ type: "reject" })}
-          onManual={() => dispatch({ type: "openManual" })}
-        />
+        <BottomSheet>
+          <ScannerConfirmCard
+            sticker={phase.sticker}
+            result={resolveScanAction(phase.mode, phase.sticker.owned_count)}
+            busy={confirmBusy}
+            onConfirm={handleConfirm}
+            onReject={() => dispatch({ type: "reject" })}
+            onManual={() => dispatch({ type: "openManual" })}
+          />
+        </BottomSheet>
       )}
 
       {phase.kind === "manual" && (
-        <div className="rounded-xl border border-white/15 bg-zinc-900/95 p-4">
-          <p className="mb-2 text-sm font-medium text-white">Digitar código</p>
-          <input
-            value={manualCode}
-            onChange={(e) => {
-              setManualCode(e.target.value);
-              setManualError(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void handleManualSubmit();
-            }}
-            autoFocus
-            placeholder="ex.: MEX1"
-            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white uppercase placeholder:text-gray-500 placeholder:normal-case"
-          />
-          {manualError && <p className="mt-1 text-xs text-red-400">{manualError}</p>}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => void handleManualSubmit()}
-              disabled={manualBusy || !manualCode.trim()}
-              className="flex items-center justify-center gap-1.5 rounded-lg bg-green-500 px-3 py-2.5 text-sm font-bold text-zinc-900 hover:bg-green-400 disabled:opacity-50 transition-colors"
-            >
-              {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Buscar
-            </button>
-            <button
-              type="button"
-              onClick={closeManual}
-              disabled={manualBusy}
-              className="rounded-lg border border-white/10 px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 disabled:opacity-50 transition-colors"
-            >
-              Cancelar
-            </button>
+        <BottomSheet>
+          <div className="rounded-xl border border-white/15 bg-zinc-900/95 p-4">
+            <p className="mb-2 text-sm font-medium text-white">Digitar código</p>
+            <input
+              value={manualCode}
+              onChange={(e) => {
+                setManualCode(e.target.value);
+                setManualError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleManualSubmit();
+              }}
+              autoFocus
+              placeholder="ex.: MEX1"
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white uppercase placeholder:text-gray-500 placeholder:normal-case"
+            />
+            {manualError && <p className="mt-1 text-xs text-red-400">{manualError}</p>}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => void handleManualSubmit()}
+                disabled={manualBusy || !manualCode.trim()}
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-green-500 px-3 py-2.5 text-sm font-bold text-zinc-900 hover:bg-green-400 disabled:opacity-50 transition-colors"
+              >
+                {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Buscar
+              </button>
+              <button
+                type="button"
+                onClick={closeManual}
+                disabled={manualBusy}
+                className="rounded-lg border border-white/10 px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 disabled:opacity-50 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
-        </div>
+        </BottomSheet>
       )}
 
       {mode === null && (

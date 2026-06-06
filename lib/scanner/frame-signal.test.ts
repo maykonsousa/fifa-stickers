@@ -57,4 +57,19 @@ describe("nextFrameSignal — rearm", () => {
     expect(d.state.phase).toBe("searching");
     expect(d.state.stableCount).toBe(0);
   });
+
+  it("a igualdade exata com rearmDiff já conta como mudou", () => {
+    const state = { phase: "rearm" as const, stableCount: 0 };
+    const exact = { diffFromPrev: 30, content: 5000, diffFromLastRead: T.rearmDiff };
+    const d = nextFrameSignal(state, exact, T);
+    expect(d.state.phase).toBe("searching");
+  });
+
+  it("sem assinatura do último lido (null) fica preso em rearm — nunca dispara às cegas", () => {
+    const state = { phase: "rearm" as const, stableCount: 0 };
+    const noSig = { diffFromPrev: 99, content: 5000, diffFromLastRead: null };
+    const d = nextFrameSignal(state, noSig, T);
+    expect(d.kind).toBe("wait");
+    expect(d.state.phase).toBe("rearm");
+  });
 });

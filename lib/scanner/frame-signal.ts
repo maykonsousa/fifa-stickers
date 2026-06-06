@@ -39,6 +39,10 @@ export function nextFrameSignal(
   t: FrameThresholds,
 ): FrameDecision {
   if (state.phase === "rearm") {
+    // diffFromLastRead null aqui = caller sem assinatura do último lido: tratamos
+    // como "não mudou" e ficamos em rearm, pra nunca disparar outra chamada às
+    // cegas. O frame que dispara a volta a searching é de movimento (diff alto) e
+    // de propósito NÃO é reavaliado como estável — a contagem recomeça do zero.
     const moved = sample.diffFromLastRead !== null && sample.diffFromLastRead >= t.rearmDiff;
     if (moved) return { kind: "wait", state: { phase: "searching", stableCount: 0 } };
     return { kind: "wait", state };

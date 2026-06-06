@@ -117,8 +117,8 @@ export function ScannerView({ userId }: { userId: string }) {
   }, []);
 
   const runScan = useCallback(
-    async (sticker: ScannedSticker, mode: ScanMode) => {
-      const { color, action, message } = resolveScanAction(mode, sticker.owned_count);
+    async (sticker: ScannedSticker, activeMode: ScanMode) => {
+      const { color, action, message } = resolveScanAction(activeMode, sticker.owned_count);
       showFlash(color, `${sticker.code} — ${message}`);
       const supabase = createClient();
 
@@ -128,20 +128,24 @@ export function ScannerView({ userId }: { userId: string }) {
           .insert({ user_id: userId, sticker_id: sticker.id })
           .select("id")
           .single();
-        const insertedId = data?.id as string | undefined;
-        setSessionCount((n) => n + 1);
-        toast.success(message, {
-          action: insertedId
-            ? {
-                label: "Desfazer",
-                onClick: async () => {
-                  await createClient().from("user_stickers").delete().eq("id", insertedId);
-                  setSessionCount((n) => Math.max(0, n - 1));
-                  toast.success("Desfeito");
-                },
-              }
-            : undefined,
-        });
+        const insertedId = data?.id as number | undefined;
+        // Só conta/oferece desfazer se o insert realmente devolveu a linha — um
+        // insert falho não deve inflar o contador da sessão.
+        if (insertedId !== undefined) {
+          setSessionCount((n) => n + 1);
+          toast.success(message, {
+            action: {
+              label: "Desfazer",
+              onClick: async () => {
+                await createClient().from("user_stickers").delete().eq("id", insertedId);
+                setSessionCount((n) => Math.max(0, n - 1));
+                toast.success("Desfeito");
+              },
+            },
+          });
+        } else {
+          toast.success(message);
+        }
       } else if (action === "remove") {
         const { data: rows } = await supabase
           .from("user_stickers")
@@ -149,8 +153,8 @@ export function ScannerView({ userId }: { userId: string }) {
           .eq("user_id", userId)
           .eq("sticker_id", sticker.id)
           .limit(1);
-        const rowId = rows?.[0]?.id as string | undefined;
-        if (rowId) {
+        const rowId = rows?.[0]?.id as number | undefined;
+        if (rowId !== undefined) {
           await supabase.from("user_stickers").delete().eq("id", rowId);
           setSessionCount((n) => n + 1);
           toast.success(message, {
@@ -173,10 +177,10 @@ export function ScannerView({ userId }: { userId: string }) {
   );
 
   // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
-  // resolve a figurinha → executa a ação do modo. `mode` é capturado pelo chamador
-  // no instante do disparo, pra honrar o modo em que a leitura começou.
+  // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo
+  // chamador no instante do disparo, pra honrar o modo em que a leitura começou.
   const resolveAndRun = useCallback(
-    async (image: string, mode: ScanMode) => {
+    async (image: string, activeMode: ScanMode) => {
       const rawText = await recognizeFrame(image);
       const snap = findCodeInText(rawText, validCodes);
       if (!snap) {
@@ -188,7 +192,7 @@ export function ScannerView({ userId }: { userId: string }) {
         showFlash("red", "Código não encontrado");
         return;
       }
-      await runScan(sticker, mode);
+      await runScan(sticker, activeMode);
     },
     [validCodes, userId, runScan, showFlash],
   );

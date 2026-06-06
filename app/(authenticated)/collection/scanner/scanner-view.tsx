@@ -12,6 +12,7 @@ import { recognizeFrame } from "@/lib/scanner/recognize-frame";
 import { cropToJpegBase64 } from "@/lib/scanner/crop-frame";
 import { loadImage } from "@/lib/scanner/load-image";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
+import { type ScanMode } from "@/lib/scanner/resolve-scan-action";
 import { ScannerConfirmCard } from "./scanner-confirm-card";
 
 type ScanState = "idle" | "reading" | "confirm" | "notfound";
@@ -30,6 +31,7 @@ export function ScannerView({ userId }: { userId: string }) {
   const [lastRawText, setLastRawText] = useState("");
   const [busy, setBusy] = useState(false);
   const [sessionCount, setSessionCount] = useState(0);
+  const [scanMode, setScanMode] = useState<ScanMode>("lancamento");
 
   const codesReady = validCodes.length > 0;
 
@@ -183,6 +185,23 @@ export function ScannerView({ userId }: { userId: string }) {
       </div>
 
       <h1 className="text-2xl font-bold text-white">Escanear figurinha</h1>
+      <div className="grid grid-cols-3 gap-1 rounded-lg bg-white/5 p-1">
+        {([
+          ["lancamento", "Lançamento"],
+          ["troca", "Troca"],
+          ["baixa", "Baixa"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setScanMode(value)}
+            className={`rounded-md px-2 py-2 text-sm font-medium transition-colors ${
+              scanMode === value ? "bg-green-500 text-zinc-900" : "text-gray-300 hover:bg-white/5"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <p className="text-sm text-gray-400">
         Enquadre a figurinha inteira na caixa — o código é detectado automaticamente.
       </p>

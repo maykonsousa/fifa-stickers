@@ -18,6 +18,14 @@ describe("resolveScanAction", () => {
     });
   });
 
+  it("lançamento: fronteira ownedCount===1 → repetida", () => {
+    expect(resolveScanAction("lancamento", 1)).toEqual({
+      color: "green",
+      action: "add",
+      message: "Repetida lançada",
+    });
+  });
+
   it("troca: não tem → verde, add", () => {
     expect(resolveScanAction("troca", 0)).toEqual({
       color: "green",

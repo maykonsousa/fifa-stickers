@@ -12,6 +12,9 @@ export interface ScanActionResult {
   message: string;
 }
 
+// Mínimo de cópias pra dar baixa: precisa sobrar pelo menos 1 (não baixamos a única).
+const MIN_OWNED_TO_REMOVE = 2;
+
 export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActionResult {
   if (mode === "lancamento") {
     return {
@@ -27,8 +30,14 @@ export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActio
       : { color: "red", action: "none", message: "Você já tem — pula" };
   }
 
-  // baixa
-  if (ownedCount >= 2) return { color: "green", action: "remove", message: "Baixa dada" };
-  if (ownedCount === 1) return { color: "yellow", action: "none", message: "Essa é sua única" };
-  return { color: "red", action: "none", message: "Você não tem essa" };
+  if (mode === "baixa") {
+    if (ownedCount >= MIN_OWNED_TO_REMOVE)
+      return { color: "green", action: "remove", message: "Baixa dada" };
+    if (ownedCount === 1) return { color: "yellow", action: "none", message: "Essa é sua única" };
+    return { color: "red", action: "none", message: "Você não tem essa" };
+  }
+
+  // Exaustividade: se um modo novo entrar em ScanMode, o TS acusa aqui.
+  const _exhaustive: never = mode;
+  throw new Error(`modo de scan desconhecido: ${_exhaustive}`);
 }

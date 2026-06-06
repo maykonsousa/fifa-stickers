@@ -181,19 +181,25 @@ export function ScannerView({ userId }: { userId: string }) {
   }, []);
 
   const handleManualSubmit = useCallback(async () => {
+    if (manualBusy) return; // guarda contra Enter repetido / duplo submit em voo
     const code = manualCode.trim().toUpperCase();
     if (!code) return;
     setManualBusy(true);
-    const sticker = await lookupStickerByCode(createClient(), code, userId);
-    setManualBusy(false);
-    if (!sticker) {
-      setManualError("Código não encontrado");
-      return;
+    try {
+      const sticker = await lookupStickerByCode(createClient(), code, userId);
+      if (!sticker) {
+        setManualError("Código não encontrado");
+        return;
+      }
+      setManualCode("");
+      setManualError(null);
+      dispatch({ type: "manualResolved", sticker, mode: scanModeRef.current });
+    } catch {
+      setManualError("Erro ao buscar — tente de novo");
+    } finally {
+      setManualBusy(false);
     }
-    setManualCode("");
-    setManualError(null);
-    dispatch({ type: "manualResolved", sticker, mode: scanModeRef.current });
-  }, [manualCode, userId]);
+  }, [manualBusy, manualCode, userId]);
 
   // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
   // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo

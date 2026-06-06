@@ -21,10 +21,11 @@ const MIN_OWNED_TO_REMOVE = 2;
 
 export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActionResult {
   if (mode === "lancamento") {
+    const repetida = ownedCount > 0;
     return {
-      color: "green",
+      color: repetida ? "yellow" : "green",
       action: "add",
-      message: ownedCount > 0 ? "Repetida" : "Nova",
+      message: repetida ? "Repetida" : "Nova",
       actionLabel: "Lançar",
     };
   }

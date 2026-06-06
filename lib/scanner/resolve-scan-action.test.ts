@@ -11,18 +11,18 @@ describe("resolveScanAction", () => {
     });
   });
 
-  it("lançamento: repetida → verde, add, rótulo repetida, Lançar", () => {
+  it("lançamento: repetida → amarelo (warning), add, rótulo repetida, Lançar", () => {
     expect(resolveScanAction("lancamento", 3)).toEqual({
-      color: "green",
+      color: "yellow",
       action: "add",
       message: "Repetida",
       actionLabel: "Lançar",
     });
   });
 
-  it("lançamento: fronteira ownedCount===1 → repetida, Lançar", () => {
+  it("lançamento: fronteira ownedCount===1 → repetida amarela, Lançar", () => {
     expect(resolveScanAction("lancamento", 1)).toEqual({
-      color: "green",
+      color: "yellow",
       action: "add",
       message: "Repetida",
       actionLabel: "Lançar",

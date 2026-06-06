@@ -32,6 +32,8 @@ export function scanFlowReducer(phase: ScanPhase, event: ScanFlowEvent): ScanPha
         ? { kind: "confirming", sticker: event.sticker, mode: event.mode }
         : phase;
     case "openManual":
+      // Abre o manual de procurando ou de uma confirmação; se já está no manual,
+      // não faz nada (não reabre o que já está aberto).
       return phase.kind === "searching" || phase.kind === "confirming"
         ? { kind: "manual" }
         : phase;
@@ -40,7 +42,11 @@ export function scanFlowReducer(phase: ScanPhase, event: ScanFlowEvent): ScanPha
       return phase.kind === "confirming" ? { kind: "searching" } : phase;
     case "closeManual":
       return phase.kind === "manual" ? { kind: "searching" } : phase;
-    default:
-      return phase;
+    default: {
+      // Exaustividade: se um evento novo entrar em ScanFlowEvent sem tratamento,
+      // o TS acusa aqui (event deixa de ser never).
+      const _exhaustive: never = event;
+      return _exhaustive;
+    }
   }
 }

@@ -69,4 +69,8 @@ describe("scanFlowReducer", () => {
   it("ignora confirm quando não está confirmando", () => {
     expect(scanFlowReducer(initialScanPhase, { type: "confirm" })).toBe(initialScanPhase);
   });
+
+  it("ignora reject quando não está confirmando", () => {
+    expect(scanFlowReducer(initialScanPhase, { type: "reject" })).toBe(initialScanPhase);
+  });
 });

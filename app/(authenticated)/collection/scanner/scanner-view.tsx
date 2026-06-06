@@ -81,6 +81,7 @@ export function ScannerView({ userId }: { userId: string }) {
       .then(({ data }) => setValidCodes((data ?? []).map((r) => r.code as string)));
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
   }, []);
 
@@ -121,8 +122,8 @@ export function ScannerView({ userId }: { userId: string }) {
   }, []);
 
   const runScan = useCallback(
-    async (sticker: ScannedSticker) => {
-      const { color, action, message } = resolveScanAction(scanModeRef.current, sticker.owned_count);
+    async (sticker: ScannedSticker, mode: ScanMode) => {
+      const { color, action, message } = resolveScanAction(mode, sticker.owned_count);
       showFlash(color, `${sticker.code} — ${message}`);
       const supabase = createClient();
 
@@ -179,6 +180,10 @@ export function ScannerView({ userId }: { userId: string }) {
   const autoCapture = useCallback(async () => {
     const video = videoRef.current;
     if (!video || video.readyState < 2) return;
+    // Captura o modo no instante do disparo: se o usuário trocar de modo enquanto
+    // o OCR (assíncrono) roda, a ação ainda honra o modo em que a leitura começou
+    // — evita, p.ex., dar baixa numa figurinha que foi escaneada em lançamento.
+    const captureMode = scanModeRef.current;
     try {
       const sw = video.videoWidth * MIRA.w;
       const sh = video.videoHeight * MIRA.h;
@@ -200,7 +205,7 @@ export function ScannerView({ userId }: { userId: string }) {
         showFlash("red", "Código não encontrado");
         return;
       }
-      await runScan(sticker);
+      await runScan(sticker, captureMode);
     } catch {
       showFlash("red", "Não consegui ler");
     }

@@ -64,7 +64,7 @@ export function ScannerConfirmCard({ sticker, result, busy, onConfirm, onReject,
           className="flex items-center justify-center gap-1.5 rounded-lg bg-green-500 px-3 py-2.5 text-sm font-bold text-zinc-900 hover:bg-green-400 disabled:opacity-50 transition-colors"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          É essa
+          {result.actionLabel}
         </button>
         <button
           type="button"
@@ -72,7 +72,7 @@ export function ScannerConfirmCard({ sticker, result, busy, onConfirm, onReject,
           disabled={busy}
           className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/5 disabled:opacity-50 transition-colors"
         >
-          <X className="h-4 w-4" /> Não é essa
+          <X className="h-4 w-4" /> Cancelar
         </button>
       </div>
       {onManual && (

@@ -31,6 +31,13 @@ const SCAN_MODES: ReadonlyArray<readonly [ScanMode, string]> = [
   ["baixa", "Baixa"],
 ];
 
+// Texto-helper que explica o que cada modo faz (mostrado abaixo do seletor).
+const SCAN_MODE_HELP: Record<ScanMode, string> = {
+  lancamento: "Use para adicionar novas figurinhas ao seu álbum — incluindo as repetidas.",
+  troca: "Use para analisar as figurinhas de outro colecionador e pegar as que faltam.",
+  baixa: "Use para remover do álbum as repetidas que você está trocando.",
+};
+
 // Amostragem on-device do gatilho. Tamanho pequeno = barato. Limiares calibrados
 // contra a escala de contentScore (variância de luminância 0–~16k). Ajustar em
 // dispositivo se disparar cedo/tarde demais.
@@ -351,9 +358,7 @@ export function ScannerView({ userId }: { userId: string }) {
           </button>
         ))}
       </div>
-      <p className="text-sm text-gray-400">
-        Enquadre a figurinha inteira na caixa — o código é detectado automaticamente.
-      </p>
+      <p className="text-sm text-gray-400">{SCAN_MODE_HELP[scanMode]}</p>
 
       {phase.kind === "searching" && codesReady && (
         <button

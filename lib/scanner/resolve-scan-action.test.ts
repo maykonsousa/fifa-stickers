@@ -6,7 +6,7 @@ describe("resolveScanAction", () => {
     expect(resolveScanAction("lancamento", 0)).toEqual({
       color: "green",
       action: "add",
-      message: "Nova lançada",
+      message: "Nova",
       actionLabel: "Lançar",
     });
   });
@@ -15,7 +15,7 @@ describe("resolveScanAction", () => {
     expect(resolveScanAction("lancamento", 3)).toEqual({
       color: "green",
       action: "add",
-      message: "Repetida lançada",
+      message: "Repetida",
       actionLabel: "Lançar",
     });
   });
@@ -24,7 +24,7 @@ describe("resolveScanAction", () => {
     expect(resolveScanAction("lancamento", 1)).toEqual({
       color: "green",
       action: "add",
-      message: "Repetida lançada",
+      message: "Repetida",
       actionLabel: "Lançar",
     });
   });
@@ -51,7 +51,7 @@ describe("resolveScanAction", () => {
     expect(resolveScanAction("baixa", 2)).toEqual({
       color: "green",
       action: "remove",
-      message: "Baixa dada",
+      message: "Repetida",
       actionLabel: "Entregar",
     });
   });

@@ -24,7 +24,7 @@ export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActio
     return {
       color: "green",
       action: "add",
-      message: ownedCount > 0 ? "Repetida lançada" : "Nova lançada",
+      message: ownedCount > 0 ? "Repetida" : "Nova",
       actionLabel: "Lançar",
     };
   }
@@ -37,7 +37,7 @@ export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActio
 
   if (mode === "baixa") {
     if (ownedCount >= MIN_OWNED_TO_REMOVE)
-      return { color: "green", action: "remove", message: "Baixa dada", actionLabel: "Entregar" };
+      return { color: "green", action: "remove", message: "Repetida", actionLabel: "Entregar" };
     if (ownedCount === 1)
       return { color: "yellow", action: "none", message: "Essa é sua única", actionLabel: "Próxima" };
     return { color: "red", action: "none", message: "Você não tem essa", actionLabel: "Próxima" };

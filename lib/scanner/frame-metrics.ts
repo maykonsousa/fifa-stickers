@@ -37,3 +37,29 @@ export function contentScore(gray: Uint8Array): number {
   }
   return variance / gray.length;
 }
+
+// Nitidez = variância do Laplaciano (kernel 4-vizinhos) sobre o buffer cinza.
+// Frame borrado → resposta baixa em toda parte → variância baixa; texto nítido →
+// bordas fortes → variância alta. Só percorre os pixels internos (precisa dos 4
+// vizinhos), então exige w>=3 e h>=3; caso contrário devolve 0. Custo O(n).
+export function sharpness(gray: Uint8Array, w: number, h: number): number {
+  if (w < 3 || h < 3 || gray.length < w * h) return 0;
+  const lap: number[] = [];
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const v = 4 * gray[i] - gray[i - 1] - gray[i + 1] - gray[i - w] - gray[i + w];
+      lap.push(v);
+    }
+  }
+  if (lap.length === 0) return 0;
+  let mean = 0;
+  for (let i = 0; i < lap.length; i++) mean += lap[i];
+  mean /= lap.length;
+  let variance = 0;
+  for (let i = 0; i < lap.length; i++) {
+    const d = lap[i] - mean;
+    variance += d * d;
+  }
+  return variance / lap.length;
+}

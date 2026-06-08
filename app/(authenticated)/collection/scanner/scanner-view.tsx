@@ -12,10 +12,11 @@ import { cropToJpegBase64 } from "@/lib/scanner/crop-frame";
 import { loadImage } from "@/lib/scanner/load-image";
 import { lookupStickerByCode, type ScannedSticker } from "@/lib/scanner/lookup-sticker-by-code";
 import { resolveScanAction, type ScanMode } from "@/lib/scanner/resolve-scan-action";
-import { toGray, meanAbsDiff, contentScore } from "@/lib/scanner/frame-metrics";
+import { toGray, meanAbsDiff, contentScore, sharpness } from "@/lib/scanner/frame-metrics";
 import { nextFrameSignal, initialFrameState, type FrameThresholds, type FrameState } from "@/lib/scanner/frame-signal";
 import { scanFlowReducer, initialScanPhase } from "@/lib/scanner/scan-flow";
 import { coverCropRegion } from "@/lib/scanner/cover-crop-region";
+import { codeCropRegion } from "@/lib/scanner/code-crop-region";
 import { ScannerConfirmCard } from "./scanner-confirm-card";
 import { BottomSheet } from "./bottom-sheet";
 
@@ -23,6 +24,14 @@ import { BottomSheet } from "./bottom-sheet";
 // toda e garimpamos o código entre as palavras (findCodeInText) — não é preciso
 // mirar exatamente no código. O recorte do OCR usa exatamente estas frações.
 const MIRA = { w: 0.82, h: 0.62 };
+
+// Região do código DENTRO do mira: badge no canto superior direito. Folga
+// generosa pra não cortar o badge se o enquadramento variar; calibrar em
+// dispositivo. Só o modo live usa este recorte.
+const CODE = { w: 0.45, h: 0.25 };
+
+// Amostra pequena só do badge, pra medir nitidez (sharpness) sem custo.
+const BADGE_SAMPLE = { w: 64, h: 32 };
 
 // Modos do scanner e seus rótulos no seletor (segmented control).
 const SCAN_MODES: ReadonlyArray<readonly [ScanMode, string]> = [
@@ -48,6 +57,7 @@ const THRESHOLDS: FrameThresholds = {
   content: 400,
   rearmDiff: 14,
   stableSamples: 3,
+  sharpness: 40,
 };
 
 export function ScannerView({ userId }: { userId: string }) {
@@ -73,6 +83,7 @@ export function ScannerView({ userId }: { userId: string }) {
   const streamRef = useRef<MediaStream | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const badgeSampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const prevSampleRef = useRef<Uint8Array | null>(null);
   const lastReadSampleRef = useRef<Uint8Array | null>(null);
   const signalStateRef = useRef<FrameState>(initialFrameState());
@@ -244,7 +255,8 @@ export function ScannerView({ userId }: { userId: string }) {
         MIRA.w,
         MIRA.h,
       );
-      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, region);
+      const badge = codeCropRegion(region, CODE);
+      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, badge);
       await resolveAndRun(image, captureMode);
     } catch {
       showFlash("red", "Não consegui ler");
@@ -305,6 +317,34 @@ export function ScannerView({ userId }: { userId: string }) {
         SAMPLE.h,
       );
       const gray = toGray(ctx.getImageData(0, 0, SAMPLE.w, SAMPLE.h).data);
+
+      // Amostra só do badge pra medir nitidez (a mira inteira teria o badge num
+      // cantinho pequeno demais pro Laplaciano ser confiável).
+      const badgeCanvas = badgeSampleCanvasRef.current ?? document.createElement("canvas");
+      badgeSampleCanvasRef.current = badgeCanvas;
+      badgeCanvas.width = BADGE_SAMPLE.w;
+      badgeCanvas.height = BADGE_SAMPLE.h;
+      const badgeCtx = badgeCanvas.getContext("2d", { willReadFrequently: true });
+      let badgeSharpness = 0;
+      if (badgeCtx) {
+        const badge = codeCropRegion(region, CODE);
+        badgeCtx.drawImage(
+          video,
+          badge.sx,
+          badge.sy,
+          badge.sw,
+          badge.sh,
+          0,
+          0,
+          BADGE_SAMPLE.w,
+          BADGE_SAMPLE.h,
+        );
+        const badgeGray = toGray(
+          badgeCtx.getImageData(0, 0, BADGE_SAMPLE.w, BADGE_SAMPLE.h).data,
+        );
+        badgeSharpness = sharpness(badgeGray, BADGE_SAMPLE.w, BADGE_SAMPLE.h);
+      }
+
       const prev = prevSampleRef.current;
       const lastRead = lastReadSampleRef.current;
       const decision = nextFrameSignal(
@@ -312,6 +352,7 @@ export function ScannerView({ userId }: { userId: string }) {
         {
           diffFromPrev: prev ? meanAbsDiff(gray, prev) : Infinity,
           content: contentScore(gray),
+          sharpness: badgeSharpness,
           diffFromLastRead: lastRead ? meanAbsDiff(gray, lastRead) : null,
         },
         THRESHOLDS,

@@ -79,6 +79,17 @@ export function ScannerView({ userId }: { userId: string }) {
 
   const [flash, setFlash] = useState<{ color: "green" | "yellow" | "red"; text: string } | null>(null);
 
+  // Overlay de debug (ativado por ?debug na URL): mostra o recorte do badge que
+  // vai pro Vision, a nitidez ao vivo e o texto lido — pra calibrar CODE/sharpness.
+  const [debug, setDebug] = useState(false);
+  const debugRef = useRef(false);
+  const [dbgSharpness, setDbgSharpness] = useState(0);
+  const [dbgCap, setDbgCap] = useState<{ badge: string | null; rawText: string; via: string }>({
+    badge: null,
+    rawText: "",
+    via: "—",
+  });
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -96,6 +107,7 @@ export function ScannerView({ userId }: { userId: string }) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMode(chooseCaptureMode({ inApp: isInAppBrowser(), hasGetUserMedia: detectCaptureEnv().hasGetUserMedia }));
+    if (new URLSearchParams(window.location.search).has("debug")) setDebug(true);
     const supabase = createClient();
     supabase
       .from("stickers")
@@ -133,6 +145,10 @@ export function ScannerView({ userId }: { userId: string }) {
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+
+  useEffect(() => {
+    debugRef.current = debug;
+  }, [debug]);
 
   useEffect(() => {
     scanModeRef.current = scanMode;
@@ -221,25 +237,42 @@ export function ScannerView({ userId }: { userId: string }) {
     }
   }, [manualBusy, manualCode, userId]);
 
-  // Tail comum às duas vias de captura (vídeo e foto): OCR → garimpa o código →
-  // resolve a figurinha → executa a ação do modo. `activeMode` é capturado pelo
-  // chamador no instante do disparo, pra honrar o modo em que a leitura começou.
-  const resolveAndRun = useCallback(
-    async (image: string, activeMode: ScanMode) => {
+  // Lê um recorte (base64) via OCR e garimpa o código. Devolve o texto cru (pra
+  // debug) e o snap (código casado) ou null.
+  const readCodeFromImage = useCallback(
+    async (image: string) => {
       const rawText = await recognizeFrame(image);
-      const snap = findCodeInText(rawText, validCodes);
-      if (!snap) {
-        showFlash("red", "Não consegui ler");
-        return;
-      }
-      const sticker = await lookupStickerByCode(createClient(), snap.code, userId);
+      return { rawText, snap: findCodeInText(rawText, validCodes) };
+    },
+    [validCodes],
+  );
+
+  // Resolve a figurinha a partir do código casado e dispara a ação do modo.
+  const resolveSnap = useCallback(
+    async (code: string, activeMode: ScanMode) => {
+      const sticker = await lookupStickerByCode(createClient(), code, userId);
       if (!sticker) {
         showFlash("red", "Código não encontrado");
         return;
       }
       dispatch({ type: "resolved", sticker, mode: activeMode });
     },
-    [validCodes, userId, showFlash],
+    [userId, showFlash],
+  );
+
+  // Tail do modo foto: uma imagem só (sem fallback de recorte). `activeMode` é
+  // capturado pelo chamador no instante do disparo, pra honrar o modo em que a
+  // leitura começou.
+  const resolveAndRun = useCallback(
+    async (image: string, activeMode: ScanMode) => {
+      const { snap } = await readCodeFromImage(image);
+      if (!snap) {
+        showFlash("red", "Não consegui ler");
+        return;
+      }
+      await resolveSnap(snap.code, activeMode);
+    },
+    [readCodeFromImage, resolveSnap, showFlash],
   );
 
   const autoCapture = useCallback(async () => {
@@ -256,12 +289,39 @@ export function ScannerView({ userId }: { userId: string }) {
         MIRA.h,
       );
       const badge = codeCropRegion(region, CODE);
-      const image = cropToJpegBase64(video, video.videoWidth, video.videoHeight, badge);
-      await resolveAndRun(image, captureMode);
+      const badgeImage = cropToJpegBase64(video, video.videoWidth, video.videoHeight, badge);
+      if (debugRef.current) setDbgCap((d) => ({ ...d, badge: badgeImage }));
+
+      // 1ª tentativa: só o badge (rápido/barato).
+      const first = await readCodeFromImage(badgeImage);
+      let snap = first.snap;
+      let via = snap ? "badge" : "nenhum";
+      let rawText = first.rawText;
+
+      // Fallback: se o recorte do badge não achou o código (enquadramento fora da
+      // posição, badge maior que o recorte etc.), tenta a mira inteira. Custa uma
+      // 2ª chamada só quando a leitura ia falhar de qualquer jeito.
+      if (!snap) {
+        const miraImage = cropToJpegBase64(video, video.videoWidth, video.videoHeight, region);
+        const second = await readCodeFromImage(miraImage);
+        if (second.snap) {
+          snap = second.snap;
+          via = "mira (fallback)";
+        }
+        rawText = `badge: «${first.rawText}» | mira: «${second.rawText}»`;
+      }
+
+      if (debugRef.current) setDbgCap((d) => ({ ...d, rawText, via }));
+
+      if (!snap) {
+        showFlash("red", "Não consegui ler");
+        return;
+      }
+      await resolveSnap(snap.code, captureMode);
     } catch {
       showFlash("red", "Não consegui ler");
     }
-  }, [resolveAndRun, showFlash]);
+  }, [readCodeFromImage, resolveSnap, showFlash]);
 
   const handlePhoto = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -344,6 +404,7 @@ export function ScannerView({ userId }: { userId: string }) {
         );
         badgeSharpness = sharpness(badgeGray, BADGE_SAMPLE.w, BADGE_SAMPLE.h);
       }
+      if (debugRef.current) setDbgSharpness(badgeSharpness);
 
       const prev = prevSampleRef.current;
       const lastRead = lastReadSampleRef.current;
@@ -434,6 +495,27 @@ export function ScannerView({ userId }: { userId: string }) {
             }`}
             style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
           />
+          {debug && (
+            <div className="pointer-events-none absolute left-2 top-2 max-w-[70%] space-y-1 rounded-lg bg-black/80 p-2 text-[10px] leading-tight text-white">
+              <div>
+                sharpness: <b>{Math.round(dbgSharpness)}</b> (piso {THRESHOLDS.sharpness})
+              </div>
+              <div>
+                resolvido por: <b>{dbgCap.via}</b>
+              </div>
+              {dbgCap.badge && (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`data:image/jpeg;base64,${dbgCap.badge}`}
+                    alt="recorte do badge enviado ao OCR"
+                    className="w-32 rounded border border-white/30"
+                  />
+                </>
+              )}
+              <div className="break-all opacity-80">OCR: {dbgCap.rawText || "—"}</div>
+            </div>
+          )}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-2 text-sm font-medium text-white">
             {!codesReady
               ? "Carregando…"

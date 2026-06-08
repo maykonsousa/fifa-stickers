@@ -9,7 +9,7 @@ export interface ScannedSticker {
 }
 
 // Resolve uma figurinha pelo código já com a contagem de cópias do usuário, via a
-// RPC lookup_sticker_by_code (uma query só — ver migration 064). A RPC retorna uma
+// RPC lookup_sticker_by_code (uma query só — ver migration 069). A RPC retorna uma
 // tabela de 0 ou 1 linha; pegamos a primeira.
 export async function lookupStickerByCode(
   supabase: SupabaseClient,

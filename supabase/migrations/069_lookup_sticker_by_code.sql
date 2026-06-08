@@ -1,4 +1,4 @@
--- 064_lookup_sticker_by_code.sql
+-- 069_lookup_sticker_by_code.sql
 -- Funde as duas queries do scanner (busca o sticker por código + conta as cópias
 -- do usuário) numa RPC única, tirando um round-trip do caminho crítico pós-Vision.
 -- Usada por lib/scanner/lookup-sticker-by-code.ts.

@@ -12,11 +12,13 @@ export interface FrameThresholds {
   content: number; // content >= content → tem conteúdo na mira
   rearmDiff: number; // diffFromLastRead >= rearmDiff → figurinha trocou
   stableSamples: number; // nº de amostras estáveis seguidas pra disparar
+  sharpness: number; // sharpness >= sharpness → badge nítido o bastante pra ler
 }
 
 export interface FrameSample {
   diffFromPrev: number; // diff vs amostra anterior
   content: number; // contraste/variância da mira
+  sharpness: number; // nitidez (variância do Laplaciano) na região do badge
   diffFromLastRead: number | null; // diff vs assinatura do último lido (null se nunca leu)
 }
 
@@ -51,7 +53,8 @@ export function nextFrameSignal(
   // searching
   const stable = sample.diffFromPrev <= t.diff;
   const hasContent = sample.content >= t.content;
-  if (!stable || !hasContent) {
+  const sharp = sample.sharpness >= t.sharpness;
+  if (!stable || !hasContent || !sharp) {
     return { kind: "wait", state: { phase: "searching", stableCount: 0 } };
   }
 

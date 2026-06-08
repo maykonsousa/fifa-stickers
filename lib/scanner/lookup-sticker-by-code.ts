@@ -8,30 +8,28 @@ export interface ScannedSticker {
   owned_count: number;
 }
 
+// Resolve uma figurinha pelo código já com a contagem de cópias do usuário, via a
+// RPC lookup_sticker_by_code (uma query só — ver migration 069). A RPC retorna uma
+// tabela de 0 ou 1 linha; pegamos a primeira.
 export async function lookupStickerByCode(
   supabase: SupabaseClient,
   code: string,
   userId: string,
 ): Promise<ScannedSticker | null> {
-  const { data: sticker } = await supabase
-    .from("stickers")
-    .select("id, code, title, image_url")
-    .eq("code", code)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("lookup_sticker_by_code", {
+    p_code: code,
+    p_user_id: userId,
+  });
 
-  if (!sticker) return null;
-
-  const { count } = await supabase
-    .from("user_stickers")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("sticker_id", sticker.id);
+  if (error) return null;
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return null;
 
   return {
-    id: sticker.id,
-    code: sticker.code,
-    title: sticker.title,
-    image_url: sticker.image_url,
-    owned_count: count ?? 0,
+    id: row.id,
+    code: row.code,
+    title: row.title,
+    image_url: row.image_url,
+    owned_count: row.owned_count ?? 0,
   };
 }

@@ -36,4 +36,17 @@ describe("findCodeInText", () => {
   it("retorna null para texto vazio", () => {
     expect(findCodeInText("   \n  ", VALID)).toBeNull();
   });
+
+  it("na linha de licenciamento (horizontal) pega só o código e ignora o resto", () => {
+    const valid = ["RSA13", "UZB7", "MEX1"];
+    expect(
+      findCodeInText("FIFA OFFICIAL LICENSED PRODUCT RSA 13 FIFA WORLD CUP 2026 PANINI", valid),
+    ).toEqual({ code: "RSA13", distance: 0 });
+  });
+
+  it("número solto e palavra longa não viram candidato (precisa ter forma de código)", () => {
+    // '2026' (só dígitos) e 'OFFICIAL' (8 letras) não têm forma de código — nem
+    // chegam a ser testados contra a lista, então não geram falso-positivo.
+    expect(findCodeInText("OFFICIAL 2026", ["MEX1", "UZB7"])).toBeNull();
+  });
 });

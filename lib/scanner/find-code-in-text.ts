@@ -10,6 +10,14 @@ import { snapToValidCode, type SnapResult } from "./snap-to-valid-code";
 // casamento apertado (distância <= 1) pra evitar falso-positivo.
 const MAX_DISTANCE = 1;
 
+// Forma de um código impresso: 2–4 letras seguidas de 0–2 dígitos (ex.: CC, FWC,
+// MEX1, RSA13). Só tokens com essa cara viram candidatos — assim o ruído do verso
+// (FIFA, OFFICIAL, PANINI, WORLD, 2026, 13...) nem é testado contra os ~2.300
+// códigos, evitando casar por acaso. Sem isso, com texto longo (pior nas
+// figurinhas horizontais, que têm texto logo abaixo do badge), um token qualquer
+// acabava casando a distância <= 1 com o código errado.
+const CODE_SHAPE = /^[A-Z]{2,4}[0-9]{0,2}$/;
+
 export function findCodeInText(rawText: string, validCodes: string[]): SnapResult | null {
   const tokens = rawText
     .toUpperCase()
@@ -19,9 +27,13 @@ export function findCodeInText(rawText: string, validCodes: string[]): SnapResul
 
   const candidates: string[] = [];
   for (let i = 0; i < tokens.length; i++) {
-    candidates.push(tokens[i]);
-    if (i + 1 < tokens.length) candidates.push(tokens[i] + tokens[i + 1]);
+    if (CODE_SHAPE.test(tokens[i])) candidates.push(tokens[i]);
+    if (i + 1 < tokens.length) {
+      const pair = tokens[i] + tokens[i + 1];
+      if (CODE_SHAPE.test(pair)) candidates.push(pair);
+    }
   }
+  if (candidates.length === 0) return null;
 
   let best: SnapResult | null = null;
   for (const candidate of candidates) {

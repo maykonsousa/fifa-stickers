@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-const getUser = vi.fn();
+const getClaims = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { getUser } }),
+  createClient: async () => ({ auth: { getClaims } }),
 }));
 
 import { POST } from "./route";
@@ -15,25 +15,36 @@ function makeRequest(body: unknown) {
   });
 }
 
+function authed() {
+  // getClaims devolve { claims: { sub, ... }, ... } quando o JWT é válido localmente.
+  getClaims.mockResolvedValue({ data: { claims: { sub: "u1" } }, error: null });
+}
+
 describe("POST /api/scanner/ocr", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     process.env.GOOGLE_VISION_API_KEY = "KEY123";
-    getUser.mockReset();
+    getClaims.mockReset();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("retorna 401 sem sessão", async () => {
-    getUser.mockResolvedValue({ data: { user: null } });
+  it("retorna 401 sem sessão (claims vazias)", async () => {
+    getClaims.mockResolvedValue({ data: null, error: { message: "no session" } });
+    const res = await POST(makeRequest({ image: "X" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("retorna 401 se claims sem sub", async () => {
+    getClaims.mockResolvedValue({ data: { claims: {} }, error: null });
     const res = await POST(makeRequest({ image: "X" }));
     expect(res.status).toBe(401);
   });
 
   it("retorna { rawText } com sessão e Vision ok", async () => {
-    getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
+    authed();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -47,7 +58,7 @@ describe("POST /api/scanner/ocr", () => {
   });
 
   it("retorna 502 quando o Vision falha", async () => {
-    getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
+    authed();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ ok: false, status: 403, text: async () => "denied" }),
@@ -57,13 +68,13 @@ describe("POST /api/scanner/ocr", () => {
   });
 
   it("retorna 400 sem imagem", async () => {
-    getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
+    authed();
     const res = await POST(makeRequest({}));
     expect(res.status).toBe(400);
   });
 
   it("retorna 500 sem GOOGLE_VISION_API_KEY", async () => {
-    getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
+    authed();
     delete process.env.GOOGLE_VISION_API_KEY;
     const res = await POST(makeRequest({ image: "X" }));
     expect(res.status).toBe(500);

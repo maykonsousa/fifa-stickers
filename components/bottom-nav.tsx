@@ -11,7 +11,7 @@ const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/collection", label: "Coleção", icon: Grid3X3 },
   { href: "/collection/scanner", label: "Scanner", icon: QrCode, isCenter: true },
-  { href: "/players", label: "Colecionadores", icon: Repeat2 },
+  { href: "/players", label: "Trocas", icon: Repeat2 },
 ];
 
 interface BottomNavProps {
@@ -61,15 +61,48 @@ export function BottomNav({ proposalsBadge = 0 }: BottomNavProps) {
       )}
     >
       {/* Mobile bottom navigation only */}
-      <div className="relative flex items-end justify-around h-16 px-2 pb-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-
-          if (item.isCenter) {
-            return (
-              <div key="scanner" className="absolute left-1/2 -translate-x-1/2 -top-4 px-2 flex items-center justify-center">
+      <div className="relative flex items-end justify-between h-16 px-4 pb-1">
+        {/* Left side: Home + Coleção */}
+        <div className="flex items-end justify-between w-36">
+          {navItems
+            .filter((item) => !item.isCenter)
+            .slice(0, 2)
+            .map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
                 <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-end gap-0.5 py-2 transition-all",
+                    active
+                      ? "text-green-400"
+                      : "text-gray-500 hover:text-gray-300"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} strokeWidth={active ? 2.5 : 2} />
+                  <span className={cn(
+                    "text-[10px] font-medium transition-all",
+                    active ? "font-semibold" : "font-normal"
+                  )}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+        </div>
+
+        {/* Scanner - absolutely centered */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-4 flex items-center justify-center">
+          {navItems
+            .filter((item) => item.isCenter)
+            .map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
                   href={item.href}
                   className={cn(
                     "flex items-center justify-center",
@@ -88,50 +121,59 @@ export function BottomNav({ proposalsBadge = 0 }: BottomNavProps) {
                 >
                   <Icon className="h-6 w-6" strokeWidth={2.5} />
                 </Link>
-              </div>
-            );
-          }
+              );
+            })}
+        </div>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex flex-col items-center justify-end gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[60px]",
-                active
-                  ? "text-green-400"
-                  : "text-gray-500 hover:text-gray-300"
-              )}
-            >
-              <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} strokeWidth={active ? 2.5 : 2} />
-              <span className={cn(
-                "text-[10px] font-medium transition-all",
-                active ? "font-semibold" : "font-normal"
-              )}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+        {/* Right side: Trocas + Perfil */}
+        <div className="flex items-end justify-between w-36">
+          {/* Trocas */}
+          {navItems
+            .filter((item) => !item.isCenter && item.href === "/players")
+            .map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex flex-col items-center justify-end gap-0.5 py-2 transition-all",
+                    active
+                      ? "text-green-400"
+                      : "text-gray-500 hover:text-gray-300"
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} strokeWidth={active ? 2.5 : 2} />
+                  <span className={cn(
+                    "text-[10px] font-medium transition-all",
+                    active ? "font-semibold" : "font-normal"
+                  )}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
 
-        {/* Profile button */}
-        <Link
-          href={profileHref}
-          className={cn(
-            "flex flex-col items-center justify-end gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[60px]",
-            isProfileActive
-              ? "text-green-400"
-              : "text-gray-500 hover:text-gray-300"
-          )}
-        >
-          <User className={cn("h-5 w-5 transition-transform", isProfileActive && "scale-110")} strokeWidth={isProfileActive ? 2.5 : 2} />
-          <span className={cn(
-            "text-[10px] font-medium transition-all",
-            isProfileActive ? "font-semibold" : "font-normal"
-          )}>
-            Perfil
-          </span>
-        </Link>
+          {/* Profile */}
+          <Link
+            href={profileHref}
+            className={cn(
+              "flex flex-col items-center justify-end gap-0.5 py-2 transition-all",
+              isProfileActive
+                ? "text-green-400"
+                : "text-gray-500 hover:text-gray-300"
+            )}
+          >
+            <User className={cn("h-5 w-5 transition-transform", isProfileActive && "scale-110")} strokeWidth={isProfileActive ? 2.5 : 2} />
+            <span className={cn(
+              "text-[10px] font-medium transition-all",
+              isProfileActive ? "font-semibold" : "font-normal"
+            )}>
+              Perfil
+            </span>
+          </Link>
+        </div>
       </div>
     </nav>
   );

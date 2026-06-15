@@ -495,15 +495,6 @@ export function ScannerView({ userId }: { userId: string }) {
             }`}
             style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
           />
-          {/* Alvo do badge: mostra onde o OCR está recortando (CODE). O usuário
-              posiciona o badge do código DENTRO deste card pra cair no caminho
-              rápido; se deixar cair fora, o autoCapture cai no fallback da mira
-              inteira (mais lento). Proporção 3:4 + 1rem do topo/direita é a
-              geometria real do CODE mostrada como alvo visual. */}
-          <div
-            className="pointer-events-none absolute right-4 top-4 aspect-[3/4] w-24 rounded border-2 border-dashed border-yellow-300/80 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
-            aria-hidden="true"
-          />
           {debug && (
             <div className="pointer-events-none absolute left-2 top-2 max-w-[70%] space-y-1 rounded-lg bg-black/80 p-2 text-[10px] leading-tight text-white">
               <div>

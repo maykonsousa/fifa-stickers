@@ -36,8 +36,8 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link href="/collection" className="hover:text-yellow-400 transition">Coleção</Link></li>
               <li><Link href="/trades" className="hover:text-yellow-400 transition">Trocas</Link></li>
-              <li><Link href="/colecionadores" className="hover:text-yellow-400 transition">Colecionadores</Link></li>
-              <li><Link href="/profile" className="hover:text-yellow-400 transition">Perfil</Link></li>
+              <li><Link href="/players" className="hover:text-yellow-400 transition">Colecionadores</Link></li>
+              <li><Link href="/settings" className="hover:text-yellow-400 transition">Perfil</Link></li>
             </ul>
           </div>
 

@@ -108,7 +108,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
     return (
       <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
         <p className="text-sm text-gray-300">Nenhum colecionador com esses filtros.</p>
-        <a href="/players/collectors" className="mt-3 inline-block text-sm text-green-400 hover:underline">
+        <a href="/players" className="mt-3 inline-block text-sm text-green-400 hover:underline">
           Limpar filtros
         </a>
       </div>

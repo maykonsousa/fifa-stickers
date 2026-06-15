@@ -27,7 +27,7 @@ export default async function AuthenticatedLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-green-950 flex flex-col">
       <TopBar isAdmin={!!admin} proposalsBadge={proposalsBadge} />
-      <main className="flex-1 w-full pb-20 md:pb-16">
+      <main className="flex-1 w-full pb-20">
         <div className="max-w-6xl mx-auto px-4 py-4">
           {children}
         </div>

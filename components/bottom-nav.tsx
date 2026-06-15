@@ -11,7 +11,7 @@ const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/collection", label: "Coleção", icon: Grid3X3 },
   { href: "/collection/scanner", label: "Scanner", icon: QrCode, isCenter: true },
-  { href: "/players", label: "Trocas", icon: Repeat2 },
+  { href: "/players", label: "Colecionadores", icon: Repeat2 },
 ];
 
 interface BottomNavProps {
@@ -20,21 +20,25 @@ interface BottomNavProps {
 
 export function BottomNav({ proposalsBadge = 0 }: BottomNavProps) {
   const pathname = usePathname();
-  const [profileHref, setProfileHref] = useState("/profile");
+  const [profileHref, setProfileHref] = useState("/settings");
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
-        const username = user.user_metadata?.user_name ?? user.email?.split("@")[0];
-        if (username) {
-          setProfileHref(`/p/${username}`);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.username) {
+          setProfileHref(`/p/${profile.username}`);
         }
       }
     });
   }, []);
 
-  // Custom active check - exact match for collection/scanner vs collection
   const isActive = (href: string) => {
     if (href === "/collection") {
       return pathname === "/collection";
@@ -50,54 +54,18 @@ export function BottomNav({ proposalsBadge = 0 }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 overflow-visible",
+        "fixed bottom-0 left-0 right-0 z-50 overflow-visible md:hidden",
         "bg-gray-900/95 backdrop-blur-xl",
         "border-t border-white/10",
         "safe-area-bottom"
       )}
     >
-      {/* Desktop: horizontal bar */}
-      <div className="hidden md:flex h-16 max-w-6xl mx-auto px-4 items-center justify-around">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                active
-                  ? "bg-green-600/20 text-green-400"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          );
-        })}
-        <Link
-          href={profileHref}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-            isProfileActive
-              ? "bg-green-600/20 text-green-400"
-              : "text-gray-400 hover:text-white hover:bg-white/5"
-          )}
-        >
-          <User className="h-4 w-4" />
-          Perfil
-        </Link>
-      </div>
-
-      {/* Mobile bottom navigation */}
-      <div className="md:hidden relative flex items-end justify-around h-16 px-2 pb-1">
+      {/* Mobile bottom navigation only */}
+      <div className="relative flex items-end justify-around h-16 px-2 pb-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
 
-          // Scanner - center, with circular bg that overflows upward
           if (item.isCenter) {
             return (
               <div key="scanner" className="absolute left-1/2 -translate-x-1/2 -top-3 flex items-center justify-center">

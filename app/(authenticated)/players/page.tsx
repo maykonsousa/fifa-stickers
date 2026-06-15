@@ -1,67 +1,151 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { MessageSquare, Users, ArrowRight } from "lucide-react";
+import { CollectorsFilters } from "./collectors/collectors-filters";
+import { CollectorsList } from "./collectors/collectors-list";
+import type { CollectorCardProps } from "./collectors/collector-card";
+import { MessageSquare } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function PlayersPage() {
+const PAGE_SIZE = 20;
+
+interface SearchParams {
+  group?: string;
+  nearby?: string;
+  page?: string;
+}
+
+export default async function PlayersPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+  const groupId = params.group ? parseInt(params.group, 10) : null;
+  const onlyNearby = params.nearby === "true";
+  const page = params.page ? Math.max(1, parseInt(params.page, 10)) : 1;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const userId = user!.id;
+  const viewerId = user!.id;
 
-  // Contagens
-  const { count: proposalsCount } = await supabase
-    .from("proposals")
-    .select("id", { count: "exact", head: true })
-    .or(`owner_user_id.eq.${userId},proposer_user_id.eq.${userId}`);
-
-  const { count: collectorsCount } = await supabase
+  const { data: viewerProfile } = await supabase
     .from("profiles")
-    .select("id", { count: "exact", head: true })
-    .neq("id", userId);
+    .select("state")
+    .eq("id", viewerId)
+    .single();
+  const viewerHasState = Boolean(viewerProfile?.state);
+
+  const { data: groups } = await supabase
+    .from("sticker_groups")
+    .select("id, name")
+    .order("id");
+
+  const { data: rpcRows, error } = await supabase.rpc("get_collector_matches", {
+    p_viewer_id: viewerId,
+    p_group_id: groupId,
+    p_only_nearby: onlyNearby && viewerHasState,
+    p_page: page,
+    p_page_size: PAGE_SIZE,
+  });
+
+  if (error) {
+    console.error("get_collector_matches failed", error);
+  }
+
+  const rows = (rpcRows ?? []) as Array<{
+    user_id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string | null;
+    city: string | null;
+    state: string | null;
+    match_count: number;
+    preview_sticker_ids: number[];
+    total_count: number;
+  }>;
+
+  const totalCount = rows[0]?.total_count ?? 0;
+
+  const allStickerIds = Array.from(new Set(rows.flatMap((r) => r.preview_sticker_ids ?? [])));
+  const stickerMap = new Map<number, string | null>();
+  if (allStickerIds.length > 0) {
+    const { data: stickers } = await supabase
+      .from("stickers")
+      .select("id, image_url")
+      .in("id", allStickerIds);
+    for (const s of stickers ?? []) stickerMap.set(s.id, s.image_url);
+  }
+
+  const collectors: CollectorCardProps[] = rows.map((r) => ({
+    username: r.username,
+    displayName: r.display_name,
+    avatarUrl: r.avatar_url,
+    city: r.city,
+    state: r.state,
+    matchCount: r.match_count,
+    previewStickers: (r.preview_sticker_ids ?? []).map((id) => ({
+      id,
+      imageUrl: stickerMap.get(id) ?? null,
+    })),
+  }));
+
+  const hasFiltersApplied = Boolean(groupId) || (onlyNearby && viewerHasState);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Trocas</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Encontre colecionadores e gerencie suas propostas.
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link
-          href="/players/collectors"
-          className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition-colors"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-600/20 text-green-400">
-            <Users className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">Colecionadores</p>
-            <p className="text-xs text-gray-400">
-              {collectorsCount ?? 0} pessoas na plataforma
-            </p>
-          </div>
-          <ArrowRight className="h-4 w-4 text-gray-500" />
-        </Link>
-
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Colecionadores</h1>
+          <p className="mt-1 text-sm text-gray-400">
+            Encontre pessoas para trocar figurinhas
+          </p>
+        </div>
         <Link
           href="/players/proposals"
-          className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-yellow-400/10 border border-yellow-400/20 px-3 py-2 text-sm font-medium text-yellow-400 hover:bg-yellow-400/20 transition-colors"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-400/20 text-yellow-400">
-            <MessageSquare className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">Propostas</p>
-            <p className="text-xs text-gray-400">
-              {proposalsCount ?? 0} trocas em andamento
-            </p>
-          </div>
-          <ArrowRight className="h-4 w-4 text-gray-500" />
+          <MessageSquare className="h-4 w-4" />
+          Propostas
         </Link>
       </div>
+
+      <CollectorsFilters groups={groups ?? []} viewerHasState={viewerHasState} />
+
+      {collectors.length === 0 ? (
+        <EmptyState hasFilters={hasFiltersApplied} />
+      ) : (
+        <CollectorsList
+          collectors={collectors}
+          totalCount={totalCount}
+          page={page}
+          pageSize={PAGE_SIZE}
+          searchParams={{ group: params.group, nearby: params.nearby }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ hasFilters }: { hasFilters: boolean }) {
+  if (hasFilters) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
+        <p className="text-sm text-gray-300">Nenhum colecionador com esses filtros.</p>
+        <a href="/players" className="mt-3 inline-block text-sm text-green-400 hover:underline">
+          Limpar filtros
+        </a>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
+      <p className="text-sm text-gray-300">
+        Ninguém ainda tem o que você precisa. Volte mais tarde.
+      </p>
+      <p className="mt-2 text-xs text-gray-500">
+        Dica: complete sua coleção em <a href="/collection" className="text-green-400 hover:underline">/collection</a> pra que o ranking encontre matches melhores.
+      </p>
     </div>
   );
 }

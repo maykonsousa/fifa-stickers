@@ -64,6 +64,8 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#0a3d2a" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+      </head>
+      <body className="font-body min-h-full flex flex-col">
         {process.env.NODE_ENV === "development" && (
           <Script
             src="//unpkg.com/react-grab/dist/index.global.js"
@@ -71,8 +73,6 @@ export default function RootLayout({
             strategy="beforeInteractive"
           />
         )}
-      </head>
-      <body className="font-body min-h-full flex flex-col">
         {children}
         <FloatingChrome />
         <Toaster position="bottom-right" theme="dark" richColors />

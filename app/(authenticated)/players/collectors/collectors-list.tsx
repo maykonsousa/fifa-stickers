@@ -23,7 +23,7 @@ export function CollectorsList({
     if (searchParams.group) params.set("group", searchParams.group);
     if (searchParams.nearby) params.set("nearby", searchParams.nearby);
     if (nextPage > 1) params.set("page", String(nextPage));
-    return `/colecionadores${params.toString() ? `?${params}` : ""}`;
+    return `/players${params.toString() ? `?${params}` : ""}`;
   };
 
   return (

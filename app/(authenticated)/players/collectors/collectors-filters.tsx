@@ -28,7 +28,7 @@ export function CollectorsFilters({ groups, viewerHasState }: CollectorsFiltersP
     }
     params.delete("page");
     startTransition(() => {
-      router.replace(`/colecionadores${params.toString() ? `?${params}` : ""}`, { scroll: false });
+      router.replace(`/players${params.toString() ? `?${params}` : ""}`, { scroll: false });
     });
   };
 

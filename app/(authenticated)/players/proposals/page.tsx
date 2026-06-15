@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ProposalsList } from "./proposals-list";
 import type { ProposalListRow, ProposalStatus, ProposalTab } from "./lib/types";
+import { ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +79,15 @@ export default async function ProposalsPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Propostas</h1>
+      <div className="flex items-center gap-4">
+        <Link
+          href="/players"
+          className="flex items-center justify-center h-10 w-10 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <h1 className="text-2xl font-bold text-white">Propostas</h1>
+      </div>
 
       <div className="flex border-b border-white/10">
         <Link

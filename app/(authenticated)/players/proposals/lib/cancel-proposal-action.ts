@@ -46,6 +46,7 @@ export async function cancelProposalAction(proposalId: string) {
     }
   }
 
-  revalidatePath(`/proposals/${proposalId}`);
-  revalidatePath("/proposals");
+  revalidatePath(`/players/proposals/${proposalId}`);
+  revalidatePath("/players/proposals");
+  revalidatePath("/players");
 }

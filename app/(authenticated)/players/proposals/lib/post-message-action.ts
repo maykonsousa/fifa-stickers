@@ -67,5 +67,5 @@ export async function postMessageAction(proposalId: string, body: string) {
     }
   }
 
-  revalidatePath(`/proposals/${proposalId}`);
+  revalidatePath(`/players/proposals/${proposalId}`);
 }

@@ -82,7 +82,7 @@ export default async function ProposalsPage({
 
       <div className="flex border-b border-white/10">
         <Link
-          href="/proposals?tab=received"
+          href="/players/proposals?tab=received"
           className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
             tab === "received" ? "text-white" : "text-gray-400 hover:text-gray-200"
           }`}
@@ -93,7 +93,7 @@ export default async function ProposalsPage({
           )}
         </Link>
         <Link
-          href="/proposals?tab=sent"
+          href="/players/proposals?tab=sent"
           className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
             tab === "sent" ? "text-white" : "text-gray-400 hover:text-gray-200"
           }`}

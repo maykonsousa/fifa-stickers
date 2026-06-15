@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { NavBar } from "@/components/nav-bar";
+import { BottomNav } from "@/components/bottom-nav";
+import { TopBar } from "@/components/top-bar";
 
 export default async function AuthenticatedLayout({
   children,
@@ -25,17 +26,13 @@ export default async function AuthenticatedLayout({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-green-950 flex flex-col">
-      <NavBar isAdmin={!!admin} proposalsBadge={proposalsBadge} />
-      <main className="mx-auto max-w-6xl px-4 py-6 flex-1 w-full">
-        {children}
+      <TopBar isAdmin={!!admin} proposalsBadge={proposalsBadge} />
+      <main className="flex-1 w-full pb-20 md:pb-16">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          {children}
+        </div>
       </main>
-      <footer className="border-t border-zinc-800 py-4 text-center text-xs text-zinc-500">
-        Produzido por{' '}
-        <a href="https://www.linkedin.com/in/maykonsousa/" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400 transition">Maykon Sousa</a>
-        {' '}e{' '}
-        <a href="https://www.linkedin.com/in/brunasousasantos/" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400 transition">Bruna Sousa</a>
-        {' '}· 🇧🇷
-      </footer>
+      <BottomNav proposalsBadge={proposalsBadge} />
     </div>
   );
 }

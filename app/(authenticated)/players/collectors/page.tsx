@@ -86,13 +86,6 @@ export default async function CollectorsPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Colecionadores</h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Pessoas com figurinhas que você precisa.
-        </p>
-      </div>
-
       <CollectorsFilters groups={groups ?? []} viewerHasState={viewerHasState} />
 
       {collectors.length === 0 ? (
@@ -115,7 +108,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
     return (
       <div className="rounded-lg border border-white/10 bg-white/5 p-8 text-center">
         <p className="text-sm text-gray-300">Nenhum colecionador com esses filtros.</p>
-        <a href="/colecionadores" className="mt-3 inline-block text-sm text-green-400 hover:underline">
+        <a href="/players/collectors" className="mt-3 inline-block text-sm text-green-400 hover:underline">
           Limpar filtros
         </a>
       </div>

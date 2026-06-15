@@ -21,7 +21,7 @@ const statusClasses: Record<ProposalStatus, string> = {
 export function ProposalCard({ row }: { row: ProposalListRow }) {
   return (
     <Link
-      href={`/proposals/${row.id}`}
+      href={`/players/proposals/${row.id}`}
       className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm p-4 hover:bg-white/10 transition-colors"
     >
       <div className="flex items-center gap-3 min-w-0">

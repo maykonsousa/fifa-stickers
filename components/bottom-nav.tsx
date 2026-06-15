@@ -68,12 +68,12 @@ export function BottomNav({ proposalsBadge = 0 }: BottomNavProps) {
 
           if (item.isCenter) {
             return (
-              <div key="scanner" className="absolute left-1/2 -translate-x-1/2 -top-3 flex items-center justify-center">
+              <div key="scanner" className="absolute left-1/2 -translate-x-1/2 -top-4 px-2 flex items-center justify-center">
                 <Link
                   href={item.href}
                   className={cn(
                     "flex items-center justify-center",
-                    "w-10 h-10 rounded-full",
+                    "w-12 h-12 rounded-full",
                     active
                       ? "bg-green-600 text-white"
                       : "bg-gray-900 text-white",
@@ -83,10 +83,10 @@ export function BottomNav({ proposalsBadge = 0 }: BottomNavProps) {
                     "active:scale-95 transition-all duration-200"
                   )}
                   style={{
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
                   }}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={2.5} />
+                  <Icon className="h-6 w-6" strokeWidth={2.5} />
                 </Link>
               </div>
             );

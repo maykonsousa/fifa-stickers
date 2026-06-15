@@ -495,6 +495,34 @@ export function ScannerView({ userId }: { userId: string }) {
             }`}
             style={{ width: `${MIRA.w * 100}%`, height: `${MIRA.h * 100}%` }}
           />
+          {/* Silhueta da figurinha (proporção 2:3, igual à carta real) centralizada
+              no vídeo. Dentro dela, o badge amarelo tracejado marca onde o
+              CODE recorta o OCR — pra o usuário saber onde posicionar o badge
+              do código pra cair no caminho rápido (em vez do fallback da mira
+              inteira, que custa 2 chamadas ao Vision). */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ height: `${MIRA.h * 100}%` }}
+          >
+            <div
+              className="relative h-full rounded-md border-2 border-dashed border-green-300/70"
+              style={{ aspectRatio: "2 / 3" }}
+            >
+              {/* Badge do código: canto superior direito, ~45% largura × ~25%
+                  altura do card, com ~1rem de inset. Espelha CODE de
+                  code-crop-region.ts. */}
+              <div
+                className="absolute rounded border-2 border-dashed border-yellow-300/90 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
+                style={{
+                  top: "1rem",
+                  right: "1rem",
+                  width: "45%",
+                  height: "25%",
+                }}
+                aria-hidden="true"
+              />
+            </div>
+          </div>
           {debug && (
             <div className="pointer-events-none absolute left-2 top-2 max-w-[70%] space-y-1 rounded-lg bg-black/80 p-2 text-[10px] leading-tight text-white">
               <div>

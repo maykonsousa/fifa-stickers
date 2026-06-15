@@ -6,10 +6,12 @@ import { callVisionOcr } from "@/lib/scanner/vision-ocr";
 // de gastar cota. Recebe { image: base64 (sem prefixo data:) }, devolve { rawText }.
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  // Validação local do JWT via JWKS cacheado (ES256, confirmado em /.well-known/jwks.json).
+  // Equivalente a getUser() pra gate de autenticação, mas SEM ida ao servidor de auth
+  // em uso normal — economiza um round-trip inteiro por scan, que é o que pesa em
+  // internet ruim. O user.id sai de claims.sub.
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  if (claimsError || !claimsData?.claims?.sub) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Settings, LogOut, Shield, User, MessageCircle, X } from "lucide-react";
+import { Settings, LogOut, Shield, User, MessageCircle, X, LayoutDashboard, Grid3X3, Repeat2, UserSearch, MessageSquare } from "lucide-react";
 import { MarkFU } from "./brand/Logo";
 import { ContactForm } from "@/components/contact-form";
 import {
@@ -14,26 +14,45 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface TopBarProps {
   isAdmin?: boolean;
   proposalsBadge?: number;
 }
 
+const navLinks = [
+  { href: "/dashboard", label: "Álbum", icon: LayoutDashboard },
+  { href: "/collection", label: "Coleção", icon: Grid3X3 },
+  { href: "/players", label: "Colecionadores", icon: UserSearch },
+  { href: "/trades", label: "Trocas", icon: Repeat2 },
+  { href: "/players/proposals", label: "Propostas", icon: MessageSquare },
+];
+
 export function TopBar({ isAdmin = false, proposalsBadge = 0 }: TopBarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [username, setUsername] = useState<string>("");
+  const [profileHref, setProfileHref] = useState<string>("/settings");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setAvatarUrl(user.user_metadata?.avatar_url ?? null);
-        setUsername(user.user_metadata?.user_name ?? user.email?.split("@")[0] ?? "Usuário");
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+        setUsername(profile?.username ?? "Usuário");
+        if (profile?.username) {
+          setProfileHref(`/p/${profile.username}`);
+        }
       }
     });
   }, []);
@@ -69,11 +88,39 @@ export function TopBar({ isAdmin = false, proposalsBadge = 0 }: TopBarProps) {
             </span>
           </Link>
 
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-green-600/20 text-green-400"
+                      : "text-gray-400 hover:bg-white/5 hover:text-white"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {link.label}
+                  {link.href === "/players/proposals" && proposalsBadge > 0 && (
+                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1.5 text-[10px] font-bold text-white">
+                      {proposalsBadge > 9 ? "9+" : proposalsBadge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
           {/* Right side: profile menu */}
           <div className="relative flex items-center gap-3" ref={menuRef}>
             {/* Badge indicator */}
             {proposalsBadge > 0 && (
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/20">
+              <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
                 <span className="text-xs text-yellow-400 font-medium">
                   {proposalsBadge} {proposalsBadge === 1 ? "proposta" : "propostas"}
@@ -82,7 +129,7 @@ export function TopBar({ isAdmin = false, proposalsBadge = 0 }: TopBarProps) {
             )}
 
             {/* User name - desktop */}
-            <span className="hidden md:block text-sm text-gray-400">
+            <span className="hidden lg:block text-sm text-gray-400">
               {username}
             </span>
 
@@ -117,7 +164,7 @@ export function TopBar({ isAdmin = false, proposalsBadge = 0 }: TopBarProps) {
                 <div className="px-4 py-3 border-b border-white/10">
                   <p className="text-sm font-medium text-white truncate">{username}</p>
                   <Link
-                    href={`/p/${username}`}
+                    href={profileHref}
                     onClick={() => setMenuOpen(false)}
                     className="text-xs text-gray-400 hover:text-green-400 transition-colors flex items-center gap-1 mt-0.5"
                   >

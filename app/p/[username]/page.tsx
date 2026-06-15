@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { PublicHeader } from "./public-header";
-import { NavBar } from "@/components/nav-bar";
+import { TopBar } from "@/components/top-bar";
+import { BottomNav } from "@/components/bottom-nav";
 import { ProfileHero } from "./profile-hero";
 import { ProfileStickers } from "./profile-stickers";
 import type { Metadata } from "next";
@@ -92,9 +93,9 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       : Number(stats.trade_duplicates_count);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-green-950 text-white">
-      {user ? <NavBar /> : <PublicHeader />}
-      <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-green-950 text-white flex flex-col">
+      {user ? <TopBar proposalsBadge={0} /> : <PublicHeader />}
+      <div className="flex-1 mx-auto max-w-4xl px-4 py-8">
         <ProfileHero
           displayName={profile.display_name}
           username={profile.username}
@@ -125,6 +126,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           tradeDuplicatesCount={tradeDuplicatesCount}
         />
       </div>
+      {user && <BottomNav />}
     </div>
   );
 }

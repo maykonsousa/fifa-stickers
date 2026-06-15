@@ -19,7 +19,7 @@ export async function GET(request: Request) {
           .single();
 
         if (!profile?.city || !profile?.state) {
-          return NextResponse.redirect(`${origin}/profile`);
+          return NextResponse.redirect(`${origin}/settings`);
         }
       }
       return NextResponse.redirect(`${origin}${next}`);

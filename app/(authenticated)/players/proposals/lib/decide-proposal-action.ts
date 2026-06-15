@@ -50,6 +50,7 @@ export async function decideProposalAction(proposalId: string, accept: boolean) 
     }
   }
 
-  revalidatePath(`/proposals/${proposalId}`);
-  revalidatePath("/proposals");
+  revalidatePath(`/players/proposals/${proposalId}`);
+  revalidatePath("/players/proposals");
+  revalidatePath("/players");
 }

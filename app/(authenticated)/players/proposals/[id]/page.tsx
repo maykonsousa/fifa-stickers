@@ -79,7 +79,7 @@ export default async function ProposalDetailPage({
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <Link href="/proposals" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
+      <Link href="/players/proposals" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 

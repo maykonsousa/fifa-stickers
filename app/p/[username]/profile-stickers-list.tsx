@@ -14,8 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { createProposalAction } from "@/app/(authenticated)/proposals/lib/create-proposal-action";
-import type { ProposalItem } from "@/app/(authenticated)/proposals/lib/types";
+import { createProposalAction } from "@/app/(authenticated)/players/proposals/lib/create-proposal-action";
+import type { ProposalItem } from "@/app/(authenticated)/players/proposals/lib/types";
 import { StickerCard } from "./sticker-card";
 
 type ViewerFilter = "all" | "owned" | "duplicates";
@@ -225,7 +225,7 @@ export function ProfileStickersList({
     startTransition(async () => {
       try {
         const id = await createProposalAction({ ownerUserId: userId, items });
-        router.push(`/proposals/${id}`);
+        router.push(`/players/proposals/${id}`);
       } catch (e) {
         setSubmitError(e instanceof Error ? e.message : "Erro ao enviar proposta");
       }

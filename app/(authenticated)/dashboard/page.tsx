@@ -56,7 +56,7 @@ export default async function DashboardPage() {
     <>
       {pendingCount > 0 && (
         <Link
-          href="/proposals?tab=received"
+          href="/players/proposals?tab=received"
           className="mb-6 flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/20 text-amber-400 flex-shrink-0">

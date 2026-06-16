@@ -95,7 +95,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-green-950 text-white flex flex-col">
       {user ? <TopBar proposalsBadge={0} /> : <PublicHeader />}
-      <div className="flex-1 mx-auto max-w-4xl px-4 py-8">
+      <div className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 min-w-0">
         <ProfileHero
           displayName={profile.display_name}
           username={profile.username}

@@ -31,9 +31,12 @@ export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActio
   }
 
   if (mode === "troca") {
-    return ownedCount === 0
-      ? { color: "green", action: "add", message: "Nova — pega!", actionLabel: "Pegar" }
-      : { color: "red", action: "none", message: "Você já tem — pula", actionLabel: "Próxima" };
+    if (ownedCount === 0)
+      return { color: "green", action: "add", message: "Nova — pega!", actionLabel: "Pegar" };
+    // Mostra a quantidade para o usuário decidir se quer pegar para trocas futuras.
+    // Se quiser, pode lançar depois pela aba de lançamentos.
+    const qty = ownedCount === 1 ? "1 figurinha" : `${ownedCount} figurinhas`;
+    return { color: "yellow", action: "none", message: `Você tem ${qty}`, actionLabel: "Próxima" };
   }
 
   if (mode === "baixa") {

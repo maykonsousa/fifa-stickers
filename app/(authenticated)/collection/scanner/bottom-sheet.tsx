@@ -10,7 +10,7 @@ export function BottomSheet({ children }: { children: ReactNode }) {
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60" aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md p-3 pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
         {children}
       </div>
     </>

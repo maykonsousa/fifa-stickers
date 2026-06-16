@@ -357,10 +357,11 @@ function AlbumPageView({
   return (
     <div className="snap-center snap-always shrink-0 w-full p-4">
       <div
-        className="grid gap-2 w-full"
+        className="grid gap-2 w-full mx-auto"
         style={{
           gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${GRID_ROWS}, auto)`,
+          maxWidth: "min(64rem, calc(100vw - 2rem))", // max-w-4xl ou largura da viewport
         }}
       >
         {page.stickers.map((s) => {

@@ -54,7 +54,7 @@ export function BottomNav({ proposalsBadge = 0 }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 overflow-visible md:hidden",
+        "fixed bottom-0 left-0 right-0 z-[60] overflow-visible md:hidden",
         "bg-gray-900/95 backdrop-blur-xl",
         "border-t border-white/10",
         "safe-area-bottom"

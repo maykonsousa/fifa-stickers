@@ -355,12 +355,13 @@ function AlbumPageView({
   onStickerClick?: (sticker: AlbumSticker) => void;
 }) {
   return (
-    <div className="snap-center snap-always shrink-0 w-full p-4">
+    <div className="snap-center snap-always shrink-0 w-screen max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-2rem)] p-4">
       <div
-        className="grid gap-2 w-full"
+        className="grid gap-2 w-full mx-auto"
         style={{
           gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${GRID_ROWS}, auto)`,
+          maxWidth: "64rem", // max-w-4xl
         }}
       >
         {page.stickers.map((s) => {

@@ -12,7 +12,8 @@ RETURNS TABLE (
   sticker_id INT,
   sticker_code TEXT,
   sticker_number INT,
-  sticker_title TEXT
+  sticker_title TEXT,
+  count INT
 )
 LANGUAGE sql
 SECURITY DEFINER
@@ -31,7 +32,8 @@ AS $$
     s.id AS sticker_id,
     s.code AS sticker_code,
     s.number AS sticker_number,
-    s.title AS sticker_title
+    s.title AS sticker_title,
+    COALESCE(c.cnt, 0) AS count
   FROM public.stickers s
   JOIN public.sticker_groups g ON g.id = s.group_id
   LEFT JOIN counts c ON c.sticker_id = s.id

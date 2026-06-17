@@ -5,6 +5,7 @@ export type ShareKind = "missing" | "duplicates";
 export interface ShareStickerItem {
   code: string;
   title: string | null;
+  count: number;
 }
 
 export interface ShareStickerGroup {
@@ -43,7 +44,13 @@ export function formatShareList(input: FormatShareListInput): string {
     if (group.stickers.length === 0) continue;
     const emoji = getGroupEmoji(group.code);
     lines.push(`*${emoji} ${group.name}* (${group.code})`);
-    lines.push(group.stickers.map((sticker) => sticker.code).join(", "));
+    lines.push(
+      group.stickers
+        .map((sticker) =>
+          sticker.count >= 3 ? `${sticker.code} ×${sticker.count}` : sticker.code
+        )
+        .join(", ")
+    );
     lines.push("");
   }
 

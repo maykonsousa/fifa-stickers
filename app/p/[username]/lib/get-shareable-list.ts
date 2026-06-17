@@ -39,6 +39,7 @@ export async function getShareableStickerList(params: {
     sticker_code: string;
     sticker_number: number;
     sticker_title: string | null;
+    count: number;
   };
 
   const groupsMap = new Map<number, ShareStickerGroup>();
@@ -48,7 +49,11 @@ export async function getShareableStickerList(params: {
       bucket = { name: row.group_name, code: row.group_code, stickers: [] };
       groupsMap.set(row.group_id, bucket);
     }
-    bucket.stickers.push({ code: row.sticker_code, title: row.sticker_title });
+    bucket.stickers.push({
+      code: row.sticker_code,
+      title: row.sticker_title,
+      count: row.count,
+    });
   }
 
   const groups = Array.from(groupsMap.values());

@@ -47,7 +47,7 @@ export function formatShareList(input: FormatShareListInput): string {
     lines.push(
       group.stickers
         .map((sticker) =>
-          sticker.count >= 3 ? `${sticker.code} ×${sticker.count}` : sticker.code
+          sticker.count >= 3 ? `${sticker.code} (×${sticker.count - 1})` : sticker.code
         )
         .join(", ")
     );

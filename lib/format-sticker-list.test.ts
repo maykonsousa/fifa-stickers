@@ -33,7 +33,7 @@ describe("formatShareList — duplicates", () => {
       ],
       totalCount: 1,
     });
-    expect(text).toContain("MEX1 ×3");
+    expect(text).toContain("MEX1 (×2)");
   });
 
   it("omite o sufixo quando count é 2", () => {
@@ -54,7 +54,7 @@ describe("formatShareList — duplicates", () => {
 
   it("mistura stickers com e sem sufixo no mesmo grupo", () => {
     const text = formatShareList(baseInput);
-    expect(text).toContain("MEX1 ×3");
+    expect(text).toContain("MEX1 (×2)");
     expect(text).toContain("MEX2");
     // garante que MEX2 não ganhou sufixo
     expect(text).not.toMatch(/MEX2 ×/);
@@ -72,7 +72,7 @@ describe("formatShareList — duplicates", () => {
       ],
       totalCount: 1,
     });
-    expect(text).toContain("BRA7 ×10");
+    expect(text).toContain("BRA7 (×9)");
   });
 
   it("header usa totalCount (stickers únicos) sem multiplicar por count", () => {

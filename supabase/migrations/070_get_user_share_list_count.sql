@@ -1,10 +1,14 @@
--- 062_get_user_share_list.sql
--- Retorna a lista de figurinhas pra compartilhar (faltam ou repetidas) já
--- filtrada e ordenada por grupo. Substitui as duas queries do client em
--- get-shareable-list.ts que estavam sujeitas ao truncate de 1000 linhas do
--- PostgREST quando o álbum cresceu pra ~985 figurinhas.
+-- 070_get_user_share_list_count.sql
+-- Adiciona a coluna `count` (total de cópias do usuário) ao retorno de
+-- get_user_share_list pra alimentar a regra de sufixo `(×(count-1))` na
+-- lista de repetidas compartilhada.
+--
+-- DROP + CREATE porque `CREATE OR REPLACE FUNCTION` não permite mudar o
+-- RETURNS TABLE (Postgres exige DROP antes pra mudar shape do row).
 
-CREATE OR REPLACE FUNCTION get_user_share_list(p_user_id UUID, p_kind TEXT)
+DROP FUNCTION IF EXISTS get_user_share_list(UUID, TEXT);
+
+CREATE FUNCTION get_user_share_list(p_user_id UUID, p_kind TEXT)
 RETURNS TABLE (
   group_id INT,
   group_name TEXT,
@@ -12,7 +16,8 @@ RETURNS TABLE (
   sticker_id INT,
   sticker_code TEXT,
   sticker_number INT,
-  sticker_title TEXT
+  sticker_title TEXT,
+  count INT
 )
 LANGUAGE sql
 SECURITY DEFINER
@@ -31,7 +36,8 @@ AS $$
     s.id AS sticker_id,
     s.code AS sticker_code,
     s.number AS sticker_number,
-    s.title AS sticker_title
+    s.title AS sticker_title,
+    COALESCE(c.cnt, 0) AS count
   FROM public.stickers s
   JOIN public.sticker_groups g ON g.id = s.group_id
   LEFT JOIN counts c ON c.sticker_id = s.id

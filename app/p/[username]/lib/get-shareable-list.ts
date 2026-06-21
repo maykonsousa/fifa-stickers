@@ -51,6 +51,7 @@ export async function getShareableStickerList(params: {
     }
     bucket.stickers.push({
       code: row.sticker_code,
+      number: row.sticker_number,
       title: row.sticker_title,
       count: row.count,
     });

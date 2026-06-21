@@ -4,6 +4,7 @@ export type ShareKind = "missing" | "duplicates";
 
 export interface ShareStickerItem {
   code: string;
+  number: number;
   title: string | null;
   count: number;
 }
@@ -47,7 +48,7 @@ export function formatShareList(input: FormatShareListInput): string {
     lines.push(
       group.stickers
         .map((sticker) =>
-          sticker.count >= 3 ? `${sticker.code} (×${sticker.count - 1})` : sticker.code
+          sticker.count >= 3 ? `${sticker.number} (×${sticker.count - 1})` : String(sticker.number)
         )
         .join(", ")
     );

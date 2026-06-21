@@ -12,8 +12,8 @@ const baseInput: FormatShareListInput = {
       name: "México",
       code: "MEX",
       stickers: [
-        { code: "MEX1", title: null, count: 3 },
-        { code: "MEX2", title: null, count: 2 },
+        { code: "MEX1", number: 1, title: null, count: 3 },
+        { code: "MEX2", number: 2, title: null, count: 2 },
       ],
     },
   ],
@@ -21,19 +21,19 @@ const baseInput: FormatShareListInput = {
 };
 
 describe("formatShareList — duplicates", () => {
-  it("mostra ×N ao lado do código quando count >= 3", () => {
+  it("mostra ×N ao lado do número quando count >= 3", () => {
     const text = formatShareList({
       ...baseInput,
       groups: [
         {
           name: "México",
           code: "MEX",
-          stickers: [{ code: "MEX1", title: null, count: 3 }],
+          stickers: [{ code: "MEX1", number: 1, title: null, count: 3 }],
         },
       ],
       totalCount: 1,
     });
-    expect(text).toContain("MEX1 (×2)");
+    expect(text).toContain("1 (×2)");
   });
 
   it("omite o sufixo quando count é 2", () => {
@@ -43,21 +43,21 @@ describe("formatShareList — duplicates", () => {
         {
           name: "México",
           code: "MEX",
-          stickers: [{ code: "MEX2", title: null, count: 2 }],
+          stickers: [{ code: "MEX2", number: 2, title: null, count: 2 }],
         },
       ],
       totalCount: 1,
     });
-    expect(text).toContain("MEX2");
-    expect(text).not.toContain("MEX2 ×");
+    expect(text).toContain("2");
+    expect(text).not.toContain("2 (×");
   });
 
   it("mistura stickers com e sem sufixo no mesmo grupo", () => {
     const text = formatShareList(baseInput);
-    expect(text).toContain("MEX1 (×2)");
-    expect(text).toContain("MEX2");
-    // garante que MEX2 não ganhou sufixo
-    expect(text).not.toMatch(/MEX2 ×/);
+    expect(text).toContain("1 (×2)");
+    expect(text).toContain("2");
+    // garante que 2 não ganhou sufixo
+    expect(text).not.toMatch(/2 \(×/);
   });
 
   it("suporta count alto (10)", () => {
@@ -67,12 +67,12 @@ describe("formatShareList — duplicates", () => {
         {
           name: "Brasil",
           code: "BRA",
-          stickers: [{ code: "BRA7", title: null, count: 10 }],
+          stickers: [{ code: "BRA7", number: 7, title: null, count: 10 }],
         },
       ],
       totalCount: 1,
     });
-    expect(text).toContain("BRA7 (×9)");
+    expect(text).toContain("7 (×9)");
   });
 
   it("header usa totalCount (stickers únicos) sem multiplicar por count", () => {
@@ -83,7 +83,7 @@ describe("formatShareList — duplicates", () => {
         {
           name: "México",
           code: "MEX",
-          stickers: [{ code: "MEX1", title: null, count: 5 }],
+          stickers: [{ code: "MEX1", number: 1, title: null, count: 5 }],
         },
       ],
     });
@@ -100,13 +100,13 @@ describe("formatShareList — missing", () => {
         {
           name: "México",
           code: "MEX",
-          stickers: [{ code: "MEX1", title: null, count: 0 }],
+          stickers: [{ code: "MEX1", number: 1, title: null, count: 0 }],
         },
       ],
       totalCount: 1,
     });
-    expect(text).toContain("MEX1");
-    expect(text).not.toMatch(/MEX1 ×/);
+    expect(text).toContain("1");
+    expect(text).not.toMatch(/1 \(×/);
     expect(text).toContain("Faltam (1):");
   });
 });

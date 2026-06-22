@@ -1,4 +1,5 @@
 import { getGroupEmoji } from "./sticker-group-emojis";
+import { getAlbumOrderIndex } from "./album-team-order";
 
 export type ShareKind = "missing" | "duplicates";
 
@@ -27,8 +28,12 @@ export interface FormatShareListInput {
 export function formatShareList(input: FormatShareListInput): string {
   const lines: string[] = [];
 
-  // Sort groups alphabetically by code
-  const sortedGroups = [...input.groups].sort((a, b) => a.code.localeCompare(b.code));
+  // Sort groups: FWC first, then by album order
+  const sortedGroups = [...input.groups].sort((a, b) => {
+    if (a.code === "FWC") return -1;
+    if (b.code === "FWC") return 1;
+    return getAlbumOrderIndex(a.code) - getAlbumOrderIndex(b.code);
+  });
 
   for (const group of sortedGroups) {
     if (group.stickers.length === 0) continue;

@@ -24,40 +24,37 @@ export interface FormatShareListInput {
   profileUrl: string;
 }
 
-const SEPARATOR = "─────────────";
-
-const HEADER_LABEL: Record<ShareKind, string> = {
-  missing: "📋 Faltam",
-  duplicates: "📦 Repetidas",
-};
-
 export function formatShareList(input: FormatShareListInput): string {
   const lines: string[] = [];
 
-  lines.push(`🏆 *faltaUma* — álbum do @${input.username}`);
-  lines.push(`👤 ${input.displayName}`);
-  lines.push("");
-  lines.push(`${HEADER_LABEL[input.kind]} (${input.totalCount}):`);
-  lines.push(SEPARATOR);
-  lines.push("");
+  // Sort groups alphabetically by code
+  const sortedGroups = [...input.groups].sort((a, b) => a.code.localeCompare(b.code));
 
-  for (const group of input.groups) {
+  for (const group of sortedGroups) {
     if (group.stickers.length === 0) continue;
     const emoji = getGroupEmoji(group.code);
-    lines.push(`*${emoji} ${group.name}* (${group.code})`);
-    lines.push(
-      group.stickers
-        .map((sticker) =>
-          sticker.count >= 3 ? `${sticker.number} (×${sticker.count - 1})` : String(sticker.number)
-        )
-        .join(", ")
-    );
-    lines.push("");
+    // Sort stickers by number numerically
+    const sortedStickers = [...group.stickers].sort((a, b) => a.number - b.number);
+    const stickerNumbers = sortedStickers
+      .map((sticker) => {
+        const num = String(sticker.number);
+        if (input.kind === "duplicates" && sticker.count >= 3) {
+          return `${num}×${sticker.count - 1}`;
+        }
+        return num;
+      })
+      .join(", ");
+    lines.push(`${group.code} ${emoji}: ${stickerNumbers}`);
   }
 
-  lines.push(SEPARATOR);
-  lines.push("💬 Bora trocar? 🤝");
-  lines.push(`🔗 ${input.profileUrl}`);
+  if (lines.length === 0) {
+    const emptyMessage = input.kind === "duplicates" ? "Nenhuma repetida" : "Nenhuma faltante";
+    lines.push(emptyMessage);
+  }
+
+  lines.push("");
+  lines.push("Falta alguma? Me mande sua lista! 🔄");
+  lines.push(input.profileUrl);
 
   return lines.join("\n");
 }

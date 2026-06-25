@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Star, Check, Pencil, Trash2, Plus } from "lucide-react";
@@ -25,15 +25,20 @@ export function AlbumsManager({
   const [editName, setEditName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const names = albums.map((a) => a.name);
 
   async function run(fn: () => Promise<unknown>) {
     setBusy(true);
     setError(null);
-    await fn();
-    setBusy(false);
-    router.refresh();
+    try {
+      await fn();
+      router.refresh();
+    } catch {
+      setError("Não foi possível concluir a ação. Tente novamente.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleCreate() {

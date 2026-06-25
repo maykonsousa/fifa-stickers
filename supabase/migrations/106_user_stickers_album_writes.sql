@@ -34,6 +34,9 @@ DECLARE
   v_album_id INT;
 BEGIN
   SELECT public_album_id INTO v_album_id FROM profiles WHERE id = p_user_id;
+  IF v_album_id IS NULL THEN
+    RAISE EXCEPTION 'user % has no public album', p_user_id;
+  END IF;
   DELETE FROM user_stickers
   WHERE id IN (
     SELECT id FROM user_stickers

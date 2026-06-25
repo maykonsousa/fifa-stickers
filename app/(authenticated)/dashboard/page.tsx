@@ -25,8 +25,11 @@ export default async function DashboardPage() {
     .select("id, name, code, type, sticker_count")
     .order("id");
 
+  const { data: activeProfile } = await supabase
+    .from("profiles").select("active_album_id").eq("id", user!.id).single();
+  const activeAlbumId = activeProfile?.active_album_id;
   const { data: groupCounts } = await supabase
-    .rpc("get_user_group_counts", { p_user_id: user!.id });
+    .rpc("get_user_group_counts", { p_album_id: activeAlbumId });
 
   const ownedByGroup = new Map<number, number>();
   let totalEntries = 0;

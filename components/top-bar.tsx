@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Settings, LogOut, Shield, User, MessageCircle, X, LayoutDashboard, Grid3X3, Repeat2, UserSearch, MessageSquare } from "lucide-react";
 import { MarkFU } from "./brand/Logo";
+import { AlbumSelector } from "@/components/album-selector";
 import { ContactForm } from "@/components/contact-form";
 import {
   Dialog,
@@ -87,6 +88,10 @@ export function TopBar({ isAdmin = false, proposalsBadge = 0 }: TopBarProps) {
               falta<span className="text-yellow-400">Uma</span>
             </span>
           </Link>
+
+          <div className="ml-2 mr-auto">
+            <AlbumSelector />
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">

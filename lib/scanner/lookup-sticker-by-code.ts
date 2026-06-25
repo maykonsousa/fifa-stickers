@@ -8,17 +8,17 @@ export interface ScannedSticker {
   owned_count: number;
 }
 
-// Resolve uma figurinha pelo código já com a contagem de cópias do usuário, via a
-// RPC lookup_sticker_by_code (uma query só — ver migration 069). A RPC retorna uma
+// Resolve uma figurinha pelo código já com a contagem de cópias no álbum, via a
+// RPC lookup_sticker_by_code (uma query só — ver migration 108). A RPC retorna uma
 // tabela de 0 ou 1 linha; pegamos a primeira.
 export async function lookupStickerByCode(
   supabase: SupabaseClient,
   code: string,
-  userId: string,
+  albumId: number,
 ): Promise<ScannedSticker | null> {
   const { data, error } = await supabase.rpc("lookup_sticker_by_code", {
     p_code: code,
-    p_user_id: userId,
+    p_album_id: albumId,
   });
 
   if (error) return null;

@@ -60,7 +60,7 @@ const THRESHOLDS: FrameThresholds = {
   sharpness: 40,
 };
 
-export function ScannerView({ userId }: { userId: string }) {
+export function ScannerView({ userId, albumId }: { userId: string; albumId: number }) {
   const router = useRouter();
   const [mode, setMode] = useState<CaptureMode | null>(null);
   const [validCodes, setValidCodes] = useState<string[]>([]);
@@ -171,7 +171,7 @@ export function ScannerView({ userId }: { userId: string }) {
       if (action === "add") {
         const { data } = await supabase
           .from("user_stickers")
-          .insert({ user_id: userId, sticker_id: sticker.id })
+          .insert({ user_id: userId, album_id: albumId, sticker_id: sticker.id })
           .select("id")
           .single();
         if (data?.id !== undefined) setSessionCount((n) => n + 1);
@@ -179,7 +179,7 @@ export function ScannerView({ userId }: { userId: string }) {
         const { data: rows } = await supabase
           .from("user_stickers")
           .select("id")
-          .eq("user_id", userId)
+          .eq("album_id", albumId)
           .eq("sticker_id", sticker.id)
           .limit(1);
         const rowId = rows?.[0]?.id as number | undefined;
@@ -191,7 +191,7 @@ export function ScannerView({ userId }: { userId: string }) {
       // action === "none": nada a mutar.
       showFlash(color, `${sticker.code} — ${message}`);
     },
-    [userId, showFlash],
+    [userId, albumId, showFlash],
   );
 
   const handleConfirm = useCallback(async () => {
@@ -222,7 +222,7 @@ export function ScannerView({ userId }: { userId: string }) {
     if (!code) return;
     setManualBusy(true);
     try {
-      const sticker = await lookupStickerByCode(createClient(), code, userId);
+      const sticker = await lookupStickerByCode(createClient(), code, albumId);
       if (!sticker) {
         setManualError("Código não encontrado");
         return;
@@ -235,7 +235,7 @@ export function ScannerView({ userId }: { userId: string }) {
     } finally {
       setManualBusy(false);
     }
-  }, [manualBusy, manualCode, userId]);
+  }, [manualBusy, manualCode, albumId]);
 
   // Lê um recorte (base64) via OCR e garimpa o código. Devolve o texto cru (pra
   // debug) e o snap (código casado) ou null.
@@ -250,14 +250,14 @@ export function ScannerView({ userId }: { userId: string }) {
   // Resolve a figurinha a partir do código casado e dispara a ação do modo.
   const resolveSnap = useCallback(
     async (code: string, activeMode: ScanMode) => {
-      const sticker = await lookupStickerByCode(createClient(), code, userId);
+      const sticker = await lookupStickerByCode(createClient(), code, albumId);
       if (!sticker) {
         showFlash("red", "Código não encontrado");
         return;
       }
       dispatch({ type: "resolved", sticker, mode: activeMode });
     },
-    [userId, showFlash],
+    [albumId, showFlash],
   );
 
   // Tail do modo foto: uma imagem só (sem fallback de recorte). `activeMode` é

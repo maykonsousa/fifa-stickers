@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Settings, LogOut, Shield, User, MessageCircle, X, LayoutDashboard, Grid3X3, Repeat2, UserSearch, MessageSquare } from "lucide-react";
+import { Settings, LogOut, Shield, User, MessageCircle, X, LayoutDashboard, Grid3X3, Repeat2, UserSearch, MessageSquare, BookOpen } from "lucide-react";
 import { MarkFU } from "./brand/Logo";
 import { AlbumSelector } from "@/components/album-selector";
 import { ContactForm } from "@/components/contact-form";
@@ -196,6 +196,14 @@ export function TopBar({ isAdmin = false, proposalsBadge = 0 }: TopBarProps) {
                       Painel Admin
                     </Link>
                   )}
+                  <Link
+                    href="/albums"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Meus álbuns
+                  </Link>
                   <Link
                     href="/settings"
                     onClick={() => setMenuOpen(false)}

@@ -108,13 +108,14 @@ Regra geral: **álbum ativo** dirige collection/dashboard/scanner; **álbum púb
 
 ## Áreas de impacto a confirmar no planejamento
 
-- **Trocas (trades / `trade_items`)**: as trocas operam sobre `user_stickers`, que agora têm `album_id`. Default proposto: as trocas usam o escopo do **álbum público** (as repetidas mostradas no perfil público são as do `public_album_id`). Validar se `trade_items`/RPCs de troca precisam de `album_id` explícito ou se basta derivar do álbum público do dono.
+- **Trocas (trades / `trade_items`)**: as trocas operam sobre `user_stickers`, que agora têm `album_id`. Default confirmado: as trocas usam o escopo do **álbum público** (as repetidas mostradas no perfil público são as do `public_album_id`). Isso casa com o fluxo pretendido: após a Etapa 2, as repetidas são transferidas para o álbum novo e o anterior fica completo (sem repetidas), então as trocas acontecem naturalmente no álbum que concentra as repetidas — o público. Validar se `trade_items`/RPCs de troca precisam de `album_id` explícito ou se basta derivar do álbum público do dono.
 - **Compartilhamento de repetidas** (feature recente): a lista compartilhada passa a refletir o álbum público.
 
 ## Fora de escopo (Etapa 2)
 
 - Função de **mover figurinhas repetidas** de um álbum para outro.
 - Suporte real a **múltiplos templates/modalidades** (criação de catálogos distintos). Apenas o gancho (`albums.template`) é entregue agora.
+- Permitir que o **visitante escolha qual álbum do colega** visualizar no perfil público (hoje mostra só o `public_album_id`).
 
 ## Estratégia de testes
 

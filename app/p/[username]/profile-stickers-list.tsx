@@ -42,7 +42,8 @@ const PAGE_SIZE = 20;
 
 export function ProfileStickersList({
   userId,
-  viewerId,
+  ownerAlbumId,
+  viewerAlbumId,
   tradeUIEnabled,
   tradeFilterActive,
   isLoggedIn,
@@ -55,7 +56,8 @@ export function ProfileStickersList({
   keyword,
 }: {
   userId: string;
-  viewerId: string | null;
+  ownerAlbumId: number;
+  viewerAlbumId: number | null;
   tradeUIEnabled: boolean;
   tradeFilterActive: boolean;
   isLoggedIn: boolean;
@@ -111,13 +113,13 @@ export function ProfileStickersList({
     const supabase = createClient();
     supabase
       .rpc("get_public_stickers", {
-        p_user_id: userId,
+        p_album_id: ownerAlbumId,
         p_tab: tab,
         p_group_id: groupId,
         p_keyword: keyword || null,
         p_page: 1,
         p_page_size: PAGE_SIZE,
-        p_viewer_id: viewerId,
+        p_viewer_album_id: viewerAlbumId,
         p_viewer_filter: effectiveViewerFilter,
       })
       .then(({ data }) => {
@@ -127,7 +129,7 @@ export function ProfileStickersList({
         setTotalCount(rows[0]?.total_count ?? 0);
         setLoading(false);
       });
-  }, [userId, tab, groupId, keyword, viewerId, effectiveViewerFilter]);
+  }, [ownerAlbumId, tab, groupId, keyword, viewerAlbumId, effectiveViewerFilter]);
 
   // Infinite scroll.
   useEffect(() => {
@@ -146,13 +148,13 @@ export function ProfileStickersList({
         const supabase = createClient();
         supabase
           .rpc("get_public_stickers", {
-            p_user_id: userId,
+            p_album_id: ownerAlbumId,
             p_tab: tab,
             p_group_id: groupId,
             p_keyword: keyword || null,
             p_page: nextPage,
             p_page_size: PAGE_SIZE,
-            p_viewer_id: viewerId,
+            p_viewer_album_id: viewerAlbumId,
             p_viewer_filter: effectiveViewerFilter,
           })
           .then(({ data }) => {
@@ -168,7 +170,7 @@ export function ProfileStickersList({
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [loading, hasMore, userId, tab, groupId, keyword, viewerId, effectiveViewerFilter]);
+  }, [loading, hasMore, ownerAlbumId, tab, groupId, keyword, viewerAlbumId, effectiveViewerFilter]);
 
   const toPicked = (sticker: StickerResult): SelectedSticker => ({
     sticker_id: sticker.id,

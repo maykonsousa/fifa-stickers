@@ -51,7 +51,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, avatar_url, username, city, state, instagram, whatsapp, share_instagram, share_whatsapp")
+    .select("id, display_name, avatar_url, username, city, state, instagram, whatsapp, share_instagram, share_whatsapp, public_album_id")
     .eq("username", username)
     .single();
 
@@ -70,9 +70,17 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const isLoggedIn = !!user;
   const viewerId: string | null = tradeFilterActive && user ? user.id : null;
 
+  const ownerAlbumId = profile.public_album_id as number;
+  let viewerAlbumId: number | null = null;
+  if (viewerId) {
+    const { data: viewerProfile } = await supabase
+      .from("profiles").select("public_album_id").eq("id", viewerId).single();
+    viewerAlbumId = viewerProfile?.public_album_id ?? null;
+  }
+
   const { data: statsRows } = await supabase.rpc("get_profile_view_stats", {
-    p_user_id: profile.id,
-    p_viewer_id: viewerId,
+    p_album_id: ownerAlbumId,
+    p_viewer_album_id: viewerAlbumId,
   });
   const stats = statsRows?.[0] ?? {
     total_stickers: 0,
@@ -114,7 +122,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         />
         <ProfileStickers
           userId={profile.id}
-          viewerId={viewerId}
+          ownerAlbumId={ownerAlbumId}
+          viewerAlbumId={viewerAlbumId}
           tradeUIEnabled={tradeUIEnabled}
           tradeFilterActive={tradeFilterActive}
           isLoggedIn={isLoggedIn}

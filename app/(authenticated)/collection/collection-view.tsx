@@ -473,8 +473,8 @@ export function CollectionView({
         </>
       ) : (
         <ProfileStickersAlbum
-          userId={userId}
-          viewerId={userId}
+          albumId={albumId}
+          viewerAlbumId={albumId}
           groupId={groupId}
           keyword={keyword}
           overrides={albumOverrides}

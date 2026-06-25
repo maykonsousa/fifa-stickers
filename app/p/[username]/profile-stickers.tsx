@@ -31,7 +31,8 @@ const VIEW_MODE_STORAGE_KEY = "profileViewMode";
 
 export function ProfileStickers({
   userId,
-  viewerId = null,
+  ownerAlbumId,
+  viewerAlbumId = null,
   tradeUIEnabled = false,
   tradeFilterActive = false,
   isLoggedIn = false,
@@ -43,7 +44,8 @@ export function ProfileStickers({
   tradeDuplicatesCount = null,
 }: {
   userId: string;
-  viewerId?: string | null;
+  ownerAlbumId: number;
+  viewerAlbumId?: number | null;
   tradeUIEnabled?: boolean;
   tradeFilterActive?: boolean;
   isLoggedIn?: boolean;
@@ -80,10 +82,10 @@ export function ProfileStickers({
   // Para o modo álbum, o "viewer" é a pessoa logada — seja ela o próprio dono
   // ou outra pessoa. A RPC do álbum aceita viewer == owner e devolve a contagem
   // certa pra renderizar o estado de posse do card.
-  const albumViewerId: string | null =
-    effectiveViewMode === "album" && isLoggedIn && viewerId === null
-      ? userId
-      : viewerId;
+  const albumViewerAlbumId: number | null =
+    effectiveViewMode === "album" && isLoggedIn && viewerAlbumId === null
+      ? ownerAlbumId
+      : viewerAlbumId;
 
   return (
     <div className="space-y-4 pb-32">
@@ -176,7 +178,8 @@ export function ProfileStickers({
       {effectiveViewMode === "list" ? (
         <ProfileStickersList
           userId={userId}
-          viewerId={viewerId}
+          ownerAlbumId={ownerAlbumId}
+          viewerAlbumId={viewerAlbumId}
           tradeUIEnabled={tradeUIEnabled}
           tradeFilterActive={tradeFilterActive}
           isLoggedIn={isLoggedIn}
@@ -190,8 +193,8 @@ export function ProfileStickers({
         />
       ) : (
         <ProfileStickersAlbum
-          userId={userId}
-          viewerId={albumViewerId}
+          albumId={ownerAlbumId}
+          viewerAlbumId={albumViewerAlbumId}
           groupId={groupId}
           keyword={keyword}
         />

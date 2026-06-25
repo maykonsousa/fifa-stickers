@@ -15,7 +15,7 @@ export async function getShareableStickerList(params: {
 
   const { data: profile, error: profileErr } = await supabase
     .from("profiles")
-    .select("id, display_name, username")
+    .select("id, display_name, username, public_album_id")
     .eq("username", params.username)
     .single();
 
@@ -24,7 +24,7 @@ export async function getShareableStickerList(params: {
   }
 
   const { data: shareRows, error: shareErr } = await supabase
-    .rpc("get_user_share_list", { p_user_id: profile.id, p_kind: params.kind })
+    .rpc("get_user_share_list", { p_album_id: profile.public_album_id, p_kind: params.kind })
     .range(0, 9999);
 
   if (shareErr) {

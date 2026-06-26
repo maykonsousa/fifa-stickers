@@ -80,9 +80,46 @@ export function StickerPicker({
   const [loadingMore, setLoadingMore] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const [ownerAlbumId, setOwnerAlbumId] = useState<number | null>(null);
+  const [viewerAlbumId, setViewerAlbumId] = useState<number | null>(null);
+  const [albumsResolved, setAlbumsResolved] = useState(false);
+
   const canShowStatus = !!ownerUserId;
   const hasMore = results.length < totalCount;
   const selectedSet = new Set(selectedStickerIds);
+
+  // Resolve album ids from user id props
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveAlbums() {
+      setAlbumsResolved(false);
+      const ids = [ownerUserId, viewerUserId].filter(Boolean) as string[];
+      if (ids.length === 0) {
+        if (!cancelled) {
+          setOwnerAlbumId(null);
+          setViewerAlbumId(null);
+          setAlbumsResolved(true);
+        }
+        return;
+      }
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, public_album_id")
+        .in("id", ids);
+      if (cancelled) return;
+      const map = new Map(
+        (data ?? []).map((r) => [r.id as string, r.public_album_id as number | null]),
+      );
+      setOwnerAlbumId(ownerUserId ? map.get(ownerUserId) ?? null : null);
+      setViewerAlbumId(viewerUserId ? map.get(viewerUserId) ?? null : null);
+      setAlbumsResolved(true);
+    }
+    resolveAlbums();
+    return () => {
+      cancelled = true;
+    };
+  }, [ownerUserId, viewerUserId]);
 
   // Busca grupos uma vez ao abrir
   useEffect(() => {
@@ -108,13 +145,13 @@ export function StickerPicker({
       else setLoading(true);
       const supabase = createClient();
       const { data } = await supabase.rpc("search_stickers", {
-        p_user_id: ownerUserId ?? "00000000-0000-0000-0000-000000000000",
+        p_album_id: ownerAlbumId,
         p_keyword: keyword || null,
         p_group_id: groupId,
         p_status: canShowStatus ? status : null,
         p_page: pageNum,
         p_page_size: PAGE_SIZE,
-        p_viewer_user_id: viewerUserId ?? null,
+        p_viewer_album_id: viewerAlbumId,
       });
       if (data && (data as StickerRow[]).length > 0) {
         const typed = data as StickerRow[];
@@ -127,22 +164,23 @@ export function StickerPicker({
       setLoading(false);
       setLoadingMore(false);
     },
-    [ownerUserId, keyword, groupId, status, canShowStatus, viewerUserId],
+    [ownerAlbumId, viewerAlbumId, keyword, groupId, status, canShowStatus],
   );
 
   // Refetch quando filtros mudam (e drawer aberto)
   useEffect(() => {
     if (!open) return;
+    if (!albumsResolved) return;
     setPage(1);
     fetchStickers(1, false);
-  }, [open, fetchStickers]);
+  }, [open, albumsResolved, fetchStickers]);
 
   // Carrega próximas páginas
   useEffect(() => {
-    if (page > 1 && open) {
+    if (page > 1 && open && albumsResolved) {
       fetchStickers(page, true);
     }
-  }, [page, open, fetchStickers]);
+  }, [page, open, albumsResolved, fetchStickers]);
 
   // Infinite scroll
   useEffect(() => {

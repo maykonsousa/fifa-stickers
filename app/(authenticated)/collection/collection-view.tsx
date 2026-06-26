@@ -51,9 +51,11 @@ const VIEW_MODE_STORAGE_KEY = "collectionViewMode";
 export function CollectionView({
   groups,
   userId,
+  albumId,
 }: {
   groups: Group[];
   userId: string;
+  albumId: number;
 }) {
   const searchParams = useSearchParams();
   const initialGroup = searchParams.get("group");
@@ -112,7 +114,7 @@ export function CollectionView({
     }
     const supabase = createClient();
     const { data } = await supabase.rpc("search_stickers", {
-      p_user_id: userId,
+      p_album_id: albumId,
       p_keyword: keyword || null,
       p_group_id: groupId,
       p_status: status,
@@ -129,7 +131,7 @@ export function CollectionView({
     }
     setLoading(false);
     setLoadingMore(false);
-  }, [userId, keyword, groupId, status]);
+  }, [albumId, keyword, groupId, status]);
 
   // Fetch list data quando filtros mudam (mesmo em modo álbum mantemos a lista
   // sincronizada pra otimista update funcionar quando voltar).
@@ -200,7 +202,7 @@ export function CollectionView({
   const doIncrement = async (stickerId: number) => {
     setAdding(true);
     const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: stickerId });
+    await supabase.from("user_stickers").insert({ user_id: userId, album_id: albumId, sticker_id: stickerId });
     incrementLocal(stickerId);
     setAdding(false);
     toast.success("Figurinha adicionada!");
@@ -212,7 +214,7 @@ export function CollectionView({
     const { data: rows } = await supabase
       .from("user_stickers")
       .select("id")
-      .eq("user_id", userId)
+      .eq("album_id", albumId)
       .eq("sticker_id", stickerId)
       .limit(1);
     if (rows && rows.length > 0) {
@@ -284,7 +286,7 @@ export function CollectionView({
     if (!uploadSticker) return;
     setAdding(true);
     const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    await supabase.from("user_stickers").insert({ user_id: userId, album_id: albumId, sticker_id: uploadSticker.id });
     incrementLocal(uploadSticker.id);
     const code = uploadSticker.code;
     setUploadSticker(null);
@@ -296,7 +298,7 @@ export function CollectionView({
     if (!uploadSticker) return;
     setAdding(true);
     const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, sticker_id: uploadSticker.id });
+    await supabase.from("user_stickers").insert({ user_id: userId, album_id: albumId, sticker_id: uploadSticker.id });
     incrementLocal(uploadSticker.id);
     setImageLocal(uploadSticker.id, imageUrl);
     const code = uploadSticker.code;
@@ -471,8 +473,8 @@ export function CollectionView({
         </>
       ) : (
         <ProfileStickersAlbum
-          userId={userId}
-          viewerId={userId}
+          albumId={albumId}
+          viewerAlbumId={albumId}
           groupId={groupId}
           keyword={keyword}
           overrides={albumOverrides}

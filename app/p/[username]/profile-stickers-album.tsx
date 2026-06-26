@@ -70,15 +70,15 @@ export interface AlbumOverride {
 }
 
 export function ProfileStickersAlbum({
-  userId,
-  viewerId,
+  albumId,
+  viewerAlbumId,
   groupId,
   keyword,
   onStickerClick,
   overrides,
 }: {
-  userId: string;
-  viewerId: string | null;
+  albumId: number;
+  viewerAlbumId: number | null;
   groupId: number | null;
   keyword: string;
   onStickerClick?: (sticker: AlbumSticker) => void;
@@ -90,7 +90,7 @@ export function ProfileStickersAlbum({
   const [pageInput, setPageInput] = useState("");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const fetchVersionRef = useRef(0);
-  const isLoggedIn = viewerId !== null;
+  const isLoggedIn = viewerAlbumId !== null;
 
   // Buscar dados sempre que filtros mudarem. Updates de contagem/imagem vêm
   // via `overrides` pra não refetchar e perder a página atual.
@@ -101,10 +101,10 @@ export function ProfileStickersAlbum({
     const supabase = createClient();
     supabase
       .rpc("get_public_stickers_album", {
-        p_user_id: userId,
+        p_album_id: albumId,
         p_group_id: groupId,
         p_keyword: keyword || null,
-        p_viewer_id: viewerId,
+        p_viewer_album_id: viewerAlbumId,
       })
       .then(({ data }) => {
         if (myVersion !== fetchVersionRef.current) return;
@@ -113,7 +113,7 @@ export function ProfileStickersAlbum({
         setCurrentIdx(0);
         setLoading(false);
       });
-  }, [userId, viewerId, groupId, keyword]);
+  }, [albumId, viewerAlbumId, groupId, keyword]);
 
   const displayPages = useMemo(() => {
     if (!overrides || Object.keys(overrides).length === 0) return pages;

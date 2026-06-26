@@ -1,9 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { getAlbumContext } from "@/lib/albums/get-active-album";
 import { ScannerView } from "./scanner-view";
 
 export default async function ScannerPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ctx = await getAlbumContext();
+  if (!ctx) redirect("/login");
 
-  return <ScannerView userId={user!.id} />;
+  return <ScannerView userId={ctx.userId} albumId={ctx.activeAlbumId} />;
 }

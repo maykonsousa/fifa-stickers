@@ -49,6 +49,24 @@ export function TradeDetailDrawer({ tradeId, userId, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [ownedCounts, setOwnedCounts] = useState<Map<number, number>>(new Map());
   const [busy, setBusy] = useState(false);
+  const [activeAlbumId, setActiveAlbumId] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveActiveAlbum() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("profiles")
+        .select("active_album_id")
+        .eq("id", userId)
+        .single();
+      if (!cancelled) setActiveAlbumId(data?.active_album_id ?? null);
+    }
+    resolveActiveAlbum();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (!tradeId) {
@@ -123,11 +141,11 @@ export function TradeDetailDrawer({ tradeId, userId, onClose }: Props) {
       // (pra mostrar o estado atual e o botão de remover)
       const receivedIds = received.map((it) => it.sticker.id);
       const counts = new Map<number, number>();
-      if (receivedIds.length > 0) {
+      if (receivedIds.length > 0 && activeAlbumId !== null) {
         const { data: ownedRows } = await supabase
           .from("user_stickers")
           .select("sticker_id")
-          .eq("user_id", userId)
+          .eq("album_id", activeAlbumId)
           .in("sticker_id", receivedIds);
         for (const r of (ownedRows ?? []) as { sticker_id: number }[]) {
           counts.set(r.sticker_id, (counts.get(r.sticker_id) ?? 0) + 1);
@@ -152,14 +170,18 @@ export function TradeDetailDrawer({ tradeId, userId, onClose }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tradeId, userId]);
+  }, [tradeId, userId, activeAlbumId]);
 
   async function handleAdd(stickerId: number) {
+    if (activeAlbumId === null) {
+      toast.error("Erro ao adicionar.");
+      return;
+    }
     setBusy(true);
     const supabase = createClient();
     const { error } = await supabase
       .from("user_stickers")
-      .insert({ user_id: userId, sticker_id: stickerId });
+      .insert({ user_id: userId, album_id: activeAlbumId, sticker_id: stickerId });
     if (error) {
       toast.error("Erro ao adicionar.");
       setBusy(false);
@@ -176,12 +198,13 @@ export function TradeDetailDrawer({ tradeId, userId, onClose }: Props) {
   }
 
   async function handleRemove(stickerId: number) {
+    if (activeAlbumId === null) return;
     setBusy(true);
     const supabase = createClient();
     const { data: rows } = await supabase
       .from("user_stickers")
       .select("id")
-      .eq("user_id", userId)
+      .eq("album_id", activeAlbumId)
       .eq("sticker_id", stickerId)
       .limit(1);
     if (rows && rows.length > 0) {

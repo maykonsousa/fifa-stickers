@@ -84,15 +84,17 @@ export function AlbumsManager({
         {albums.map((a) => (
           <li key={a.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
             {editingId === a.id ? (
-              <div className="flex gap-2">
+              <div className="space-y-2">
                 <input
                   autoFocus
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                  className="w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
                 />
-                <button disabled={busy} onClick={() => handleRename(a.id)} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm text-white">Salvar</button>
-                <button onClick={() => setEditingId(null)} className="rounded-lg px-3 py-1.5 text-sm text-gray-400">Cancelar</button>
+                <div className="flex gap-2">
+                  <button disabled={busy} onClick={() => handleRename(a.id)} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm text-white">Salvar</button>
+                  <button onClick={() => setEditingId(null)} className="rounded-lg px-3 py-1.5 text-sm text-gray-400">Cancelar</button>
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-3">

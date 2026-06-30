@@ -41,13 +41,7 @@ export function formatShareList(input: FormatShareListInput): string {
     // Sort stickers by number numerically
     const sortedStickers = [...group.stickers].sort((a, b) => a.number - b.number);
     const stickerNumbers = sortedStickers
-      .map((sticker) => {
-        const num = String(sticker.number);
-        if (input.kind === "duplicates" && sticker.count >= 3) {
-          return `${num}×${sticker.count - 1}`;
-        }
-        return num;
-      })
+      .map((sticker) => String(sticker.number))
       .join(", ");
     lines.push(`${group.code} ${emoji}: ${stickerNumbers}`);
   }

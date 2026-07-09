@@ -41,6 +41,7 @@ interface StickerResult {
   image_url: string | null;
   owned_count: number;
   total_count: number;
+  wishlisted: boolean;
 }
 
 type ViewMode = "list" | "album";
@@ -77,12 +78,14 @@ export function CollectionView({
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
   const [uploadSticker, setUploadSticker] = useState<StickerResult | null>(null);
   const [actionsSticker, setActionsSticker] = useState<{
     id: number;
     code: string;
     title: string | null;
     owned_count: number;
+    wishlisted?: boolean;
   } | null>(null);
   // Updates otimistas que o álbum aplica sem refetchar (pra não voltar pra
   // primeira página depois de adicionar/remover figurinha).
@@ -229,7 +232,7 @@ export function CollectionView({
   // 1. Já possui (owned >= 1) → abre modal de ações (+1/-1).
   // 2. Não possui + sem imagem → abre modal de upload.
   // 3. Não possui + com imagem → +1 direto.
-  const handleCardClick = (sticker: { id: number; code: string; title: string | null; image_url: string | null; owned_count: number }) => {
+  const handleCardClick = (sticker: { id: number; code: string; title: string | null; image_url: string | null; owned_count: number; wishlisted?: boolean }) => {
     if (adding) return;
     if (sticker.owned_count >= 1) {
       setActionsSticker({
@@ -237,6 +240,7 @@ export function CollectionView({
         code: sticker.code,
         title: sticker.title,
         owned_count: sticker.owned_count,
+        wishlisted: sticker.wishlisted,
       });
       return;
     }
@@ -257,6 +261,7 @@ export function CollectionView({
           image_url: sticker.image_url,
           owned_count: 0,
           total_count: 0,
+          wishlisted: false,
         });
       }
       return;
@@ -279,6 +284,29 @@ export function CollectionView({
       const next = prev.owned_count - 1;
       return next <= 0 ? null : { ...prev, owned_count: next };
     });
+  };
+
+  const doToggleWishlist = async () => {
+    if (!actionsSticker || actionsSticker.wishlisted === undefined) return;
+    const stickerId = actionsSticker.id;
+    const next = !actionsSticker.wishlisted;
+    setWishlistBusy(true);
+    const supabase = createClient();
+    if (next) {
+      await supabase.from("album_wishlist").insert({ album_id: albumId, sticker_id: stickerId });
+    } else {
+      await supabase
+        .from("album_wishlist")
+        .delete()
+        .eq("album_id", albumId)
+        .eq("sticker_id", stickerId);
+    }
+    setResults((prev) =>
+      prev.map((s) => (s.id === stickerId ? { ...s, wishlisted: next } : s))
+    );
+    setActionsSticker((prev) => (prev ? { ...prev, wishlisted: next } : null));
+    setWishlistBusy(false);
+    toast.success(next ? "Adicionada à lista de desejo!" : "Removida da lista de desejo!");
   };
 
   // Quando o upload modal finaliza (com ou sem foto).
@@ -383,7 +411,7 @@ export function CollectionView({
           <Popover open={statusOpen} onOpenChange={setStatusOpen}>
             <PopoverTrigger className="flex w-full sm:w-36 items-center justify-between rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white hover:bg-white/10 transition-colors">
               <span className={status ? "text-white" : "text-gray-400"}>
-                {status === "owned" ? "Tenho" : status === "missing" ? "Faltam" : status === "duplicate" ? "Repetidas" : "Todas"}
+                {status === "owned" ? "Tenho" : status === "preciso" ? "Preciso" : status === "duplicate" ? "Repetidas" : "Todas"}
               </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
             </PopoverTrigger>
@@ -391,7 +419,7 @@ export function CollectionView({
               {[
                 { value: null, label: "Todas" },
                 { value: "owned", label: "Tenho" },
-                { value: "missing", label: "Faltam" },
+                { value: "preciso", label: "Preciso" },
                 { value: "duplicate", label: "Repetidas" },
               ].map((opt) => (
                 <button
@@ -453,6 +481,7 @@ export function CollectionView({
                 key={sticker.id}
                 sticker={sticker}
                 ownedCount={sticker.owned_count}
+                wishlisted={sticker.wishlisted}
                 onClick={() => handleCardClick(sticker)}
               />
             ))}
@@ -515,6 +544,9 @@ export function CollectionView({
         busy={adding}
         onIncrement={handleActionsIncrement}
         onDecrement={handleActionsDecrement}
+        wishlisted={actionsSticker?.wishlisted}
+        onToggleWishlist={doToggleWishlist}
+        wishlistBusy={wishlistBusy}
       />
     </div>
   );

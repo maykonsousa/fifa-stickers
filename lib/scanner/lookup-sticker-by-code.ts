@@ -6,6 +6,7 @@ export interface ScannedSticker {
   title: string | null;
   image_url: string | null;
   owned_count: number;
+  wishlisted: boolean;
 }
 
 // Resolve uma figurinha pelo código já com a contagem de cópias no álbum, via a
@@ -31,5 +32,6 @@ export async function lookupStickerByCode(
     title: row.title,
     image_url: row.image_url,
     owned_count: row.owned_count ?? 0,
+    wishlisted: row.wishlisted ?? false,
   };
 }

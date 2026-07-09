@@ -38,12 +38,39 @@ describe("resolveScanAction", () => {
     });
   });
 
-  it("troca: já tem → vermelho, none, Próxima", () => {
+  it("troca: já tem e fora da wishlist → amarelo, none, Próxima", () => {
     expect(resolveScanAction("troca", 1)).toEqual({
-      color: "red",
+      color: "yellow",
       action: "none",
-      message: "Você já tem — pula",
+      message: "Você tem 1 figurinha",
       actionLabel: "Próxima",
+    });
+  });
+
+  it("troca: já tem 2 e fora da wishlist → amarelo, none, plural", () => {
+    expect(resolveScanAction("troca", 2)).toEqual({
+      color: "yellow",
+      action: "none",
+      message: "Você tem 2 figurinhas",
+      actionLabel: "Próxima",
+    });
+  });
+
+  it("troca: já tem e na wishlist → verde, add, Pegar (mostra quantidade)", () => {
+    expect(resolveScanAction("troca", 2, true)).toEqual({
+      color: "green",
+      action: "add",
+      message: "Você quer mais dessa — pega! (tem 2)",
+      actionLabel: "Pegar",
+    });
+  });
+
+  it("troca: não tem, wishlisted não muda nada → verde, add, Pegar, 'Nova'", () => {
+    expect(resolveScanAction("troca", 0, true)).toEqual({
+      color: "green",
+      action: "add",
+      message: "Nova — pega!",
+      actionLabel: "Pegar",
     });
   });
 

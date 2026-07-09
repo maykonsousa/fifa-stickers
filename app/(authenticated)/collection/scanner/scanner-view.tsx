@@ -165,7 +165,7 @@ export function ScannerView({ userId, albumId }: { userId: string; albumId: numb
 
   const executeScanAction = useCallback(
     async (sticker: ScannedSticker, activeMode: ScanMode) => {
-      const { color, action, message } = resolveScanAction(activeMode, sticker.owned_count);
+      const { color, action, message } = resolveScanAction(activeMode, sticker.owned_count, sticker.wishlisted);
       const supabase = createClient();
 
       if (action === "add") {
@@ -579,7 +579,7 @@ export function ScannerView({ userId, albumId }: { userId: string; albumId: numb
         <BottomSheet>
           <ScannerConfirmCard
             sticker={phase.sticker}
-            result={resolveScanAction(phase.mode, phase.sticker.owned_count)}
+            result={resolveScanAction(phase.mode, phase.sticker.owned_count, phase.sticker.wishlisted)}
             busy={confirmBusy}
             onConfirm={handleConfirm}
             onReject={() => dispatch({ type: "reject" })}

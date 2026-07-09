@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Minus, Loader2 } from "lucide-react";
+import { Plus, Minus, Loader2, Star } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -17,6 +17,9 @@ interface Props {
   busy: boolean;
   onIncrement: () => void;
   onDecrement: () => void;
+  wishlisted?: boolean;
+  onToggleWishlist?: () => void;
+  wishlistBusy?: boolean;
 }
 
 export function StickerActionsModal({
@@ -28,6 +31,9 @@ export function StickerActionsModal({
   busy,
   onIncrement,
   onDecrement,
+  wishlisted,
+  onToggleWishlist,
+  wishlistBusy = false,
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && !busy && onClose()}>
@@ -79,6 +85,28 @@ export function StickerActionsModal({
               )}
             </button>
           </div>
+          {wishlisted !== undefined && onToggleWishlist && (
+            <button
+              type="button"
+              onClick={onToggleWishlist}
+              disabled={wishlistBusy}
+              aria-pressed={wishlisted}
+              className={`flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${
+                wishlisted
+                  ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                  : "border border-white/15 text-gray-300 hover:bg-white/5"
+              }`}
+            >
+              {wishlistBusy ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Star className="w-4 h-4" fill={wishlisted ? "currentColor" : "none"} />
+                  {wishlisted ? "Na lista de desejo — remover" : "Quero mais dessa"}
+                </>
+              )}
+            </button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

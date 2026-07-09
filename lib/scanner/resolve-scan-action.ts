@@ -19,7 +19,11 @@ export interface ScanActionResult {
 // Mínimo de cópias pra dar baixa: precisa sobrar pelo menos 1 (não baixamos a única).
 const MIN_OWNED_TO_REMOVE = 2;
 
-export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActionResult {
+export function resolveScanAction(
+  mode: ScanMode,
+  ownedCount: number,
+  wishlisted = false,
+): ScanActionResult {
   if (mode === "lancamento") {
     const repetida = ownedCount > 0;
     return {
@@ -33,8 +37,15 @@ export function resolveScanAction(mode: ScanMode, ownedCount: number): ScanActio
   if (mode === "troca") {
     if (ownedCount === 0)
       return { color: "green", action: "add", message: "Nova — pega!", actionLabel: "Pegar" };
-    // Mostra a quantidade para o usuário decidir se quer pegar para trocas futuras.
-    // Se quiser, pode lançar depois pela aba de lançamentos.
+    // Está na lista de desejo: quer estocar mesmo já tendo (alta demanda). Pega!
+    if (wishlisted)
+      return {
+        color: "green",
+        action: "add",
+        message: `Você quer mais dessa — pega! (tem ${ownedCount})`,
+        actionLabel: "Pegar",
+      };
+    // Já tem e não é desejo: só confere e segue.
     const qty = ownedCount === 1 ? "1 figurinha" : `${ownedCount} figurinhas`;
     return { color: "yellow", action: "none", message: `Você tem ${qty}`, actionLabel: "Próxima" };
   }

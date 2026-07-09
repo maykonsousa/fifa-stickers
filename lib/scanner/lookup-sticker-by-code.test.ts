@@ -27,7 +27,16 @@ describe("lookupStickerByCode", () => {
       error: null,
     });
     const result = await lookupStickerByCode(client, "MEX1", 1);
-    expect(result).toEqual({ id: 7, code: "MEX1", title: "Messi", image_url: "u", owned_count: 2 });
+    expect(result).toEqual({ id: 7, code: "MEX1", title: "Messi", image_url: "u", owned_count: 2, wishlisted: false });
+  });
+
+  it("mapeia o campo wishlisted quando presente na RPC", async () => {
+    const { client } = fakeClient({
+      data: [{ id: 7, code: "MEX1", title: "Messi", image_url: "u", owned_count: 2, wishlisted: true }],
+      error: null,
+    });
+    const result = await lookupStickerByCode(client, "MEX1", 1);
+    expect(result).toEqual({ id: 7, code: "MEX1", title: "Messi", image_url: "u", owned_count: 2, wishlisted: true });
   });
 
   it("devolve null quando a RPC não retorna linha (código inexistente)", async () => {

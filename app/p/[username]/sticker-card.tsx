@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import Image from "next/image";
 
 export interface StickerCardSticker {
@@ -18,6 +18,7 @@ export function StickerCard({
   onClick,
   ownedCount = null,
   orientation = "portrait",
+  wishlisted = false,
 }: {
   sticker: StickerCardSticker;
   selectable?: boolean;
@@ -26,6 +27,7 @@ export function StickerCard({
   onClick?: () => void;
   ownedCount?: number | null;
   orientation?: "portrait" | "landscape";
+  wishlisted?: boolean;
 }) {
   // Retrato 3:4. Paisagem 5:3 — landscape um pouco mais baixo que portrait
   // numa linha mista: portrait_h = (4/3) * W ≈ 1.33W; landscape_h =
@@ -108,6 +110,14 @@ export function StickerCard({
           aria-label={`${ownedCount - 1} repetidas`}
         >
           +{ownedCount - 1}
+        </span>
+      )}
+      {wishlisted && ownedCount !== null && (
+        <span
+          className="absolute top-1 left-1 flex h-5 items-center gap-0.5 rounded-full bg-green-500 px-1.5 text-[10px] font-bold text-white shadow tabular-nums"
+          aria-label={`Na lista de desejo — você tem ${ownedCount}`}
+        >
+          <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> tem {ownedCount}
         </span>
       )}
     </div>

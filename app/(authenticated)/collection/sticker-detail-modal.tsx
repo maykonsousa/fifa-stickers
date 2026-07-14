@@ -72,6 +72,7 @@ export function StickerDetailModal({
   // Navegação por teclado enquanto o modal está aberto.
   useEffect(() => {
     if (!open) return;
+    if (editing || !sticker?.image_url) return; // não sequestrar navegação durante edição de foto
     const handler = (e: KeyboardEvent) => {
       const t = e.target;
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) return;
@@ -80,7 +81,7 @@ export function StickerDetailModal({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [open, hasPrev, hasNext, onPrev, onNext]);
+  }, [open, hasPrev, hasNext, onPrev, onNext, editing, sticker?.image_url]);
 
   if (!sticker) return null;
 
@@ -100,7 +101,10 @@ export function StickerDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && !busy && onClose()}>
-      <DialogContent className="max-w-sm bg-zinc-900/95 backdrop-blur-xl border border-white/15 text-white p-4">
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-sm bg-zinc-900/95 backdrop-blur-xl border border-white/15 text-white p-4"
+      >
         {/* Header */}
         <DialogHeader className="pb-2">
           <div className="flex items-center justify-between gap-2">

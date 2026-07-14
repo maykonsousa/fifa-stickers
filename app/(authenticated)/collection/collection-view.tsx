@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -18,11 +18,17 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { ChevronsUpDown, Check, Loader2, BookOpen, List, ScanLine } from "lucide-react";
-import { StickerImageUpload } from "@/components/sticker-image-upload";
 import { StickerCard } from "@/app/p/[username]/sticker-card";
 import { ProfileStickersAlbum, type AlbumOverride } from "@/app/p/[username]/profile-stickers-album";
 import { StickerLegend } from "@/app/p/[username]/sticker-legend";
-import { StickerActionsModal } from "./sticker-actions-modal";
+import { StickerDetailModal } from "./sticker-detail-modal";
+import {
+  listToNavList,
+  albumToNavList,
+  canGoPrev,
+  canGoNext,
+  resolveNext,
+} from "@/lib/collection/sticker-nav";
 
 interface Group {
   id: number;
@@ -45,6 +51,20 @@ interface StickerResult {
 }
 
 type ViewMode = "list" | "album";
+
+type AlbumPageForNav = {
+  page: number;
+  stickers: {
+    id: number;
+    code: string;
+    title: string | null;
+    image_url: string | null;
+    orientation: "portrait" | "landscape";
+    row: number;
+    col: number;
+    viewer_owned_count: number;
+  }[];
+};
 
 const PAGE_SIZE = 20;
 const VIEW_MODE_STORAGE_KEY = "collectionViewMode";
@@ -79,14 +99,10 @@ export function CollectionView({
   const [loadingMore, setLoadingMore] = useState(false);
   const [adding, setAdding] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState(false);
-  const [uploadSticker, setUploadSticker] = useState<StickerResult | null>(null);
-  const [actionsSticker, setActionsSticker] = useState<{
-    id: number;
-    code: string;
-    title: string | null;
-    owned_count: number;
-    wishlisted?: boolean;
-  } | null>(null);
+  const [navIndex, setNavIndex] = useState<number | null>(null);
+  const [pendingAdvance, setPendingAdvance] = useState(false);
+  const [wishlistedIds, setWishlistedIds] = useState<Set<number>>(new Set());
+  const [albumPages, setAlbumPages] = useState<AlbumPageForNav[]>([]);
   // Updates otimistas que o álbum aplica sem refetchar (pra não voltar pra
   // primeira página depois de adicionar/remover figurinha).
   const [albumOverrides, setAlbumOverrides] = useState<Record<number, AlbumOverride>>({});
@@ -168,6 +184,34 @@ export function CollectionView({
     return () => observer.disconnect();
   }, [hasMore, loading, loadingMore, viewMode]);
 
+  // Wishlist do álbum (uma vez por albumId), pra marcar as figurinhas no álbum.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("album_wishlist")
+      .select("sticker_id")
+      .eq("album_id", albumId)
+      .then(({ data }) => {
+        setWishlistedIds(new Set((data ?? []).map((r) => r.sticker_id as number)));
+      });
+  }, [albumId]);
+
+  // Lista de navegação normalizada pra visão atual.
+  const navList = useMemo(
+    () =>
+      viewMode === "list"
+        ? listToNavList(results)
+        : albumToNavList(albumPages, wishlistedIds),
+    [viewMode, results, albumPages, wishlistedIds],
+  );
+
+  // Trocar entre lista/álbum fecha o modal (índices divergem entre as visões).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNavIndex(null);
+    setPendingAdvance(false);
+  }, [viewMode]);
+
   const bumpOverride = (stickerId: number, delta: number) => {
     setAlbumOverrides((prev) => ({
       ...prev,
@@ -228,111 +272,92 @@ export function CollectionView({
     toast.success("Figurinha removida!");
   };
 
-  // Lógica central de clique no card:
-  // 1. Já possui (owned >= 1) → abre modal de ações (+1/-1).
-  // 2. Não possui + sem imagem → abre modal de upload.
-  // 3. Não possui + com imagem → +1 direto.
-  const handleCardClick = (sticker: { id: number; code: string; title: string | null; image_url: string | null; owned_count: number; wishlisted?: boolean }) => {
-    if (adding) return;
-    if (sticker.owned_count >= 1) {
-      setActionsSticker({
-        id: sticker.id,
-        code: sticker.code,
-        title: sticker.title,
-        owned_count: sticker.owned_count,
-        wishlisted: sticker.wishlisted,
-      });
+  // Todo clique numa figurinha abre o modal unificado no índice correspondente.
+  const handleCardClick = (sticker: { id: number }) => {
+    const idx = navList.findIndex((s) => s.id === sticker.id);
+    if (idx >= 0) setNavIndex(idx);
+  };
+
+  // Navegação com load-more contínuo no modo lista.
+  const hasMoreForNav = viewMode === "list" && hasMore;
+  const currentSticker = navIndex !== null ? navList[navIndex] ?? null : null;
+  const modalHasPrev = navIndex !== null && canGoPrev(navIndex);
+  const modalHasNext =
+    navIndex !== null && canGoNext(navIndex, navList.length, hasMoreForNav);
+
+  const handleNavPrev = () => {
+    if (navIndex !== null && canGoPrev(navIndex)) setNavIndex(navIndex - 1);
+  };
+
+  const handleNavNext = () => {
+    if (navIndex === null) return;
+    if (pendingAdvance) return;
+    const action = resolveNext(navIndex, navList.length, hasMoreForNav);
+    if (action.type === "move") {
+      setNavIndex(action.index);
+    } else if (action.type === "loadMore") {
+      setPendingAdvance(true);
+      setPage((p) => p + 1);
+    }
+  };
+
+  // Quando a próxima página chega, avança o índice.
+  useEffect(() => {
+    if (!pendingAdvance) return;
+    // Página nova chegou: avança pro próximo item.
+    if (navIndex !== null && navIndex < navList.length - 1) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNavIndex(navIndex + 1);
+      setPendingAdvance(false);
       return;
     }
-    if (!sticker.image_url) {
-      // Reaproveita o tipo StickerResult — caller passa o objeto completo da lista.
-      // No modo álbum, montamos um stub equivalente.
-      const full = results.find((s) => s.id === sticker.id);
-      if (full) {
-        setUploadSticker(full);
-      } else {
-        // Fallback: cria stub minimamente válido.
-        setUploadSticker({
-          id: sticker.id,
-          group_id: 0,
-          code: sticker.code,
-          number: 0,
-          title: sticker.title,
-          image_url: sticker.image_url,
-          owned_count: 0,
-          total_count: 0,
-          wishlisted: false,
-        });
-      }
-      return;
+    // Carga terminou e não há mais páginas — não há pra onde avançar.
+    if (!loadingMore && !hasMore) {
+      setPendingAdvance(false);
     }
-    void doIncrement(sticker.id);
+  }, [navList.length, loadingMore, hasMore, pendingAdvance, navIndex]);
+
+  const handleModalIncrement = async () => {
+    if (!currentSticker) return;
+    await doIncrement(currentSticker.id);
   };
 
-  // Quando a modal de ações dispara +1 ou -1.
-  const handleActionsIncrement = async () => {
-    if (!actionsSticker) return;
-    await doIncrement(actionsSticker.id);
-    setActionsSticker((prev) => prev ? { ...prev, owned_count: prev.owned_count + 1 } : null);
+  const handleModalDecrement = async () => {
+    if (!currentSticker) return;
+    await doDecrement(currentSticker.id);
   };
 
-  const handleActionsDecrement = async () => {
-    if (!actionsSticker) return;
-    await doDecrement(actionsSticker.id);
-    setActionsSticker((prev) => {
-      if (!prev) return null;
-      const next = prev.owned_count - 1;
-      return next <= 0 ? null : { ...prev, owned_count: next };
-    });
-  };
-
-  const doToggleWishlist = async () => {
-    if (!actionsSticker || actionsSticker.wishlisted === undefined) return;
-    const stickerId = actionsSticker.id;
-    const next = !actionsSticker.wishlisted;
+  const handleModalToggleWishlist = async () => {
+    if (!currentSticker) return;
+    const stickerId = currentSticker.id;
+    const next = !currentSticker.wishlisted;
     setWishlistBusy(true);
     const supabase = createClient();
     if (next) {
       await supabase.from("album_wishlist").insert({ album_id: albumId, sticker_id: stickerId });
     } else {
-      await supabase
-        .from("album_wishlist")
-        .delete()
-        .eq("album_id", albumId)
-        .eq("sticker_id", stickerId);
+      await supabase.from("album_wishlist").delete().eq("album_id", albumId).eq("sticker_id", stickerId);
     }
-    setResults((prev) =>
-      prev.map((s) => (s.id === stickerId ? { ...s, wishlisted: next } : s))
-    );
-    setActionsSticker((prev) => (prev ? { ...prev, wishlisted: next } : null));
+    setResults((prev) => prev.map((s) => (s.id === stickerId ? { ...s, wishlisted: next } : s)));
+    setWishlistedIds((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(stickerId);
+      else copy.delete(stickerId);
+      return copy;
+    });
     setWishlistBusy(false);
     toast.success(next ? "Adicionada à lista de desejo!" : "Removida da lista de desejo!");
   };
 
-  // Quando o upload modal finaliza (com ou sem foto).
-  const handleSkipUpload = async () => {
-    if (!uploadSticker) return;
-    setAdding(true);
-    const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, album_id: albumId, sticker_id: uploadSticker.id });
-    incrementLocal(uploadSticker.id);
-    const code = uploadSticker.code;
-    setUploadSticker(null);
-    setAdding(false);
-    toast.success(`Figurinha ${code} adicionada!`);
+  const handleModalImageUploaded = (imageUrl: string) => {
+    if (!currentSticker) return;
+    setImageLocal(currentSticker.id, imageUrl);
+    toast.success("Foto atualizada!");
   };
 
-  const handleUploadSuccess = async (imageUrl: string) => {
-    if (!uploadSticker) return;
-    setAdding(true);
-    const supabase = createClient();
-    await supabase.from("user_stickers").insert({ user_id: userId, album_id: albumId, sticker_id: uploadSticker.id });
-    incrementLocal(uploadSticker.id);
-    setImageLocal(uploadSticker.id, imageUrl);
-    const code = uploadSticker.code;
-    setUploadSticker(null);
-    setAdding(false);
-    toast.success(`Figurinha ${code} adicionada com foto!`);
+  const handleModalImageRemoved = () => {
+    if (!currentSticker) return;
+    setImageLocal(currentSticker.id, null);
   };
 
   return (
@@ -341,7 +366,7 @@ export function CollectionView({
         <div>
           <h1 className="text-2xl font-bold text-white">Coleção</h1>
           <p className="mt-1 text-sm text-gray-400">
-            Clique numa figurinha pra adicionar — se já tiver, abre opções de + / − e remover.
+            Clique numa figurinha pra ver detalhes, adicionar/remover e gerenciar sua lista de desejo.
           </p>
         </div>
         <button
@@ -507,46 +532,28 @@ export function CollectionView({
           groupId={groupId}
           keyword={keyword}
           overrides={albumOverrides}
-          onStickerClick={(s) =>
-            handleCardClick({
-              id: s.id,
-              code: s.code,
-              title: s.title,
-              image_url: s.image_url,
-              owned_count: s.viewer_owned_count,
-            })
-          }
+          onPagesChange={setAlbumPages}
+          onStickerClick={(s) => handleCardClick({ id: s.id })}
         />
       )}
 
-      <StickerImageUpload
-        open={!!uploadSticker}
-        onClose={() => setUploadSticker(null)}
-        stickerId={uploadSticker?.id ?? 0}
-        stickerCode={uploadSticker?.code ?? ""}
+      <StickerDetailModal
+        open={navIndex !== null}
+        onClose={() => setNavIndex(null)}
+        sticker={currentSticker}
         userId={userId}
-        onSuccess={handleUploadSuccess}
-        onSkip={uploadSticker?.image_url ? undefined : handleSkipUpload}
-        currentImageUrl={uploadSticker?.image_url}
-        onRemove={() => {
-          if (uploadSticker) {
-            setImageLocal(uploadSticker.id, null);
-          }
-        }}
-      />
-
-      <StickerActionsModal
-        open={!!actionsSticker}
-        onClose={() => setActionsSticker(null)}
-        stickerCode={actionsSticker?.code ?? ""}
-        stickerTitle={actionsSticker?.title ?? null}
-        ownedCount={actionsSticker?.owned_count ?? 0}
         busy={adding}
-        onIncrement={handleActionsIncrement}
-        onDecrement={handleActionsDecrement}
-        wishlisted={actionsSticker?.wishlisted}
-        onToggleWishlist={doToggleWishlist}
         wishlistBusy={wishlistBusy}
+        hasPrev={modalHasPrev}
+        hasNext={modalHasNext && !pendingAdvance}
+        navBusy={pendingAdvance}
+        onPrev={handleNavPrev}
+        onNext={handleNavNext}
+        onIncrement={handleModalIncrement}
+        onDecrement={handleModalDecrement}
+        onToggleWishlist={handleModalToggleWishlist}
+        onImageUploaded={handleModalImageUploaded}
+        onImageRemoved={handleModalImageRemoved}
       />
     </div>
   );

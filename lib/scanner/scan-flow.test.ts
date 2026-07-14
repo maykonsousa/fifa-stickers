@@ -8,6 +8,7 @@ const STICKER: ScannedSticker = {
   title: "México",
   image_url: null,
   owned_count: 0,
+  wishlisted: false,
 };
 
 describe("scanFlowReducer", () => {

@@ -303,15 +303,18 @@ export function CollectionView({
   // Quando a próxima página chega, avança o índice.
   useEffect(() => {
     if (!pendingAdvance) return;
+    // Página nova chegou: avança pro próximo item.
     if (navIndex !== null && navIndex < navList.length - 1) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setNavIndex(navIndex + 1);
       setPendingAdvance(false);
-    } else if (!loadingMore) {
-      // Página carregou e não cresceu o suficiente — desiste do avanço.
+      return;
+    }
+    // Carga terminou e não há mais páginas — não há pra onde avançar.
+    if (!loadingMore && !hasMore) {
       setPendingAdvance(false);
     }
-  }, [navList.length, loadingMore, pendingAdvance, navIndex]);
+  }, [navList.length, loadingMore, hasMore, pendingAdvance, navIndex]);
 
   const handleModalIncrement = async () => {
     if (!currentSticker) return;
@@ -362,7 +365,7 @@ export function CollectionView({
         <div>
           <h1 className="text-2xl font-bold text-white">Coleção</h1>
           <p className="mt-1 text-sm text-gray-400">
-            Clique numa figurinha pra adicionar — se já tiver, abre opções de + / − e remover.
+            Clique numa figurinha pra ver detalhes, adicionar/remover e gerenciar sua lista de desejo.
           </p>
         </div>
         <button

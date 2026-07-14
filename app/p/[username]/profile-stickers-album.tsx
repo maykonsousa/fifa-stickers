@@ -76,6 +76,7 @@ export function ProfileStickersAlbum({
   keyword,
   onStickerClick,
   overrides,
+  onPagesChange,
 }: {
   albumId: number;
   viewerAlbumId: number | null;
@@ -83,6 +84,7 @@ export function ProfileStickersAlbum({
   keyword: string;
   onStickerClick?: (sticker: AlbumSticker) => void;
   overrides?: Record<number, AlbumOverride>;
+  onPagesChange?: (pages: AlbumPage[]) => void;
 }) {
   const [pages, setPages] = useState<AlbumPage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +132,10 @@ export function ProfileStickersAlbum({
       }),
     }));
   }, [pages, overrides]);
+
+  useEffect(() => {
+    onPagesChange?.(displayPages);
+  }, [displayPages, onPagesChange]);
 
   // Sincronizar currentIdx com scroll do carrossel.
   useEffect(() => {

@@ -17,7 +17,7 @@ type Action = "link" | ShareKind;
 interface ShareMenuProps {
   username: string;
   displayName: string;
-  totalMissing: number;
+  totalNeeded: number;
   totalDuplicates: number;
   className?: string;
 }
@@ -25,7 +25,7 @@ interface ShareMenuProps {
 export function ShareMenu({
   username,
   displayName,
-  totalMissing,
+  totalNeeded,
   totalDuplicates,
   className,
 }: ShareMenuProps) {
@@ -139,12 +139,12 @@ export function ShareMenu({
           busy={activeAction === "link"}
           onClick={shareLink}
         />
-        {totalMissing > 0 && (
+        {totalNeeded > 0 && (
           <MenuItem
             icon={AlertCircle}
             iconColor="text-red-400"
-            label="Lista de faltantes"
-            hint={`${totalMissing} ${totalMissing === 1 ? "figurinha" : "figurinhas"}`}
+            label="Preciso"
+            hint={`${totalNeeded} ${totalNeeded === 1 ? "figurinha" : "figurinhas"}`}
             busy={activeAction === "missing"}
             onClick={() => shareList("missing")}
           />

@@ -87,12 +87,15 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     owner_unique_owned: 0,
     owner_total_duplicates: 0,
     trade_duplicates_count: null,
+    wishlist_needed: 0,
   };
 
   const total = Number(stats.total_stickers);
   const uniqueOwned = Number(stats.owner_unique_owned);
   const totalDuplicates = Number(stats.owner_total_duplicates);
   const totalMissing = total - uniqueOwned;
+  const wishlistNeeded = Number(stats.wishlist_needed ?? 0);
+  const totalNeeded = totalMissing + wishlistNeeded;
   const percent = total > 0 ? Math.round((uniqueOwned / total) * 100) : 0;
   const ownerHasTradeable = totalDuplicates > 0 && totalMissing > 0;
   const tradeDuplicatesCount: number | null =
@@ -116,6 +119,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           shareWhatsapp={profile.share_whatsapp}
           totalOwned={uniqueOwned}
           totalMissing={totalMissing}
+          totalNeeded={totalNeeded}
           totalDuplicates={totalDuplicates}
           totalStickers={total}
           percent={percent}

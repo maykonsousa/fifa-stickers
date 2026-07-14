@@ -14,6 +14,7 @@ interface ProfileHeroProps {
   shareWhatsapp: boolean;
   totalOwned: number;
   totalMissing: number;
+  totalNeeded: number;
   totalDuplicates: number;
   totalStickers: number;
   percent: number;
@@ -31,6 +32,7 @@ export function ProfileHero({
   shareWhatsapp,
   totalOwned,
   totalMissing,
+  totalNeeded,
   totalDuplicates,
   totalStickers,
   percent,
@@ -69,7 +71,7 @@ export function ProfileHero({
         <ShareMenu
           username={username}
           displayName={displayName}
-          totalMissing={totalMissing}
+          totalNeeded={totalNeeded}
           totalDuplicates={totalDuplicates}
           className="sm:ml-auto shrink-0"
         />

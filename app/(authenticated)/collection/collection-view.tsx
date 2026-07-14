@@ -291,6 +291,7 @@ export function CollectionView({
 
   const handleNavNext = () => {
     if (navIndex === null) return;
+    if (pendingAdvance) return;
     const action = resolveNext(navIndex, navList.length, hasMoreForNav);
     if (action.type === "move") {
       setNavIndex(action.index);
@@ -544,7 +545,7 @@ export function CollectionView({
         busy={adding}
         wishlistBusy={wishlistBusy}
         hasPrev={modalHasPrev}
-        hasNext={modalHasNext}
+        hasNext={modalHasNext && !pendingAdvance}
         navBusy={pendingAdvance}
         onPrev={handleNavPrev}
         onNext={handleNavNext}
